@@ -234,52 +234,67 @@ const forceCleanup = () => {
   }
 };
       // Navigation component
-      function Navigation() {
-        return e('div', { className: "bg-gradient-orange-red shadow-xl" },
-          e('div', { className: "max-w-7xl mx-auto px-6" },
-            e('div', { className: "flex items-center justify-between py-4" },
-              e('div', { className: "flex items-center space-x-4" },
-                e('div', { className: "flex items-center space-x-2" },
-                  e('div', { className: "w-10 h-10 bg-white rounded-xl flex items-center justify-center" },
-                    e('span', { className: "text-2xl text-orange-600" }, '⚡')
-                  ),
-                  e('h1', { 
-                    className: "text-2xl font-bold text-white tracking-tight", 
-                    style: {fontFamily: 'Georgia, Times, serif'} 
-                  }, "FuelIQ")
-                )
-              ),
-              
-              e('div', { className: "flex space-x-1 bg-white/10 rounded-2xl p-1 overflow-x-auto backdrop-blur-sm" },
-                [
-                  { id: 'setup', label: 'Setup', icon: '⚙️' },
-                  { id: 'journey', label: 'Journey', icon: '⚖️' },
-                  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-                  { id: 'meals', label: 'Meals', icon: '🍽️' },
-                  { id: 'pantry', label: 'Pantry', icon: '🛒' },
-                  { id: 'planning', label: 'Planning', icon: '📅' },
-                  { id: 'wearables', label: 'Devices', icon: '⌚' },
-                  { id: 'analytics', label: 'Analytics', icon: '📈' },
-                  { id: 'chat', label: 'AI Chat', icon: '💬' }
-                ].map(({ id, label, icon }) => 
-                  e('button', {
-                    key: id,
-                    onClick: () => setCurrentView(id),
-                    className: `flex items-center space-x-2 px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all duration-200 ${
-                      currentView === id
-                        ? 'bg-white text-orange-600 shadow-lg'
-                        : 'text-white/80 hover:text-white hover:bg-white/10'
-                    }`
-                  },
-                    e('span', { className: "text-lg" }, icon),
-                    e('span', { className: "hidden md:inline" }, label)
-                  )
-                )
-              )
+     function Navigation() {
+  const [isNavigating, setIsNavigating] = useState(false);
+  
+  const handleNavClick = (targetView) => {
+    if (isNavigating) return; // Prevent double-clicks
+    
+    setIsNavigating(true);
+    forceCleanup();
+    
+    setTimeout(() => {
+      setCurrentView(targetView);
+      setIsNavigating(false);
+    }, 100);
+  };
+  
+  return e('div', { className: "bg-gradient-orange-red shadow-xl" },
+    e('div', { className: "max-w-7xl mx-auto px-6" },
+      e('div', { className: "flex items-center justify-between py-4" },
+        e('div', { className: "flex items-center space-x-4" },
+          e('div', { className: "flex items-center space-x-2" },
+            e('div', { className: "w-10 h-10 bg-white rounded-xl flex items-center justify-center" },
+              e('span', { className: "text-2xl text-orange-600" }, '⚡')
+            ),
+            e('h1', { 
+              className: "text-2xl font-bold text-white tracking-tight", 
+              style: {fontFamily: 'Georgia, Times, serif'} 
+            }, "FuelIQ")
+          )
+        ),
+        
+        e('div', { className: "flex space-x-1 bg-white/10 rounded-2xl p-1 overflow-x-auto backdrop-blur-sm" },
+          [
+            { id: 'setup', label: 'Setup', icon: '⚙️' },
+            { id: 'journey', label: 'Journey', icon: '⚖️' },
+            { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+            { id: 'meals', label: 'Meals', icon: '🍽️' },
+            { id: 'pantry', label: 'Pantry', icon: '🛒' },
+            { id: 'planning', label: 'Planning', icon: '📅' },
+            { id: 'wearables', label: 'Devices', icon: '⌚' },
+            { id: 'analytics', label: 'Analytics', icon: '📈' },
+            { id: 'chat', label: 'AI Chat', icon: '💬' }
+          ].map(({ id, label, icon }) => 
+            e('button', {
+              key: id,
+              onClick: () => handleNavClick(id),
+              disabled: isNavigating,
+              className: `flex items-center space-x-2 px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all duration-200 ${
+                currentView === id
+                  ? 'bg-white text-orange-600 shadow-lg'
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+              } ${isNavigating ? 'opacity-50 cursor-not-allowed' : ''}`
+            },
+              e('span', { className: "text-lg" }, icon),
+              e('span', { className: "hidden md:inline" }, label)
             )
           )
-        );
-      }
+        )
+      )
+    )
+  );
+}
 
       // Setup view
       if (currentView === 'setup') {
