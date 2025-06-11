@@ -164,6 +164,25 @@ useEffect(() => {
     }, 100);
   }
 }, [currentView]);
+      const totals = useMemo(() => {
+  const today = new Date().toISOString().split('T')[0];
+  const key = `fueliq_meals_${today}`;
+  try {
+    const data = JSON.parse(localStorage.getItem(key) || '{}');
+    const allFoods = [...(data.breakfast||[]), ...(data.lunch||[]), ...(data.dinner||[]), ...(data.snacks||[])];
+    return allFoods.reduce((acc, item) => {
+      const mult = (item.servingSize || 100) / 100;
+      return {
+        calories: acc.calories + ((item.calories || 0) * mult),
+        protein: acc.protein + ((item.protein || 0) * mult),
+        carbs: acc.carbs + ((item.carbs || 0) * mult),
+        fat: acc.fat + ((item.fat || 0) * mult)
+      };
+    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+  } catch (e) {
+    return { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  }
+}, [currentView]); // This will recalculate when you switch tabs     
       // Navigation component
       function Navigation() {
         return e('div', { className: "bg-gradient-orange-red shadow-xl" },
@@ -486,25 +505,7 @@ useEffect(() => {
 
       // Dashboard view
       if (currentView === 'dashboard') {
-const totals = useMemo(() => {
-  const today = new Date().toISOString().split('T')[0];
-  const key = `fueliq_meals_${today}`;
-  try {
-    const data = JSON.parse(localStorage.getItem(key) || '{}');
-    const allFoods = [...(data.breakfast||[]), ...(data.lunch||[]), ...(data.dinner||[]), ...(data.snacks||[])];
-    return allFoods.reduce((acc, item) => {
-      const mult = (item.servingSize || 100) / 100;
-      return {
-        calories: acc.calories + ((item.calories || 0) * mult),
-        protein: acc.protein + ((item.protein || 0) * mult),
-        carbs: acc.carbs + ((item.carbs || 0) * mult),
-        fat: acc.fat + ((item.fat || 0) * mult)
-      };
-    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-  } catch (e) {
-    return { calories: 0, protein: 0, carbs: 0, fat: 0 };
-  }
-}, [currentView]); // This will recalculate when you switch tabs        
+   
         return e('div', { className: "min-h-screen bg-gradient-card" },
           e(Navigation),
           e('div', { className: "max-w-7xl mx-auto p-6" },
