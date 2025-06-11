@@ -193,7 +193,14 @@ useEffect(() => {
   } catch (e) {
     return { calories: 0, protein: 0, carbs: 0, fat: 0 };
   }
-}, [currentView]); // This will recalculate when you switch tabs     
+}, [currentView]); // This will recalculate when you switch tabs
+      // 👈 ADD THIS FUNCTION HERE:
+const clearContainer = (containerId) => {
+  const container = document.getElementById(containerId);
+  if (container) {
+    container.innerHTML = '';
+  }
+};
       // Navigation component
       function Navigation() {
         return e('div', { className: "bg-gradient-orange-red shadow-xl" },
