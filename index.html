@@ -165,6 +165,16 @@ useEffect(() => {
     }, 100);
   }
 }, [currentView]);
+      // 👈 ADD THIS ENTIRE BLOCK RIGHT HERE:
+useEffect(() => {
+  if (currentView === 'pantry') {
+    setTimeout(() => {
+      if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
+        window.FuelIQPantry.renderSmartPantry('pantry-container');
+      }
+    }, 100);
+  }
+}, [currentView]);
       const totals = useMemo(() => {
   const today = new Date().toISOString().split('T')[0];
   const key = `fueliq_meals_${today}`;
