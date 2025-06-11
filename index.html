@@ -177,10 +177,21 @@ useEffect(() => {
   }
 }, [currentView]); // This will recalculate when you switch tabs
       // 👈 ADD THIS FUNCTION HERE:
-const clearContainer = (containerId) => {
-  const container = document.getElementById(containerId);
-  if (container) {
-    container.innerHTML = '';
+const forceCleanup = () => {
+  // Clean all possible containers
+  ['meals-container', 'journey-container', 'pantry-container'].forEach(id => {
+    clearContainer(id);
+  });
+  
+  // Clear any global event listeners that might be stuck
+  if (window.FuelIQMeals && window.FuelIQMeals.cleanup) {
+    window.FuelIQMeals.cleanup();
+  }
+  if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.cleanup) {
+    window.FuelIQWeightJourney.cleanup();
+  }
+  if (window.FuelIQPantry && window.FuelIQPantry.cleanup) {
+    window.FuelIQPantry.cleanup();
   }
 };
       // Navigation component
