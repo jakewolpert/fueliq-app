@@ -27,6 +27,7 @@
   <script src="meals-tab.js"></script>
   <script src="pantry-tab.js"></script>
   <script src="weight-journey.js"></script>
+  <script src="meal-planning.js"></script>
   <script>
     const { useState, useEffect, useMemo } = React;
     const { createElement: e } = React;
@@ -68,7 +69,7 @@
       // Enhanced cleanup function
       const forceCleanup = () => {
         // Clean all possible containers
-        ['meals-container', 'journey-container', 'pantry-container'].forEach(id => {
+        ['meals-container', 'journey-container', 'pantry-container', 'planning-container'].forEach(id => {
           clearContainer(id);
         });
         
@@ -81,6 +82,9 @@
         }
         if (window.FuelIQPantry && window.FuelIQPantry.cleanup) {
           window.FuelIQPantry.cleanup();
+        }
+        if (window.FuelIQMealPlanning && window.FuelIQMealPlanning.cleanup) {
+          window.FuelIQMealPlanning.cleanup();
         }
       };
 
@@ -224,6 +228,27 @@
               }
             } catch (error) {
               console.error('Error rendering pantry tab:', error);
+            }
+          }, 300);
+          
+          return () => clearTimeout(timer);
+        }
+      }, [currentView]);
+
+      // Enhanced meal planning tab rendering
+      useEffect(() => {
+        if (currentView === 'planning') {
+          clearContainer('planning-container');
+          
+          const timer = setTimeout(() => {
+            try {
+              if (window.FuelIQMealPlanning && window.FuelIQMealPlanning.renderMealPlanning) {
+                window.FuelIQMealPlanning.renderMealPlanning('planning-container');
+              } else {
+                console.warn('FuelIQMealPlanning module not available');
+              }
+            } catch (error) {
+              console.error('Error rendering meal planning tab:', error);
             }
           }, 300);
           
@@ -593,7 +618,15 @@
               
               // Continue button
               e('button', {
-                onClick: () => setCurrentView('dashboard'),
+                onClick: () => {
+                  // Save user profile to localStorage for other modules
+                  try {
+                    localStorage.setItem('fueliq_user_profile', JSON.stringify(userProfile));
+                  } catch (e) {
+                    console.warn('Could not save user profile:', e);
+                  }
+                  setCurrentView('dashboard');
+                },
                 disabled: !goals.calories,
                 className: "w-full px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl hover:from-orange-600 hover:to-red-700 disabled:from-gray-300 disabled:to-gray-400 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center"
               },
@@ -862,10 +895,10 @@
                   ),
                   e('button', {
                     className: "p-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
-                    onClick: () => setCurrentView('pantry')
+                    onClick: () => setCurrentView('planning')
                   },
-                    e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '📱'),
-                    e('span', { className: 'font-bold text-lg' }, 'Scan Item')
+                    e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '📅'),
+                    e('span', { className: 'font-bold text-lg' }, 'Plan Meals')
                   ),
                   e('button', {
                     className: "p-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
@@ -876,10 +909,10 @@
                   ),
                   e('button', {
                     className: "p-6 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
-                    onClick: () => alert('Water tracking coming soon! 🚰')
+                    onClick: () => setCurrentView('pantry')
                   },
-                    e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '💧'),
-                    e('span', { className: 'font-bold text-lg' }, 'Add Water')
+                    e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '📱'),
+                    e('span', { className: 'font-bold text-lg' }, 'Scan Item')
                   )
                 )
               )
@@ -940,6 +973,14 @@
         );
       }
 
+      // Special handling for meal planning tab
+      if (currentView === 'planning') {
+        return e('div', { className: "min-h-screen bg-gradient-card" },
+          e(Navigation),
+          e('div', { id: "planning-container", className: "planning-tab-content" })
+        );
+      }
+
       // Default view for other sections
       return e('div', { className: "min-h-screen bg-gradient-card" },
         e(Navigation),
@@ -953,8 +994,8 @@
                 'journey': 'Weight Journey',
                 'meals': 'Food Logging',
                 'pantry': 'Smart Pantry',
-                'wearables': 'Wearable Devices',
                 'planning': 'Meal Planning',
+                'wearables': 'Wearable Devices',
                 'analytics': 'Analytics & Reports',
                 'chat': 'AI Assistant'
               }[currentView] || 'Feature Coming Soon'
