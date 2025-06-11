@@ -1,1331 +1,541 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Target, Droplets, Clock, TrendingUp, MessageCircle, Settings, BarChart3, Utensils, Moon, Activity, Calculator, Lightbulb, ChevronDown, ChevronUp, Calendar, Upload, ShoppingCart, Camera, ExternalLink, Scale, Trophy, AlertTriangle, Wifi, WifiOff, Smartphone, Watch, Zap, Heart, Brain } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FuelIQ - Your Intelligent Nutrition Companion</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .text-gradient {
+      background: linear-gradient(to right, #ea580c, #dc2626);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .bg-gradient-orange-red {
+      background: linear-gradient(to right, #ea580c, #dc2626, #ec4899);
+    }
+    .bg-gradient-card {
+      background: linear-gradient(135deg, #fed7aa, #fecaca, #fbb6ce);
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script>
+    const { useState, useEffect } = React;
+    const { createElement: e } = React;
 
-const FuelIQ = () => {
-  const [currentView, setCurrentView] = useState('setup');
-  const [userProfile, setUserProfile] = useState({
-    age: '',
-    weight: '',
-    height: '',
-    gender: 'male',
-    activityLevel: 'moderate',
-    goal: 'fat_loss',
-    dietaryRestrictions: [],
-    allergies: [],
-    healthConcerns: [],
-    antiBloutPreference: false
-  });
-  const [goals, setGoals] = useState({});
-  const [meals, setMeals] = useState([]);
-  const [dailyData, setDailyData] = useState({
-    sleep: '',
-    activity: '',
-    steps: '',
-    water: 0,
-    notes: ''
-  });
-  const [chatMessages, setChatMessages] = useState([]);
-  const [chatInput, setChatInput] = useState('');
-  const [expandedSections, setExpandedSections] = useState({});
-  const [pantryItems, setPantryItems] = useState([]);
-  const [groceryInput, setGroceryInput] = useState('');
-  const [mealPlan, setMealPlan] = useState({});
-  const [selectedMealPlanDay, setSelectedMealPlanDay] = useState('monday');
-  const [scannerActive, setScannerActive] = useState(false);
-  const [weightJourney, setWeightJourney] = useState({
-    currentWeight: '',
-    targetWeight: '',
-    userTimeline: '',
-    recommendedTimeline: '',
-    weeklyGoal: '',
-    safetyWarnings: [],
-    milestones: [],
-    startDate: null,
-    weeklyCalories: [],
-    progressCheckins: [],
-    weightHistory: []
-  });
-  const [showWeightUpdate, setShowWeightUpdate] = useState(false);
-  const [newWeightEntry, setNewWeightEntry] = useState('');
-  const [connectedWearables, setConnectedWearables] = useState({});
-  const [wearableData, setWearableData] = useState({
-    steps: 0,
-    calories: 0,
-    sleep: 0,
-    heartRate: 0,
-    lastSync: null
-  });
+    function FuelIQ() {
+      const [currentView, setCurrentView] = useState('setup');
+      const [userProfile, setUserProfile] = useState({
+        age: '',
+        weight: '',
+        height: '',
+        gender: 'male',
+        activityLevel: 'moderate',
+        goal: 'fat_loss',
+        dietaryRestrictions: [],
+        allergies: [],
+        healthConcerns: [],
+        antiBloutPreference: false
+      });
+      const [goals, setGoals] = useState({});
+      const [meals, setMeals] = useState([]);
 
-  // Wearable device configurations
-  const wearableDevices = [
-    { id: 'whoop', name: 'WHOOP', icon: '⌚', color: 'from-red-500 to-red-600', features: ['heart_rate', 'sleep', 'recovery', 'strain'] },
-    { id: 'garmin', name: 'Garmin', icon: '🏃', color: 'from-blue-500 to-blue-600', features: ['steps', 'heart_rate', 'sleep', 'calories'] },
-    { id: 'oura', name: 'Oura Ring', icon: '💍', color: 'from-purple-500 to-purple-600', features: ['sleep', 'heart_rate', 'recovery', 'temperature'] },
-    { id: 'fitbit', name: 'Fitbit', icon: '📱', color: 'from-green-500 to-green-600', features: ['steps', 'heart_rate', 'sleep', 'calories'] },
-    { id: 'apple', name: 'Apple Watch', icon: '⌚', color: 'from-gray-500 to-gray-600', features: ['steps', 'heart_rate', 'sleep', 'calories', 'workouts'] },
-    { id: 'coros', name: 'COROS', icon: '🏔️', color: 'from-orange-500 to-orange-600', features: ['steps', 'heart_rate', 'sleep', 'training_load'] }
-  ];
-
-  // Mock wearable connection
-  const connectWearable = (deviceId) => {
-    setConnectedWearables({
-      ...connectedWearables,
-      [deviceId]: {
-        connected: true,
-        lastSync: new Date(),
-        status: 'syncing'
-      }
-    });
-
-    setTimeout(() => {
-      const mockData = {
-        steps: Math.floor(Math.random() * 10000) + 5000,
-        calories: Math.floor(Math.random() * 500) + 200,
-        sleep: Math.floor(Math.random() * 3) + 6.5,
-        heartRate: Math.floor(Math.random() * 20) + 65,
-        lastSync: new Date()
-      };
-
-      setWearableData(mockData);
-      setConnectedWearables({
-        ...connectedWearables,
-        [deviceId]: {
-          connected: true,
-          lastSync: new Date(),
-          status: 'connected'
+      // Calculate TDEE and macro goals
+      const calculateGoals = (profile) => {
+        const { age, weight, height, gender, activityLevel, goal } = profile;
+        
+        if (!age || !weight || !height) return {};
+        
+        const weightKg = weight / 2.205;
+        
+        let bmr;
+        if (gender === 'male') {
+          bmr = 10 * weightKg + 6.25 * (height * 2.54) - 5 * age + 5;
+        } else {
+          bmr = 10 * weightKg + 6.25 * (height * 2.54) - 5 * age - 161;
         }
-      });
-
-      setDailyData({
-        ...dailyData,
-        steps: mockData.steps.toString(),
-        sleep: mockData.sleep.toString()
-      });
-    }, 2000);
-  };
-
-  const disconnectWearable = (deviceId) => {
-    const newConnected = { ...connectedWearables };
-    delete newConnected[deviceId];
-    setConnectedWearables(newConnected);
-  };
-
-  // Grocery service integrations
-  const groceryServices = [
-    { name: 'Instacart', logo: '🛒', color: 'from-green-400 to-green-600', available: true },
-    { name: 'Amazon Fresh', logo: '📦', color: 'from-orange-400 to-orange-600', available: true },
-    { name: 'Walmart+', logo: '🏪', color: 'from-blue-400 to-blue-600', available: true },
-    { name: 'Target Same Day', logo: '🎯', color: 'from-red-400 to-red-600', available: true },
-    { name: 'Shipt', logo: '🚗', color: 'from-purple-400 to-purple-600', available: true }
-  ];
-
-  // Mock barcode scanner function
-  const handleBarcodeScan = () => {
-    setScannerActive(true);
-    setTimeout(() => {
-      const mockProducts = [
-        'Greek yogurt',
-        'Chicken breast',
-        'Quinoa',
-        'Blueberries',
-        'Spinach'
-      ];
-      const scannedProduct = mockProducts[Math.floor(Math.random() * mockProducts.length)];
-      setPantryItems([...new Set([...pantryItems, scannedProduct])]);
-      setScannerActive(false);
-    }, 2000);
-  };
-
-  // Send grocery list to service
-  const sendToGroceryService = (service, list) => {
-    const listText = list.join(', ');
-    alert(`Sending grocery list to ${service.name}:\n\n${listText}\n\nIn a real app, this would open ${service.name}'s website or app with your list pre-populated!`);
-  };
-
-  // Enhanced food database with allergen and dietary information
-  const foodDatabase = {
-    // Anti-bloat friendly foods
-    'Egg Whites (1 large)': { cal: 17, protein: 3.6, carbs: 0.2, fat: 0.1, category: 'anti-bloat', type: 'protein', ingredients: ['eggs'], allergens: ['eggs'], dietaryTags: ['keto', 'paleo'] },
-    'Chicken Breast (3oz)': { cal: 140, protein: 26, carbs: 0, fat: 3, category: 'anti-bloat', type: 'protein', ingredients: ['chicken breast'], allergens: [], dietaryTags: ['keto', 'paleo', 'gluten-free'] },
-    'White Rice (1/2 cup cooked)': { cal: 100, protein: 2, carbs: 22, fat: 0, category: 'anti-bloat', type: 'carb', ingredients: ['white rice'], allergens: [], dietaryTags: ['gluten-free', 'vegan'] },
-    'Banana (medium)': { cal: 105, protein: 1, carbs: 27, fat: 0, category: 'anti-bloat', type: 'carb', ingredients: ['banana'], allergens: [], dietaryTags: ['vegan', 'gluten-free'] },
-    'Blueberries (1/2 cup)': { cal: 40, protein: 0.5, carbs: 10, fat: 0, category: 'anti-bloat', type: 'carb', ingredients: ['blueberries'], allergens: [], dietaryTags: ['vegan', 'gluten-free'] },
-    'Spinach Cooked (1 cup)': { cal: 41, protein: 5, carbs: 7, fat: 0, category: 'anti-bloat', type: 'vegetable', ingredients: ['spinach'], allergens: [], dietaryTags: ['vegan', 'gluten-free'] },
-    'Carrots Cooked (1 cup)': { cal: 54, protein: 1, carbs: 13, fat: 0, category: 'anti-bloat', type: 'vegetable', ingredients: ['carrots'], allergens: [], dietaryTags: ['vegan', 'gluten-free'] },
-    'Sweet Potato (medium)': { cal: 112, protein: 2, carbs: 26, fat: 0, category: 'anti-bloat', type: 'carb', ingredients: ['sweet potato'], allergens: [], dietaryTags: ['vegan', 'gluten-free', 'paleo'] },
-    'Greek Yogurt Plain (1 cup)': { cal: 130, protein: 23, carbs: 9, fat: 0, category: 'anti-bloat', type: 'protein', ingredients: ['greek yogurt'], allergens: ['dairy'], dietaryTags: ['vegetarian', 'gluten-free'] },
-    'Whey Protein (1 scoop)': { cal: 120, protein: 25, carbs: 2, fat: 1, category: 'anti-bloat', type: 'protein', ingredients: ['protein powder'], allergens: ['dairy'], dietaryTags: ['vegetarian'] },
-    
-    // Regular foods
-    'Whole Egg (large)': { cal: 70, protein: 6, carbs: 0, fat: 5, category: 'regular', type: 'protein', ingredients: ['eggs'], allergens: ['eggs'], dietaryTags: ['keto', 'paleo', 'vegetarian'] },
-    'Ground Beef 90/10 (3oz)': { cal: 184, protein: 22, carbs: 0, fat: 10, category: 'regular', type: 'protein', ingredients: ['ground beef'], allergens: [], dietaryTags: ['keto', 'paleo'] },
-    'Salmon (3oz)': { cal: 175, protein: 19, carbs: 0, fat: 11, category: 'regular', type: 'protein', ingredients: ['salmon'], allergens: ['fish'], dietaryTags: ['keto', 'paleo', 'pescatarian'] },
-    'Quinoa (1/2 cup cooked)': { cal: 111, protein: 4, carbs: 20, fat: 2, category: 'regular', type: 'carb', ingredients: ['quinoa'], allergens: [], dietaryTags: ['vegan', 'gluten-free'] },
-    'Oats (1/2 cup dry)': { cal: 150, protein: 5, carbs: 27, fat: 3, category: 'regular', type: 'carb', ingredients: ['oats'], allergens: ['gluten'], dietaryTags: ['vegan'] },
-    'Avocado (1/2 medium)': { cal: 160, protein: 2, carbs: 9, fat: 15, category: 'regular', type: 'fat', ingredients: ['avocado'], allergens: [], dietaryTags: ['vegan', 'keto', 'paleo'] },
-    'Almonds (1oz)': { cal: 164, protein: 6, carbs: 6, fat: 14, category: 'regular', type: 'fat', ingredients: ['almonds'], allergens: ['tree nuts'], dietaryTags: ['vegan', 'keto', 'paleo'] },
-    'Olive Oil (1 tbsp)': { cal: 119, protein: 0, carbs: 0, fat: 14, category: 'regular', type: 'fat', ingredients: ['olive oil'], allergens: [], dietaryTags: ['vegan', 'keto', 'paleo'] },
-    
-    // Potential bloat triggers
-    'Black Beans (1/2 cup)': { cal: 114, protein: 8, carbs: 20, fat: 0, category: 'bloat-risk', type: 'protein', ingredients: ['black beans'], allergens: [], dietaryTags: ['vegan', 'gluten-free'] },
-    'Broccoli Raw (1 cup)': { cal: 25, protein: 3, carbs: 5, fat: 0, category: 'bloat-risk', type: 'vegetable', ingredients: ['broccoli'], allergens: [], dietaryTags: ['vegan', 'gluten-free'] },
-    'Apple (medium)': { cal: 95, protein: 0, carbs: 25, fat: 0, category: 'bloat-risk', type: 'carb', ingredients: ['apple'], allergens: [], dietaryTags: ['vegan', 'gluten-free'] },
-    'Milk Whole (1 cup)': { cal: 149, protein: 8, carbs: 12, fat: 8, category: 'bloat-risk', type: 'protein', ingredients: ['milk'], allergens: ['dairy'], dietaryTags: ['vegetarian'] },
-    'Bread Whole Wheat (1 slice)': { cal: 69, protein: 4, carbs: 12, fat: 1, category: 'bloat-risk', type: 'carb', ingredients: ['whole wheat bread'], allergens: ['gluten'], dietaryTags: ['vegan'] }
-  };
-
-  // Filter foods based on user preferences
-  const filterFoodsByPreferences = (foods) => {
-    return foods.filter(([foodName, data]) => {
-      // Check allergies
-      const hasAllergens = data.allergens.some(allergen => {
-        if (allergen === 'dairy' && userProfile.allergies.includes('Dairy/Lactose')) return true;
-        if (allergen === 'gluten' && userProfile.allergies.includes('Gluten/Wheat')) return true;
-        if (allergen === 'eggs' && userProfile.allergies.includes('Eggs')) return true;
-        if (allergen === 'tree nuts' && userProfile.allergies.includes('Nuts (Tree Nuts)')) return true;
-        if (allergen === 'fish' && userProfile.allergies.includes('Fish')) return true;
-        return false;
-      });
-      
-      if (hasAllergens) return false;
-
-      // Check dietary restrictions
-      const meetsDietaryReqs = userProfile.dietaryRestrictions.every(restriction => {
-        if (restriction === 'Gluten-Free' && data.allergens.includes('gluten')) return false;
-        if (restriction === 'Dairy-Free' && data.allergens.includes('dairy')) return false;
-        if (restriction === 'Vegan' && !data.dietaryTags.includes('vegan')) return false;
-        if (restriction === 'Vegetarian' && (!data.dietaryTags.includes('vegan') && !data.dietaryTags.includes('vegetarian'))) return false;
-        if (restriction === 'Keto' && !data.dietaryTags.includes('keto') && data.carbs > 5) return false;
-        if (restriction === 'Paleo' && !data.dietaryTags.includes('paleo')) return false;
-        return true;
-      });
-
-      return meetsDietaryReqs;
-    });
-  };
-
-  // Calculate TDEE and macro goals
-  const calculateGoals = (profile) => {
-    const { age, weight, height, gender, activityLevel, goal } = profile;
-    
-    if (!age || !weight || !height) return {};
-    
-    const weightKg = weight / 2.205;
-    
-    let bmr;
-    if (gender === 'male') {
-      bmr = 10 * weightKg + 6.25 * (height * 2.54) - 5 * age + 5;
-    } else {
-      bmr = 10 * weightKg + 6.25 * (height * 2.54) - 5 * age - 161;
-    }
-    
-    const activityMultipliers = {
-      sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
-      active: 1.725,
-      very_active: 1.9
-    };
-    
-    const tdee = bmr * activityMultipliers[activityLevel];
-    
-    const goalAdjustments = {
-      fat_loss: -500,
-      muscle_gain: 300,
-      maintenance: 0,
-      recomp: -200
-    };
-    
-    const targetCalories = tdee + goalAdjustments[goal];
-    
-    const proteinPerKg = goal === 'muscle_gain' ? 2.2 : goal === 'fat_loss' ? 2.0 : 1.8;
-    const proteinGrams = (weightKg * proteinPerKg);
-    const proteinCalories = proteinGrams * 4;
-    
-    const fatPercentage = goal === 'fat_loss' ? 0.25 : 0.30;
-    const fatCalories = targetCalories * fatPercentage;
-    const fatGrams = fatCalories / 9;
-    
-    const carbCalories = targetCalories - proteinCalories - fatCalories;
-    const carbGrams = carbCalories / 4;
-    
-    return {
-      calories: Math.round(targetCalories),
-      protein: Math.round(proteinGrams),
-      carbs: Math.round(carbGrams),
-      fat: Math.round(fatGrams),
-      water: Math.round(weight * 0.67)
-    };
-  };
-
-  // Calculate safe weight loss journey with guardrails
-  const calculateWeightJourney = (currentWeight, targetWeight, gender) => {
-    if (!currentWeight || !targetWeight) return {};
-    
-    const weightDifference = Math.abs(currentWeight - targetWeight);
-    const isWeightLoss = currentWeight > targetWeight;
-    const isWeightGain = currentWeight < targetWeight;
-    
-    const safetyWarnings = [];
-    
-    const maxWeeklyLoss = 2;
-    const recommendedWeeklyLoss = weightDifference > 50 ? 1.5 : 1;
-    const maxWeeklyGain = 0.5;
-    
-    let recommendedWeeksToGoal;
-    let weeklyTarget;
-    
-    if (isWeightLoss) {
-      recommendedWeeksToGoal = Math.ceil(weightDifference / recommendedWeeklyLoss);
-      weeklyTarget = recommendedWeeklyLoss;
-      
-      if (weightDifference > 100) {
-        safetyWarnings.push("This is a significant weight loss goal. Consider breaking it into smaller milestones.");
-      }
-      if (weightDifference < 5) {
-        safetyWarnings.push("Small weight changes can be achieved through body recomposition - focus on strength training and protein.");
-      }
-    } else if (isWeightGain) {
-      recommendedWeeksToGoal = Math.ceil(weightDifference / maxWeeklyGain);
-      weeklyTarget = maxWeeklyGain;
-      
-      if (weightDifference > 30) {
-        safetyWarnings.push("Significant weight gain should be done gradually with focus on muscle building.");
-      }
-    } else {
-      return {
-        recommendedTimeline: "Maintenance Phase",
-        weeklyGoal: 0,
-        safetyWarnings: ["Focus on body recomposition - building muscle while maintaining weight."],
-        milestones: []
+        
+        const activityMultipliers = {
+          sedentary: 1.2,
+          light: 1.375,
+          moderate: 1.55,
+          active: 1.725,
+          very_active: 1.9
+        };
+        
+        const tdee = bmr * activityMultipliers[activityLevel];
+        
+        const goalAdjustments = {
+          fat_loss: -500,
+          muscle_gain: 300,
+          maintenance: 0,
+          recomp: -200
+        };
+        
+        const targetCalories = tdee + goalAdjustments[goal];
+        
+        const proteinPerKg = goal === 'muscle_gain' ? 2.2 : goal === 'fat_loss' ? 2.0 : 1.8;
+        const proteinGrams = (weightKg * proteinPerKg);
+        const proteinCalories = proteinGrams * 4;
+        
+        const fatPercentage = goal === 'fat_loss' ? 0.25 : 0.30;
+        const fatCalories = targetCalories * fatPercentage;
+        const fatGrams = fatCalories / 9;
+        
+        const carbCalories = targetCalories - proteinCalories - fatCalories;
+        const carbGrams = carbCalories / 4;
+        
+        return {
+          calories: Math.round(targetCalories),
+          protein: Math.round(proteinGrams),
+          carbs: Math.round(carbGrams),
+          fat: Math.round(fatGrams),
+          water: Math.round(weight * 0.67)
+        };
       };
-    }
-    
-    const milestones = [];
-    const milestoneInterval = Math.min(10, Math.max(5, Math.round(weightDifference / 4)));
-    
-    for (let i = milestoneInterval; i < weightDifference; i += milestoneInterval) {
-      const milestoneWeight = isWeightLoss ? currentWeight - i : currentWeight + i;
-      const milestoneWeek = Math.round(i / weeklyTarget);
-      
-      milestones.push({
-        weight: milestoneWeight,
-        week: milestoneWeek,
-        achieved: false
-      });
-    }
-    
-    milestones.push({
-      weight: targetWeight,
-      week: recommendedWeeksToGoal,
-      achieved: false,
-      isFinal: true
-    });
-    
-    const weeklyCalories = [];
-    
-    for (let week = 0; week < Math.min(recommendedWeeksToGoal, 52); week++) {
-      const currentProgressWeight = isWeightLoss 
-        ? currentWeight - (week * weeklyTarget)
-        : currentWeight + (week * weeklyTarget);
-      
-      const tempProfile = { ...userProfile, weight: currentProgressWeight };
-      const adjustedGoals = calculateGoals(tempProfile);
-      
-      weeklyCalories.push({
-        week: week + 1,
-        calories: adjustedGoals.calories,
-        protein: adjustedGoals.protein,
-        weight: Math.round(currentProgressWeight * 10) / 10
-      });
-    }
-    
-    return {
-      recommendedTimeline: `${recommendedWeeksToGoal} weeks (${Math.round(recommendedWeeksToGoal / 4.33)} months)`,
-      weeklyGoal: isWeightLoss ? -weeklyTarget : weeklyTarget,
-      safetyWarnings,
-      milestones,
-      weeklyCalories: weeklyCalories.slice(0, 12),
-      totalWeeks: recommendedWeeksToGoal,
-      isWeightLoss,
-      isWeightGain
-    };
-  };
 
-  // Meal suggestion algorithm
-  const suggestMeals = (mealType, targetCals, targetProtein, antiBlout = false) => {
-    let availableFoods = Object.entries(foodDatabase);
-    
-    if (antiBlout) {
-      availableFoods = availableFoods.filter(([name, data]) => data.category === 'anti-bloat');
-    } else {
-      availableFoods = availableFoods.filter(([name, data]) => data.category !== 'bloat-risk');
-    }
-    
-    const mealSuggestions = {
-      breakfast: [
-        { name: 'High Protein Start', foods: ['Egg Whites (1 large)', 'Whole Egg (large)', 'Spinach Cooked (1 cup)', 'Sweet Potato (medium)'] },
-        { name: 'Quick & Light', foods: ['Greek Yogurt Plain (1 cup)', 'Blueberries (1/2 cup)', 'Whey Protein (1 scoop)'] },
-        { name: 'Balanced Power', foods: ['Chicken Breast (3oz)', 'White Rice (1/2 cup cooked)', 'Carrots Cooked (1 cup)'] }
-      ],
-      lunch: [
-        { name: 'Lean & Clean', foods: ['Chicken Breast (3oz)', 'White Rice (1/2 cup cooked)', 'Spinach Cooked (1 cup)'] },
-        { name: 'Protein Bowl', foods: ['Ground Beef 90/10 (3oz)', 'Sweet Potato (medium)', 'Carrots Cooked (1 cup)'] },
-        { name: 'Light & Fresh', foods: ['Greek Yogurt Plain (1 cup)', 'Banana (medium)', 'Whey Protein (1 scoop)'] }
-      ],
-      dinner: [
-        { name: 'Balanced Dinner', foods: ['Salmon (3oz)', 'Quinoa (1/2 cup cooked)', 'Spinach Cooked (1 cup)'] },
-        { name: 'Comfort Clean', foods: ['Chicken Breast (3oz)', 'Sweet Potato (medium)', 'Carrots Cooked (1 cup)'] },
-        { name: 'High Protein', foods: ['Ground Beef 90/10 (3oz)', 'White Rice (1/2 cup cooked)', 'Blueberries (1/2 cup)'] }
-      ],
-      snack: [
-        { name: 'Protein Power', foods: ['Whey Protein (1 scoop)', 'Banana (medium)'] },
-        { name: 'Greek Delight', foods: ['Greek Yogurt Plain (1 cup)', 'Blueberries (1/2 cup)'] },
-        { name: 'Simple & Clean', foods: ['Egg Whites (1 large)', 'Sweet Potato (medium)'] }
-      ]
-    };
-    
-    return mealSuggestions[mealType] || [];
-  };
+      const calculateProgress = () => {
+        const totals = meals.reduce((acc, meal) => {
+          acc.calories += meal.calories;
+          acc.protein += meal.protein;
+          acc.carbs += meal.carbs;
+          acc.fat += meal.fat;
+          return acc;
+        }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
-  // Parse grocery list from text input
-  const parseGroceryList = (text) => {
-    const lines = text.split('\n').filter(line => line.trim());
-    const items = lines.map(line => {
-      const cleaned = line.replace(/^[-•*]\s*/, '').replace(/^\d+\.?\s*/, '').trim().toLowerCase();
-      return cleaned;
-    });
-    return items;
-  };
+        return totals;
+      };
 
-  // Find matching foods based on pantry items
-  const findFoodsFromPantry = () => {
-    const availableFoods = Object.entries(foodDatabase).filter(([foodName, data]) => {
-      return data.ingredients.some(ingredient => 
-        pantryItems.some(pantryItem => 
-          pantryItem.toLowerCase().includes(ingredient.toLowerCase()) || 
-          ingredient.toLowerCase().includes(pantryItem.toLowerCase())
+      useEffect(() => {
+        if (userProfile.age && userProfile.weight && userProfile.height) {
+          setGoals(calculateGoals(userProfile));
+        }
+      }, [userProfile]);
+
+      // Navigation component
+      function Navigation() {
+        return e('div', { className: "bg-gradient-orange-red shadow-xl" },
+          e('div', { className: "max-w-7xl mx-auto px-6" },
+            e('div', { className: "flex items-center justify-between py-4" },
+              e('div', { className: "flex items-center space-x-4" },
+                e('div', { className: "flex items-center space-x-2" },
+                  e('div', { className: "w-10 h-10 bg-white rounded-xl flex items-center justify-center" },
+                    e('span', { className: "text-2xl text-orange-600" }, '⚡')
+                  ),
+                  e('h1', { 
+                    className: "text-2xl font-bold text-white tracking-tight", 
+                    style: {fontFamily: 'Georgia, Times, serif'} 
+                  }, "FuelIQ")
+                )
+              ),
+              
+              e('div', { className: "flex space-x-1 bg-white/10 rounded-2xl p-1 overflow-x-auto backdrop-blur-sm" },
+                [
+                  { id: 'setup', label: 'Setup', icon: '⚙️' },
+                  { id: 'journey', label: 'Journey', icon: '⚖️' },
+                  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+                  { id: 'meals', label: 'Meals', icon: '🍽️' },
+                  { id: 'pantry', label: 'Pantry', icon: '🛒' },
+                  { id: 'planning', label: 'Planning', icon: '📅' },
+                  { id: 'wearables', label: 'Devices', icon: '⌚' },
+                  { id: 'analytics', label: 'Analytics', icon: '📈' },
+                  { id: 'chat', label: 'AI Chat', icon: '💬' }
+                ].map(({ id, label, icon }) => 
+                  e('button', {
+                    key: id,
+                    onClick: () => setCurrentView(id),
+                    className: `flex items-center space-x-2 px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all duration-200 ${
+                      currentView === id
+                        ? 'bg-white text-orange-600 shadow-lg'
+                        : 'text-white/80 hover:text-white hover:bg-white/10'
+                    }`
+                  },
+                    e('span', { className: "text-lg" }, icon),
+                    e('span', { className: "hidden md:inline" }, label)
+                  )
+                )
+              )
+            )
+          )
+        );
+      }
+
+      // Setup view
+      if (currentView === 'setup') {
+        const dietaryOptions = [
+          'Vegetarian', 'Vegan', 'Pescatarian', 'Keto', 'Paleo', 'Mediterranean', 
+          'Low Carb', 'Low Fat', 'Gluten-Free', 'Dairy-Free', 'Sugar-Free', 
+          'Intermittent Fasting', 'FODMAP', 'Whole30', 'Raw Food', 'Flexitarian'
+        ];
+
+        const allergyOptions = [
+          'Dairy/Lactose', 'Gluten/Wheat', 'Nuts (Tree Nuts)', 'Peanuts', 'Shellfish', 
+          'Fish', 'Eggs', 'Soy', 'Sesame', 'Corn', 'Nightshades', 'Sulfites'
+        ];
+
+        const healthConcernOptions = [
+          'Diabetes Type 1', 'Diabetes Type 2', 'High Blood Pressure', 'High Cholesterol', 
+          'Heart Disease', 'PCOS', 'Thyroid Issues', 'IBS/IBD', 'Acid Reflux/GERD', 
+          'Kidney Disease', 'Liver Disease', 'Celiac Disease', 'Crohn\'s Disease', 
+          'Food Intolerances', 'Eating Disorder History'
+        ];
+
+        return e('div', { className: "min-h-screen bg-gradient-card" },
+          e(Navigation),
+          e('div', { className: "max-w-6xl mx-auto p-6" },
+            e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20" },
+              // Header
+              e('div', { className: "text-center mb-8" },
+                e('div', { className: "w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4" },
+                  e('span', { className: "text-4xl text-white" }, '⚡')
+                ),
+                e('h1', { 
+                  className: "text-4xl font-bold text-gradient mb-4", 
+                  style: {fontFamily: 'Georgia, Times, serif'} 
+                }, "Welcome to FuelIQ"),
+                e('p', { className: "text-xl text-gray-600 font-medium" }, "Your intelligent nutrition and wellness companion")
+              ),
+              
+              // Basic Information
+              e('div', { className: "mb-8" },
+                e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
+                  e('span', { className: "mr-3 text-2xl" }, '⚙️'),
+                  "Basic Information"
+                ),
+                e('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
+                  e('div', { className: "space-y-2" },
+                    e('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Age"),
+                    e('input', {
+                      type: "number",
+                      value: userProfile.age,
+                      onChange: (e) => setUserProfile({...userProfile, age: e.target.value}),
+                      className: "w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium",
+                      placeholder: "25"
+                    })
+                  ),
+                  
+                  e('div', { className: "space-y-2" },
+                    e('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Weight (lbs)"),
+                    e('input', {
+                      type: "number",
+                      value: userProfile.weight,
+                      onChange: (e) => setUserProfile({...userProfile, weight: e.target.value}),
+                      className: "w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium",
+                      placeholder: "180"
+                    })
+                  ),
+                  
+                  e('div', { className: "space-y-2" },
+                    e('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Height (inches)"),
+                    e('input', {
+                      type: "number",
+                      value: userProfile.height,
+                      onChange: (e) => setUserProfile({...userProfile, height: e.target.value}),
+                      className: "w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium",
+                      placeholder: "70"
+                    })
+                  ),
+                  
+                  e('div', { className: "space-y-2" },
+                    e('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Gender"),
+                    e('select', {
+                      value: userProfile.gender,
+                      onChange: (e) => setUserProfile({...userProfile, gender: e.target.value}),
+                      className: "w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium"
+                    },
+                      e('option', { value: "male" }, "Male"),
+                      e('option', { value: "female" }, "Female")
+                    )
+                  ),
+                  
+                  e('div', { className: "space-y-2" },
+                    e('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Activity Level"),
+                    e('select', {
+                      value: userProfile.activityLevel,
+                      onChange: (e) => setUserProfile({...userProfile, activityLevel: e.target.value}),
+                      className: "w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium"
+                    },
+                      e('option', { value: "sedentary" }, "Sedentary (desk job, no exercise)"),
+                      e('option', { value: "light" }, "Light (light exercise 1-3 days/week)"),
+                      e('option', { value: "moderate" }, "Moderate (moderate exercise 3-5 days/week)"),
+                      e('option', { value: "active" }, "Active (hard exercise 6-7 days/week)"),
+                      e('option', { value: "very_active" }, "Very Active (2x/day, intense training)")
+                    )
+                  ),
+                  
+                  e('div', { className: "space-y-2" },
+                    e('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Primary Goal"),
+                    e('select', {
+                      value: userProfile.goal,
+                      onChange: (e) => setUserProfile({...userProfile, goal: e.target.value}),
+                      className: "w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium"
+                    },
+                      e('option', { value: "fat_loss" }, "Fat Loss"),
+                      e('option', { value: "muscle_gain" }, "Muscle Gain"),
+                      e('option', { value: "maintenance" }, "Maintenance"),
+                      e('option', { value: "recomp" }, "Body Recomposition")
+                    )
+                  )
+                )
+              ),
+
+              // Dietary Preferences
+              e('div', { className: "mb-8" },
+                e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
+                  e('span', { className: "mr-3 text-2xl" }, '🍽️'),
+                  "Dietary Preferences"
+                ),
+                e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-3" },
+                  dietaryOptions.map(option => 
+                    e('button', {
+                      key: option,
+                      onClick: () => {
+                        const newRestrictions = userProfile.dietaryRestrictions.includes(option)
+                          ? userProfile.dietaryRestrictions.filter(r => r !== option)
+                          : [...userProfile.dietaryRestrictions, option];
+                        setUserProfile({...userProfile, dietaryRestrictions: newRestrictions});
+                      },
+                      className: `p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
+                        userProfile.dietaryRestrictions.includes(option)
+                          ? 'border-orange-500 bg-gradient-to-r from-orange-50 to-red-50 text-orange-700'
+                          : 'border-gray-200 bg-white/50 text-gray-600 hover:border-orange-300'
+                      }`
+                    }, option)
+                  )
+                )
+              ),
+
+              // Allergies & Intolerances
+              e('div', { className: "mb-8" },
+                e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
+                  e('span', { className: "mr-3 text-2xl" }, '⚠️'),
+                  "Allergies & Intolerances"
+                ),
+                e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-3" },
+                  allergyOptions.map(allergy => 
+                    e('button', {
+                      key: allergy,
+                      onClick: () => {
+                        const newAllergies = userProfile.allergies.includes(allergy)
+                          ? userProfile.allergies.filter(a => a !== allergy)
+                          : [...userProfile.allergies, allergy];
+                        setUserProfile({...userProfile, allergies: newAllergies});
+                      },
+                      className: `p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
+                        userProfile.allergies.includes(allergy)
+                          ? 'border-red-500 bg-gradient-to-r from-red-50 to-pink-50 text-red-700'
+                          : 'border-gray-200 bg-white/50 text-gray-600 hover:border-red-300'
+                      }`
+                    }, allergy)
+                  )
+                )
+              ),
+
+              // Health Concerns
+              e('div', { className: "mb-8" },
+                e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
+                  e('span', { className: "mr-3 text-2xl" }, '❤️'),
+                  "Health Concerns"
+                ),
+                e('p', { className: "text-sm text-gray-600 mb-4" },
+                  "Select any health conditions to get personalized nutrition recommendations"
+                ),
+                e('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-3" },
+                  healthConcernOptions.map(concern => 
+                    e('button', {
+                      key: concern,
+                      onClick: () => {
+                        const newConcerns = userProfile.healthConcerns.includes(concern)
+                          ? userProfile.healthConcerns.filter(c => c !== concern)
+                          : [...userProfile.healthConcerns, concern];
+                        setUserProfile({...userProfile, healthConcerns: newConcerns});
+                      },
+                      className: `p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 text-left ${
+                        userProfile.healthConcerns.includes(concern)
+                          ? 'border-pink-500 bg-gradient-to-r from-pink-50 to-red-50 text-pink-700'
+                          : 'border-gray-200 bg-white/50 text-gray-600 hover:border-pink-300'
+                      }`
+                    }, concern)
+                  )
+                )
+              ),
+
+              // Special Preferences
+              e('div', { className: "mb-8" },
+                e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
+                  e('span', { className: "mr-3 text-2xl" }, '🧠'),
+                  "Special Preferences"
+                ),
+                e('div', { className: "space-y-4" },
+                  e('label', { className: "flex items-center p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border-2 border-orange-200" },
+                    e('input', {
+                      type: "checkbox",
+                      checked: userProfile.antiBloutPreference,
+                      onChange: (e) => setUserProfile({...userProfile, antiBloutPreference: e.target.checked}),
+                      className: "mr-3 w-5 h-5 text-orange-600 border-2 border-gray-300 rounded focus:ring-orange-500"
+                    }),
+                    e('span', { className: "font-medium text-gray-700" }, "Prioritize anti-bloat food recommendations")
+                  )
+                )
+              ),
+
+              // Smart recommendations notification
+              (userProfile.allergies.includes('Dairy/Lactose') || userProfile.dietaryRestrictions.includes('Gluten-Free')) && 
+                e('div', { className: "mb-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200" },
+                  e('h3', { className: "font-bold text-green-800 mb-3 flex items-center" },
+                    e('span', { className: "mr-2 text-xl" }, '💡'),
+                    "Smart Recommendations Activated!"
+                  ),
+                  e('p', { className: "text-sm text-green-700" },
+                    "Based on your selections, we'll automatically filter out dairy products and prioritize gluten-free options in your meal suggestions and grocery lists."
+                  )
+                ),
+              
+              // Goals display
+              goals.calories && 
+                e('div', { className: "mb-8 p-6 bg-gradient-to-r from-orange-50 via-red-50 to-pink-50 rounded-2xl border border-orange-200" },
+                  e('h3', { className: "text-xl font-bold text-gray-800 mb-6 flex items-center" },
+                    e('span', { className: "mr-2 text-2xl" }, '🎯'),
+                    "Your Calculated Goals"
+                  ),
+                  e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
+                    e('div', { className: "text-center p-4 bg-white/60 rounded-xl" },
+                      e('div', { className: "text-3xl font-bold text-orange-600 mb-1" }, goals.calories),
+                      e('div', { className: "text-sm font-medium text-gray-600" }, "Calories")
+                    ),
+                    e('div', { className: "text-center p-4 bg-white/60 rounded-xl" },
+                      e('div', { className: "text-3xl font-bold text-red-500 mb-1" }, goals.protein + "g"),
+                      e('div', { className: "text-sm font-medium text-gray-600" }, "Protein")
+                    ),
+                    e('div', { className: "text-center p-4 bg-white/60 rounded-xl" },
+                      e('div', { className: "text-3xl font-bold text-green-500 mb-1" }, goals.carbs + "g"),
+                      e('div', { className: "text-sm font-medium text-gray-600" }, "Carbs")
+                    ),
+                    e('div', { className: "text-center p-4 bg-white/60 rounded-xl" },
+                      e('div', { className: "text-3xl font-bold text-yellow-500 mb-1" }, goals.fat + "g"),
+                      e('div', { className: "text-sm font-medium text-gray-600" }, "Fat")
+                    )
+                  )
+                ),
+              
+              // Continue button
+              e('button', {
+                onClick: () => setCurrentView('dashboard'),
+                disabled: !goals.calories,
+                className: "w-full px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl hover:from-orange-600 hover:to-red-700 disabled:from-gray-300 disabled:to-gray-400 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center"
+              },
+                "Continue to Dashboard ",
+                e('span', { className: "ml-2 text-xl" }, '→')
+              )
+            )
+          )
+        );
+      }
+
+      // Dashboard view
+      if (currentView === 'dashboard') {
+        const totals = calculateProgress();
+        
+        return e('div', { className: "min-h-screen bg-gradient-card" },
+          e(Navigation),
+          e('div', { className: "max-w-7xl mx-auto p-6" },
+            e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20" },
+              e('h2', { className: "text-2xl font-bold mb-6 text-gradient" },
+                "Today's Progress"
+              ),
+              
+              e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" },
+                [
+                  { label: 'Calories', current: totals.calories, goal: goals.calories, color: 'from-blue-500 to-cyan-500', icon: '⚡' },
+                  { label: 'Protein', current: totals.protein, goal: goals.protein, color: 'from-red-500 to-pink-500', unit: 'g', icon: '❤️' },
+                  { label: 'Carbs', current: totals.carbs, goal: goals.carbs, color: 'from-green-500 to-emerald-500', unit: 'g', icon: '🧠' },
+                  { label: 'Fat', current: totals.fat, goal: goals.fat, color: 'from-yellow-500 to-orange-500', unit: 'g', icon: '💧' }
+                ].map(({ label, current, goal, color, unit = '', icon }) => 
+                  e('div', { key: label, className: "relative overflow-hidden" },
+                    e('div', { className: `p-6 bg-gradient-to-br ${color} rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200` },
+                      e('div', { className: "flex items-center justify-between mb-2" },
+                        e('span', { className: "text-2xl opacity-80" }, icon),
+                        e('div', { className: "text-right" },
+                          e('div', { className: "text-2xl font-bold" },
+                            current.toFixed(0) + unit
+                          ),
+                          e('div', { className: "text-sm opacity-80" }, "/ " + goal + unit)
+                        )
+                      ),
+                      e('div', { className: "text-xs font-medium opacity-80 mb-2" }, label),
+                      e('div', { className: "w-full bg-white/20 rounded-full h-2" },
+                        e('div', { 
+                          className: "bg-white h-2 rounded-full transition-all duration-500",
+                          style: {width: `${Math.min((current / goal) * 100, 100)}%`}
+                        })
+                      )
+                    )
+                  )
+                )
+              ),
+
+              e('div', { className: "text-center" },
+                e('h3', { className: "text-xl font-bold text-gray-800 mb-4" }, "🎉 Welcome to FuelIQ!"),
+                e('p', { className: "text-gray-600 mb-6" }, "This is a demo of your nutrition tracking app. Navigate through the tabs above to explore all features!"),
+                e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
+                  [
+                    { view: 'setup', label: 'Update Profile', icon: '⚙️', color: 'from-blue-500 to-cyan-500' },
+                    { view: 'journey', label: 'Weight Journey', icon: '⚖️', color: 'from-green-500 to-emerald-500' },
+                    { view: 'meals', label: 'Log Food', icon: '🍽️', color: 'from-purple-500 to-pink-500' },
+                    { view: 'wearables', label: 'Connect Device', icon: '⌚', color: 'from-orange-500 to-red-500' }
+                  ].map(({ view, label, icon, color }) => 
+                    e('button', {
+                      key: view,
+                      onClick: () => setCurrentView(view),
+                      className: `p-6 bg-gradient-to-br ${color} rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group`
+                    },
+                      e('span', { className: "text-4xl mb-3 block group-hover:scale-110 transition-transform duration-200" }, icon),
+                      e('div', { className: "font-bold" }, label)
+                    )
+                  )
+                )
+              )
+            )
+          )
+        );
+      }
+
+      // Default view for other sections
+      return e('div', { className: "min-h-screen bg-gradient-card" },
+        e(Navigation),
+        e('div', { className: "max-w-6xl mx-auto p-6" },
+          e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20 text-center" },
+            e('div', { className: "w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6" },
+              e('span', { className: "text-4xl text-white" }, '⚙️')
+            ),
+            e('h2', { className: "text-3xl font-bold mb-4 text-gradient" },
+              {
+                'journey': 'Weight Journey',
+                'meals': 'Food Logging',
+                'pantry': 'Smart Pantry',
+                'wearables': 'Wearable Devices',
+                'planning': 'Meal Planning',
+                'analytics': 'Analytics & Reports',
+                'chat': 'AI Assistant'
+              }[currentView] || 'Feature Coming Soon'
+            ),
+            e('p', { className: "text-xl text-gray-600 mb-8" }, "This section is coming soon with enhanced features!"),
+            e('button', {
+              onClick: () => setCurrentView('dashboard'),
+              className: "px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl hover:from-orange-600 hover:to-red-700 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200"
+            }, "Back to Dashboard")
+          )
         )
       );
-    });
-    return availableFoods;
-  };
-
-  // Suggest meals based on available pantry items
-  const suggestMealsFromPantry = (mealType) => {
-    const availableFoods = findFoodsFromPantry();
-    const proteinFoods = availableFoods.filter(([name, data]) => data.type === 'protein');
-    const carbFoods = availableFoods.filter(([name, data]) => data.type === 'carb');
-    const vegetableFoods = availableFoods.filter(([name, data]) => data.type === 'vegetable');
-
-    const suggestions = [];
-    
-    for (let i = 0; i < Math.min(3, proteinFoods.length); i++) {
-      const protein = proteinFoods[i];
-      const carb = carbFoods[Math.floor(Math.random() * carbFoods.length)];
-      const vegetable = vegetableFoods[Math.floor(Math.random() * vegetableFoods.length)];
-      
-      const foods = [protein[0]];
-      if (carb) foods.push(carb[0]);
-      if (vegetable) foods.push(vegetable[0]);
-      
-      suggestions.push({
-        name: `Pantry ${mealType.charAt(0).toUpperCase() + mealType.slice(1)} #${i + 1}`,
-        foods: foods,
-        available: true
-      });
     }
 
-    return suggestions;
-  };
-
-  // Generate grocery list from meal plan
-  const generateGroceryList = () => {
-    const allIngredients = new Set();
-    
-    Object.values(mealPlan).forEach(dayMeals => {
-      Object.values(dayMeals).forEach(meals => {
-        meals.forEach(meal => {
-          if (meal.foods) {
-            meal.foods.forEach(foodName => {
-              const foodData = foodDatabase[foodName];
-              if (foodData && foodData.ingredients) {
-                foodData.ingredients.forEach(ingredient => allIngredients.add(ingredient));
-              }
-            });
-          }
-        });
-      });
-    });
-
-    return Array.from(allIngredients).sort();
-  };
-
-  // Add meal to meal plan
-  const addToMealPlan = (day, mealType, meal) => {
-    const newMealPlan = { ...mealPlan };
-    if (!newMealPlan[day]) newMealPlan[day] = {};
-    if (!newMealPlan[day][mealType]) newMealPlan[day][mealType] = [];
-    
-    newMealPlan[day][mealType].push(meal);
-    setMealPlan(newMealPlan);
-  };
-
-  // AI-like chat responses
-  const getChatResponse = (message) => {
-    const lowerMessage = message.toLowerCase();
-    const currentTotals = meals.reduce((acc, meal) => {
-      acc.calories += meal.calories;
-      acc.protein += meal.protein;
-      acc.carbs += meal.carbs;
-      acc.fat += meal.fat;
-      return acc;
-    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-
-    if (lowerMessage.includes('wearable') || lowerMessage.includes('whoop') || lowerMessage.includes('garmin') || lowerMessage.includes('oura')) {
-      return "Great question! FuelIQ integrates with all major wearables including WHOOP, Garmin, Oura Ring, Apple Watch, Fitbit, and COROS. Go to the Wearables tab to connect your devices and automatically sync your activity, sleep, and health data. This makes tracking effortless and more accurate!";
-    } else if (lowerMessage.includes('bloat') || lowerMessage.includes('bloating')) {
-      return "To reduce bloating, try these strategies: 1) Eat slowly and chew thoroughly, 2) Focus on low-FODMAP foods like spinach, carrots, and lean proteins, 3) Avoid carbonated drinks, 4) Cook vegetables instead of eating them raw, 5) Pair fruits with protein or fat to slow digestion. I can suggest anti-bloat meal options if you'd like!";
-    } else if (lowerMessage.includes('protein') || lowerMessage.includes('muscle')) {
-      return `Based on your current intake of ${currentTotals.protein.toFixed(1)}g protein today, you're ${currentTotals.protein >= goals.protein ? 'on track' : `${(goals.protein - currentTotals.protein).toFixed(1)}g short`} of your ${goals.protein}g goal. For muscle building/retention, aim for 20-30g protein per meal. Great sources include chicken breast, egg whites, Greek yogurt, and whey protein.`;
-    } else if (lowerMessage.includes('calorie') || lowerMessage.includes('weight')) {
-      return `You've consumed ${currentTotals.calories.toFixed(0)} calories today out of your ${goals.calories} goal. Remember: consistent moderate deficits (300-500 calories) work better than extreme restrictions. Focus on nutrient-dense whole foods to feel satisfied while meeting your goals.`;
-    } else if (lowerMessage.includes('meal') || lowerMessage.includes('eat')) {
-      return "I can suggest meals based on your preferences! Try asking for 'anti-bloat breakfast ideas' or 'high protein lunch suggestions'. You can also check your Pantry tab to get meal suggestions based on ingredients you already have, or use Meal Planning to organize your week!";
-    } else if (lowerMessage.includes('grocery') || lowerMessage.includes('shopping') || lowerMessage.includes('pantry')) {
-      return "Great question! Use the Pantry tab to upload your grocery list, scan barcodes, or add items you have at home. I'll suggest meals you can make with those ingredients. You can also use Meal Planning to create a weekly plan and automatically send your shopping list to Instacart, Amazon Fresh, or other delivery services!";
-    } else if (lowerMessage.includes('sync') || lowerMessage.includes('data') || lowerMessage.includes('connect')) {
-      return "FuelIQ automatically syncs with your connected wearables every few hours. If you need to manually sync, go to the Wearables tab and tap 'Sync Now' on your connected device. Your sleep, steps, heart rate, and activity data will be automatically imported to keep your tracking accurate!";
-    } else {
-      return "I'm here to help with nutrition, meal planning, wearable integration, and wellness questions! Ask me about meal suggestions, macro tracking, anti-bloat foods, workout nutrition, or connecting your devices. What would you like to know?";
-    }
-  };
-
-  const handleChat = () => {
-    if (!chatInput.trim()) return;
-    
-    const userMessage = { type: 'user', message: chatInput };
-    const botResponse = { type: 'bot', message: getChatResponse(chatInput) };
-    
-    setChatMessages([...chatMessages, userMessage, botResponse]);
-    setChatInput('');
-  };
-
-  const addMeal = (foodName, macros, quantity = 1) => {
-    const meal = {
-      id: Date.now(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      food: foodName,
-      quantity: quantity,
-      calories: macros.cal * quantity,
-      protein: macros.protein * quantity,
-      carbs: macros.carbs * quantity,
-      fat: macros.fat * quantity
-    };
-    setMeals([...meals, meal]);
-  };
-
-  const calculateProgress = () => {
-    const totals = meals.reduce((acc, meal) => {
-      acc.calories += meal.calories;
-      acc.protein += meal.protein;
-      acc.carbs += meal.carbs;
-      acc.fat += meal.fat;
-      return acc;
-    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-
-    return totals;
-  };
-
-  const toggleSection = (section) => {
-    setExpandedSections({
-      ...expandedSections,
-      [section]: !expandedSections[section]
-    });
-  };
-
-  useEffect(() => {
-    if (userProfile.age && userProfile.weight && userProfile.height) {
-      setGoals(calculateGoals(userProfile));
-    }
-  }, [userProfile]);
-
-  // Navigation component with modern design
-  const Navigation = () => (
-    <div className="bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 shadow-xl">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex items-center justify-between py-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                <Zap className="h-6 w-6 text-orange-600" />
-              </div>
-              <h1 className="text-2xl font-bold text-white tracking-tight" style={{fontFamily: 'Georgia, Times, serif'}}>FuelIQ</h1>
-            </div>
-          </div>
-          
-          <div className="flex space-x-1 bg-white/10 rounded-2xl p-1 overflow-x-auto backdrop-blur-sm">
-            {[
-              { id: 'setup', label: 'Setup', icon: Settings },
-              { id: 'journey', label: 'Journey', icon: Scale },
-              { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-              { id: 'meals', label: 'Meals', icon: Utensils },
-              { id: 'pantry', label: 'Pantry', icon: Plus },
-              { id: 'planning', label: 'Planning', icon: Calendar },
-              { id: 'wearables', label: 'Devices', icon: Watch },
-              { id: 'analytics', label: 'Analytics', icon: TrendingUp },
-              { id: 'chat', label: 'AI Chat', icon: MessageCircle }
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setCurrentView(id)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all duration-200 ${
-                  currentView === id
-                    ? 'bg-white text-orange-600 shadow-lg'
-                    : 'text-white/80 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="hidden md:inline">{label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Setup view with modern design
-  if (currentView === 'setup') {
-    // Dietary options
-    const dietaryOptions = [
-      'Vegetarian', 'Vegan', 'Pescatarian', 'Keto', 'Paleo', 'Mediterranean', 
-      'Low Carb', 'Low Fat', 'Gluten-Free', 'Dairy-Free', 'Sugar-Free', 
-      'Intermittent Fasting', 'FODMAP', 'Whole30', 'Raw Food', 'Flexitarian'
-    ];
-
-    const allergyOptions = [
-      'Dairy/Lactose', 'Gluten/Wheat', 'Nuts (Tree Nuts)', 'Peanuts', 'Shellfish', 
-      'Fish', 'Eggs', 'Soy', 'Sesame', 'Corn', 'Nightshades', 'Sulfites'
-    ];
-
-    const healthConcernOptions = [
-      'Diabetes Type 1', 'Diabetes Type 2', 'High Blood Pressure', 'High Cholesterol', 
-      'Heart Disease', 'PCOS', 'Thyroid Issues', 'IBS/IBD', 'Acid Reflux/GERD', 
-      'Kidney Disease', 'Liver Disease', 'Celiac Disease', 'Crohn\'s Disease', 
-      'Food Intolerances', 'Eating Disorder History'
-    ];
-
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-100">
-        <Navigation />
-        <div className="max-w-6xl mx-auto p-6">
-          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20">
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Zap className="h-10 w-10 text-white" />
-              </div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-4" style={{fontFamily: 'Georgia, Times, serif'}}>
-                Welcome to FuelIQ
-              </h1>
-              <p className="text-xl text-gray-600 font-medium">Your intelligent nutrition and wellness companion</p>
-            </div>
-            
-            {/* Basic Information */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <Settings className="mr-3 h-6 w-6 text-orange-600" />
-                Basic Information
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Age</label>
-                  <input
-                    type="number"
-                    value={userProfile.age}
-                    onChange={(e) => setUserProfile({...userProfile, age: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium"
-                    placeholder="25"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Weight (lbs)</label>
-                  <input
-                    type="number"
-                    value={userProfile.weight}
-                    onChange={(e) => setUserProfile({...userProfile, weight: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium"
-                    placeholder="180"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Height (inches)</label>
-                  <input
-                    type="number"
-                    value={userProfile.height}
-                    onChange={(e) => setUserProfile({...userProfile, height: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium"
-                    placeholder="70"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Gender</label>
-                  <select
-                    value={userProfile.gender}
-                    onChange={(e) => setUserProfile({...userProfile, gender: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium"
-                  >
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                  </select>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Activity Level</label>
-                  <select
-                    value={userProfile.activityLevel}
-                    onChange={(e) => setUserProfile({...userProfile, activityLevel: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium"
-                  >
-                    <option value="sedentary">Sedentary (desk job, no exercise)</option>
-                    <option value="light">Light (light exercise 1-3 days/week)</option>
-                    <option value="moderate">Moderate (moderate exercise 3-5 days/week)</option>
-                    <option value="active">Active (hard exercise 6-7 days/week)</option>
-                    <option value="very_active">Very Active (2x/day, intense training)</option>
-                  </select>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Primary Goal</label>
-                  <select
-                    value={userProfile.goal}
-                    onChange={(e) => setUserProfile({...userProfile, goal: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium"
-                  >
-                    <option value="fat_loss">Fat Loss</option>
-                    <option value="muscle_gain">Muscle Gain</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="recomp">Body Recomposition</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Dietary Preferences */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <Utensils className="mr-3 h-6 w-6 text-red-600" />
-                Dietary Preferences
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {dietaryOptions.map(option => (
-                  <button
-                    key={option}
-                    onClick={() => {
-                      const newRestrictions = userProfile.dietaryRestrictions.includes(option)
-                        ? userProfile.dietaryRestrictions.filter(r => r !== option)
-                        : [...userProfile.dietaryRestrictions, option];
-                      setUserProfile({...userProfile, dietaryRestrictions: newRestrictions});
-                    }}
-                    className={`p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
-                      userProfile.dietaryRestrictions.includes(option)
-                        ? 'border-orange-500 bg-gradient-to-r from-orange-50 to-red-50 text-orange-700'
-                        : 'border-gray-200 bg-white/50 text-gray-600 hover:border-orange-300'
-                    }`}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Allergies & Intolerances */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <AlertTriangle className="mr-3 h-6 w-6 text-red-600" />
-                Allergies & Intolerances
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {allergyOptions.map(allergy => (
-                  <button
-                    key={allergy}
-                    onClick={() => {
-                      const newAllergies = userProfile.allergies.includes(allergy)
-                        ? userProfile.allergies.filter(a => a !== allergy)
-                        : [...userProfile.allergies, allergy];
-                      setUserProfile({...userProfile, allergies: newAllergies});
-                    }}
-                    className={`p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
-                      userProfile.allergies.includes(allergy)
-                        ? 'border-red-500 bg-gradient-to-r from-red-50 to-pink-50 text-red-700'
-                        : 'border-gray-200 bg-white/50 text-gray-600 hover:border-red-300'
-                    }`}
-                  >
-                    {allergy}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Health Concerns */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <Heart className="mr-3 h-6 w-6 text-pink-600" />
-                Health Concerns
-              </h2>
-              <p className="text-sm text-gray-600 mb-4">
-                Select any health conditions to get personalized nutrition recommendations
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {healthConcernOptions.map(concern => (
-                  <button
-                    key={concern}
-                    onClick={() => {
-                      const newConcerns = userProfile.healthConcerns.includes(concern)
-                        ? userProfile.healthConcerns.filter(c => c !== concern)
-                        : [...userProfile.healthConcerns, concern];
-                      setUserProfile({...userProfile, healthConcerns: newConcerns});
-                    }}
-                    className={`p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 text-left ${
-                      userProfile.healthConcerns.includes(concern)
-                        ? 'border-pink-500 bg-gradient-to-r from-pink-50 to-red-50 text-pink-700'
-                        : 'border-gray-200 bg-white/50 text-gray-600 hover:border-pink-300'
-                    }`}
-                  >
-                    {concern}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Special Preferences */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                <Brain className="mr-3 h-6 w-6 text-orange-600" />
-                Special Preferences
-              </h2>
-              <div className="space-y-4">
-                <label className="flex items-center p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border-2 border-orange-200">
-                  <input
-                    type="checkbox"
-                    checked={userProfile.antiBloutPreference}
-                    onChange={(e) => setUserProfile({...userProfile, antiBloutPreference: e.target.checked})}
-                    className="mr-3 w-5 h-5 text-orange-600 border-2 border-gray-300 rounded focus:ring-orange-500"
-                  />
-                  <span className="font-medium text-gray-700">Prioritize anti-bloat food recommendations</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Example for your wife */}
-            {(userProfile.allergies.includes('Dairy/Lactose') || userProfile.dietaryRestrictions.includes('Gluten-Free')) && (
-              <div className="mb-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200">
-                <h3 className="font-bold text-green-800 mb-3 flex items-center">
-                  <Lightbulb className="mr-2 h-5 w-5" />
-                  Smart Recommendations Activated!
-                </h3>
-                <p className="text-sm text-green-700">
-                  Based on your selections, we'll automatically filter out dairy products and prioritize gluten-free options in your meal suggestions and grocery lists.
-                </p>
-              </div>
-            )}
-            
-            {goals.calories && (
-              <div className="mb-8 p-6 bg-gradient-to-r from-orange-50 via-red-50 to-pink-50 rounded-2xl border border-orange-200">
-                <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                  <Target className="mr-2 h-6 w-6 text-orange-600" />
-                  Your Calculated Goals
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-white/60 rounded-xl">
-                    <div className="text-3xl font-bold text-orange-600 mb-1">{goals.calories}</div>
-                    <div className="text-sm font-medium text-gray-600">Calories</div>
-                  </div>
-                  <div className="text-center p-4 bg-white/60 rounded-xl">
-                    <div className="text-3xl font-bold text-red-500 mb-1">{goals.protein}g</div>
-                    <div className="text-sm font-medium text-gray-600">Protein</div>
-                  </div>
-                  <div className="text-center p-4 bg-white/60 rounded-xl">
-                    <div className="text-3xl font-bold text-green-500 mb-1">{goals.carbs}g</div>
-                    <div className="text-sm font-medium text-gray-600">Carbs</div>
-                  </div>
-                  <div className="text-center p-4 bg-white/60 rounded-xl">
-                    <div className="text-3xl font-bold text-yellow-500 mb-1">{goals.fat}g</div>
-                    <div className="text-sm font-medium text-gray-600">Fat</div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <button
-              onClick={() => setCurrentView('journey')}
-              disabled={!goals.calories}
-              className="w-full px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl hover:from-orange-600 hover:to-red-700 disabled:from-gray-300 disabled:to-gray-400 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center"
-            >
-              Continue to Weight Journey
-              <ChevronDown className="ml-2 h-5 w-5 rotate-[-90deg]" />
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Weight Journey view with enhanced design
-  if (currentView === 'journey') {
-    const journeyData = weightJourney.currentWeight && weightJourney.targetWeight 
-      ? calculateWeightJourney(parseFloat(weightJourney.currentWeight), parseFloat(weightJourney.targetWeight), userProfile.gender)
-      : {};
-
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-100">
-        <Navigation />
-        <div className="max-w-7xl mx-auto p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Goal Setting */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
-              <h2 className="text-2xl font-bold mb-6 flex items-center bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                <Scale className="mr-3 h-6 w-6 text-orange-600" /> Your Weight Journey
-              </h2>
-              
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Current Weight (lbs)</label>
-                  <input
-                    type="number"
-                    value={weightJourney.currentWeight}
-                    onChange={(e) => setWeightJourney({...weightJourney, currentWeight: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-4 focus:ring-red-500/20 transition-all duration-200 font-medium"
-                    placeholder="180"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Target Weight (lbs)</label>
-                  <input
-                    type="number"
-                    value={weightJourney.targetWeight}
-                    onChange={(e) => setWeightJourney({...weightJourney, targetWeight: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-200 font-medium"
-                    placeholder="165"
-                  />
-                </div>
-
-                {journeyData.recommendedTimeline && (
-                  <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl border border-blue-200">
-                    <h3 className="font-bold text-blue-800 mb-3 flex items-center">
-                      <Clock className="mr-2 h-5 w-5" />
-                      Recommended Timeline
-                    </h3>
-                    <div className="text-3xl font-bold text-blue-600 mb-2">
-                      {journeyData.recommendedTimeline}
-                    </div>
-                    <div className="text-sm font-medium text-blue-600">
-                      {Math.abs(journeyData.weeklyGoal)} lbs per week
-                    </div>
-                  </div>
-                )}
-
-                {journeyData.safetyWarnings && journeyData.safetyWarnings.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="font-bold text-amber-800 flex items-center">
-                      <AlertTriangle className="h-5 w-5 mr-2" /> Important Notes
-                    </h4>
-                    <div className="space-y-2">
-                      {journeyData.safetyWarnings.map((warning, idx) => (
-                        <div key={idx} className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 rounded-xl">
-                          <p className="text-sm font-medium text-amber-700">{warning}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {journeyData.recommendedTimeline && (
-                  <button
-                    onClick={() => {
-                      setWeightJourney({
-                        ...weightJourney,
-                        startDate: new Date(),
-                        ...journeyData
-                      });
-                      setUserProfile({
-                        ...userProfile,
-                        weight: weightJourney.currentWeight,
-                        goal: journeyData.isWeightLoss ? 'fat_loss' : 'muscle_gain'
-                      });
-                    }}
-                    className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl hover:from-green-600 hover:to-emerald-700 font-bold shadow-xl transform hover:scale-105 transition-all duration-200"
-                  >
-                    🚀 Start My Journey
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Milestones */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
-              <h2 className="text-2xl font-bold mb-6 flex items-center bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
-                <Trophy className="mr-3 h-6 w-6 text-yellow-500" /> Milestones
-              </h2>
-              
-              {!journeyData.milestones || journeyData.milestones.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Trophy className="h-10 w-10 text-yellow-500 opacity-50" />
-                  </div>
-                  <p className="text-gray-500 font-medium">Set your weight goals to see milestones!</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {journeyData.milestones.map((milestone, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`p-5 rounded-2xl border-2 transition-all duration-200 ${
-                        milestone.achieved 
-                          ? 'border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 shadow-lg' 
-                          : milestone.isFinal 
-                            ? 'border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-lg' 
-                            : 'border-gray-200 bg-gradient-to-r from-gray-50 to-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-bold text-lg">
-                            {milestone.isFinal ? '🎯 Final Goal' : `🏃 Milestone ${idx + 1}`}
-                          </div>
-                          <div className="text-sm text-gray-600 font-medium">
-                            Week {milestone.week}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className={`text-2xl font-bold ${
-                            milestone.achieved ? 'text-green-600' : 
-                            milestone.isFinal ? 'text-blue-600' : 'text-gray-600'
-                          }`}>
-                            {milestone.weight} lbs
-                          </div>
-                          {milestone.achieved && (
-                            <div className="text-xs text-green-600 font-bold">✅ Achieved!</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Weekly Progress */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
-              <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Weekly Calorie Plan
-              </h2>
-              
-              {!journeyData.weeklyCalories || journeyData.weeklyCalories.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Calculator className="h-10 w-10 text-indigo-500 opacity-50" />
-                  </div>
-                  <p className="text-gray-500 font-medium">Your weekly calorie targets will appear here!</p>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-80 overflow-y-auto">
-                  {journeyData.weeklyCalories.map((week, idx) => (
-                    <div key={idx} className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-bold text-lg">Week {week.week}</div>
-                          <div className="text-xs text-gray-500 font-medium">
-                            Target: {week.weight} lbs
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold text-xl text-indigo-600">
-                            {week.calories} cal
-                          </div>
-                          <div className="text-xs text-gray-500 font-medium">
-                            {week.protein}g protein
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {journeyData.totalWeeks && (
-                <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
-                  <div className="text-sm text-blue-600 text-center font-medium">
-                    💡 <strong>Pro Tip:</strong> Your calorie needs will decrease as you lose weight. 
-                    We'll automatically adjust your targets every few weeks!
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Modern Dashboard with enhanced wearable integration
-  if (currentView === 'dashboard') {
-    const totals = calculateProgress();
-    
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-100">
-        <Navigation />
-        <div className="max-w-7xl mx-auto p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Progress Overview */}
-            <div className="lg:col-span-2 bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
-              <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                Today's Progress
-              </h2>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                {[
-                  { label: 'Calories', current: totals.calories, goal: goals.calories, color: 'from-blue-500 to-cyan-500', icon: Zap },
-                  { label: 'Protein', current: totals.protein, goal: goals.protein, color: 'from-red-500 to-pink-500', unit: 'g', icon: Heart },
-                  { label: 'Carbs', current: totals.carbs, goal: goals.carbs, color: 'from-green-500 to-emerald-500', unit: 'g', icon: Brain },
-                  { label: 'Fat', current: totals.fat, goal: goals.fat, color: 'from-yellow-500 to-orange-500', unit: 'g', icon: Droplets }
-                ].map(({ label, current, goal, color, unit = '', icon: Icon }) => (
-                  <div key={label} className="relative overflow-hidden">
-                    <div className={`p-6 bg-gradient-to-br ${color} rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <Icon className="h-6 w-6 opacity-80" />
-                        <div className="text-right">
-                          <div className="text-2xl font-bold">
-                            {current.toFixed(0)}{unit}
-                          </div>
-                          <div className="text-sm opacity-80">/ {goal}{unit}</div>
-                        </div>
-                      </div>
-                      <div className="text-xs font-medium opacity-80 mb-2">{label}</div>
-                      <div className="w-full bg-white/20 rounded-full h-2">
-                        <div 
-                          className="bg-white h-2 rounded-full transition-all duration-500"
-                          style={{width: `${Math.min((current / goal) * 100, 100)}%`}}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Wearable Data on Dashboard */}
-              {Object.keys(connectedWearables).length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-xl font-bold mb-4 flex items-center text-gray-800">
-                    <Watch className="mr-2 h-6 w-6 text-orange-600" /> Wearable Data
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl border border-blue-200">
-                      <div className="flex items-center justify-between">
-                        <Activity className="h-8 w-8 text-blue-600" />
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-blue-700">
-                            {wearableData.steps.toLocaleString()}
-                          </div>
-                          <div className="text-xs text-blue-600 font-medium">Steps</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-100 rounded-2xl border border-purple-200">
-                      <div className="flex items-center justify-between">
-                        <Moon className="h-8 w-8 text-purple-600" />
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-purple-700">
-                            {wearableData.sleep}h
-                          </div>
-                          <div className="text-xs text-purple-600 font-medium">Sleep</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl border border-green-200">
-                      <div className="flex items-center justify-between">
-                        <Zap className="h-8 w-8 text-green-600" />
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-green-700">
-                            {wearableData.calories}
-                          </div>
-                          <div className="text-xs text-green-600 font-medium">Active Cal</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4 bg-gradient-to-br from-red-50 to-pink-100 rounded-2xl border border-red-200">
-                      <div className="flex items-center justify-between">
-                        <Heart className="h-8 w-8 text-red-600" />
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-red-700">
-                            {wearableData.heartRate}
-                          </div>
-                          <div className="text-xs text-red-600 font-medium">Heart Rate</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Quick Actions */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { view: 'meals', label: 'Log Food', icon: Utensils, color: 'from-blue-500 to-cyan-500' },
-                  { view: 'wearables', label: 'Connect Device', icon: Watch, color: 'from-green-500 to-emerald-500' },
-                  { view: 'pantry', label: 'Pantry', icon: ShoppingCart, color: 'from-purple-500 to-pink-500' },
-                  { view: 'planning', label: 'Meal Plan', icon: Calendar, color: 'from-orange-500 to-red-500' }
-                ].map(({ view, label, icon: Icon, color }) => (
-                  <button
-                    key={view}
-                    onClick={() => setCurrentView(view)}
-                    className={`p-6 bg-gradient-to-br ${color} rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group`}
-                  >
-                    <Icon className="h-8 w-8 mb-3 group-hover:scale-110 transition-transform duration-200" />
-                    <div className="font-bold">{label}</div>
-                    {view === 'wearables' && Object.keys(connectedWearables).length > 0 && (
-                      <div className="text-xs mt-1 opacity-80">
-                        {Object.keys(connectedWearables).length} connected
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Daily Tracking */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
-              <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">
-                Daily Tracking
-              </h2>
-              
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center">
-                    <Moon className="h-4 w-4 mr-2 text-purple-600" /> Sleep (hours)
-                  </label>
-                  <input
-                    type="number"
-                    value={dailyData.sleep}
-                    onChange={(e) => setDailyData({...dailyData, sleep: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-200 font-medium"
-                    placeholder="7.5"
-                    step="0.5"
-                  />
-                  {wearableData.sleep > 0 && (
-                    <div className="text-xs text-blue-600 mt-2 font-medium">
-                      🔗 From wearable: {wearableData.sleep}h
-                    </div>
-                  )}
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center">
-                    <Activity className="h-4 w-4 mr-2 text-green-600" /> Exercise (minutes)
-                  </label>
-                  <input
-                    type="number"
-                    value={dailyData.activity}
-                    onChange={(e) => setDailyData({...dailyData, activity: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-200 font-medium"
-                    placeholder="60"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Steps</label>
-                  <input
-                    type="number"
-                    value={dailyData.steps}
-                    onChange={(e) => setDailyData({...dailyData, steps: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 font-medium"
-                    placeholder="8000"
-                  />
-                  {wearableData.steps > 0 && (
-                    <div className="text-xs text-blue-600 mt-2 font-medium">
-                      🔗 From wearable: {wearableData.steps.toLocaleString()}
-                    </div>
-                  )}
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center">
-                    <Droplets className="h-4 w-4 mr-2 text-blue-600" /> Water (oz)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      value={dailyData.water}
-                      onChange={(e) => setDailyData({...dailyData, water: parseInt(e.target.value) || 0})}
-                      className="flex-1 px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 font-medium"
-                      placeholder="64"
-                    />
-                    <button
-                      onClick={() => setDailyData({...dailyData, water: dailyData.water + 8})}
-                      className="px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:from-blue-600 hover:to-cyan-600 font-bold transform hover:scale-105 transition-all duration-200"
-                    >
-                      +8
-                    </button>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2 font-medium">
-                    Goal: {goals.water}oz
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Notes</label>
-                  <textarea
-                    value={dailyData.notes}
-                    onChange={(e) => setDailyData({...dailyData, notes: e.target.value})}
-                    className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 transition-all duration-200 font-medium resize-none"
-                    rows="3"
-                    placeholder="How did you feel today?"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Continue with remaining views using similar modern design patterns...
-  // For brevity, I'll keep the existing structure but add the modern styling
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-100">
-      <Navigation />
-      <div className="max-w-6xl mx-auto p-6">
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20 text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Settings className="h-10 w-10 text-white" />
-          </div>
-          <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-            {currentView === 'meals' && 'Food Logging'}
-            {currentView === 'pantry' && 'Smart Pantry'}
-            {currentView === 'wearables' && 'Wearable Devices'}
-            {currentView === 'planning' && 'Meal Planning'}
-            {currentView === 'analytics' && 'Analytics & Reports'}
-            {currentView === 'chat' && 'AI Assistant'}
-          </h2>
-          <p className="text-xl text-gray-600 mb-8">This section is coming soon with enhanced features!</p>
-          <button
-            onClick={() => setCurrentView('dashboard')}
-            className="px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl hover:from-orange-600 hover:to-red-700 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default FuelIQ;
+    ReactDOM.render(e(FuelIQ), document.getElementById('root'));
+  </script>
+</body>
+</html>
