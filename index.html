@@ -507,38 +507,13 @@
         );
       }
 
-      // ADD THIS NEW SECTION - Special handling for meals tab
-      if (currentView === 'meals') {
-        // Save user goals in the format meals tab expects
-        React.useEffect(() => {
-          if (goals.calories) {
-            const userGoalsData = {
-              dailyCalories: goals.calories,
-              protein: goals.protein,
-              carbs: goals.carbs,
-              fat: goals.fat
-            };
-            
-            // Save to localStorage if available, otherwise use memory storage
-            try {
-              localStorage.setItem('fueliq_user_goals', JSON.stringify(userGoalsData));
-            } catch (e) {
-              // Fallback handled by meals module
-              console.warn('localStorage not available:', e);
-            }
-          }
-        }, [goals]);
-
-        // Render meals tab and initialize it
-        React.useEffect(() => {
-          if (window.FuelIQMeals) {
-            window.FuelIQMeals.renderMealsTab('meals-container');
-          }
-        }, []);
-
-        return e('div', { className: "min-h-screen bg-gradient-card" },
-          e(Navigation),
-          e('div', { id: "meals-container", className: "meals-tab-content" })
+      // Special handling for meals tab
+if (currentView === 'meals') {
+  return e('div', { className: "min-h-screen bg-gradient-card" },
+    e(Navigation),
+    e('div', { id: "meals-container", className: "meals-tab-content" })
+  );
+})
         );
       }
 
