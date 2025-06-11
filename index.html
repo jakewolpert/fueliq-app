@@ -135,14 +135,24 @@ useEffect(() => {
     }, 150);
   }
 }, [currentView]);
+// Enhanced journey tab rendering
 useEffect(() => {
   if (currentView === 'journey') {
     clearContainer('journey-container');
-    setTimeout(() => {
-      if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.renderWeightJourney) {
-        window.FuelIQWeightJourney.renderWeightJourney('journey-container');
+    
+    const timer = setTimeout(() => {
+      try {
+        if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.renderWeightJourney) {
+          window.FuelIQWeightJourney.renderWeightJourney('journey-container');
+        } else {
+          console.warn('FuelIQWeightJourney module not available');
+        }
+      } catch (error) {
+        console.error('Error rendering journey tab:', error);
       }
-    }, 150);
+    }, 300);
+    
+    return () => clearTimeout(timer);
   }
 }, [currentView]);
       // 👈 ADD THIS ENTIRE BLOCK RIGHT HERE:
