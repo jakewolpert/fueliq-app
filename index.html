@@ -101,27 +101,6 @@
           water: Math.round(weight * 0.67)
         };
       };
-
-      const calculateProgress = () => {
-  const today = new Date().toISOString().split('T')[0];
-  const key = `fueliq_meals_${today}`;
-  try {
-    const data = JSON.parse(localStorage.getItem(key) || '{}');
-    const allFoods = [...(data.breakfast||[]), ...(data.lunch||[]), ...(data.dinner||[]), ...(data.snacks||[])];
-    return allFoods.reduce((totals, item) => {
-      const mult = (item.servingSize || 100) / 100;
-      return {
-        calories: totals.calories + ((item.calories || 0) * mult),
-        protein: totals.protein + ((item.protein || 0) * mult),
-        carbs: totals.carbs + ((item.carbs || 0) * mult),
-        fat: totals.fat + ((item.fat || 0) * mult)
-      };
-    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-  } catch (e) {
-    return { calories: 0, protein: 0, carbs: 0, fat: 0 };
-  }
-};
-
       useEffect(() => {
         if (userProfile.age && userProfile.weight && userProfile.height) {
           setGoals(calculateGoals(userProfile));
