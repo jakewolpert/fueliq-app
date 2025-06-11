@@ -594,6 +594,14 @@ if (currentView === 'meals') {
     e('div', { id: "meals-container", className: "meals-tab-content" })
   );
 }
+      // 👈 ADD THIS ENTIRE BLOCK RIGHT HERE:
+// Special handling for pantry tab
+if (currentView === 'pantry') {
+  return e('div', { className: "min-h-screen bg-gradient-card" },
+    e(Navigation),
+    e('div', { id: "pantry-container", className: "pantry-tab-content" })
+  );
+}
       // Default view for other sections
       return e('div', { className: "min-h-screen bg-gradient-card" },
         e(Navigation),
