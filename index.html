@@ -149,30 +149,33 @@ useEffect(() => {
 
 useEffect(() => {
   if (currentView === 'meals') {
+    clearContainer('meals-container');
     setTimeout(() => {
       if (window.FuelIQMeals && window.FuelIQMeals.renderMealsTab) {
         window.FuelIQMeals.renderMealsTab('meals-container');
       }
-    }, 100);
+    }, 150);
   }
 }, [currentView]);
-      useEffect(() => {
+useEffect(() => {
   if (currentView === 'journey') {
+    clearContainer('journey-container');
     setTimeout(() => {
       if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.renderWeightJourney) {
         window.FuelIQWeightJourney.renderWeightJourney('journey-container');
       }
-    }, 100);
+    }, 150);
   }
 }, [currentView]);
       // 👈 ADD THIS ENTIRE BLOCK RIGHT HERE:
 useEffect(() => {
   if (currentView === 'pantry') {
+    clearContainer('pantry-container');
     setTimeout(() => {
       if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
         window.FuelIQPantry.renderSmartPantry('pantry-container');
       }
-    }, 100);
+    }, 150);
   }
 }, [currentView]);
       const totals = useMemo(() => {
