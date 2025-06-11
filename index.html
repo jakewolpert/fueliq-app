@@ -156,16 +156,46 @@ useEffect(() => {
   }
 }, [currentView]);
       // 👈 ADD THIS ENTIRE BLOCK RIGHT HERE:
+// Enhanced pantry tab rendering
 useEffect(() => {
   if (currentView === 'pantry') {
     clearContainer('pantry-container');
-    setTimeout(() => {
-      if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
-        window.FuelIQPantry.renderSmartPantry('pantry-container');
+    
+    const timer = setTimeout(() => {
+      try {
+        if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
+          window.FuelIQPantry.renderSmartPantry('pantry-container');
+        } else {
+          console.warn('FuelIQPantry module not available');
+        }
+      } catch (error) {
+        console.error('Error rendering pantry tab:', error);
       }
-    }, 150);
+    }, 300);
+    
+    return () => clearTimeout(timer);
   }
 }, [currentView]);
+
+// Add navigation event listener with enhanced cleanup
+useEffect(() => {
+  const handleNavigation = (event) => {
+    // Force cleanup before navigation
+    forceCleanup();
+    
+    // Small delay to ensure cleanup completes
+    setTimeout(() => {
+      setCurrentView(event.detail);
+    }, 100);
+  };
+  
+  window.addEventListener('navigateToTab', handleNavigation);
+  
+  return () => {
+    window.removeEventListener('navigateToTab', handleNavigation);
+    forceCleanup(); // Cleanup on component unmount
+  };
+}, []);
       const totals = useMemo(() => {
   const today = new Date().toISOString().split('T')[0];
   const key = `fueliq_meals_${today}`;
