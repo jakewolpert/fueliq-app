@@ -130,14 +130,26 @@ useEffect(() => {
   }
 }, [currentView, goals]);
 
+// Enhanced meals tab rendering
 useEffect(() => {
   if (currentView === 'meals') {
+    // Force cleanup first
     clearContainer('meals-container');
-    setTimeout(() => {
-      if (window.FuelIQMeals && window.FuelIQMeals.renderMealsTab) {
-        window.FuelIQMeals.renderMealsTab('meals-container');
+    
+    // Wait longer for cleanup to complete
+    const timer = setTimeout(() => {
+      try {
+        if (window.FuelIQMeals && window.FuelIQMeals.renderMealsTab) {
+          window.FuelIQMeals.renderMealsTab('meals-container');
+        } else {
+          console.warn('FuelIQMeals module not available');
+        }
+      } catch (error) {
+        console.error('Error rendering meals tab:', error);
       }
-    }, 150);
+    }, 300); // Increased delay
+    
+    return () => clearTimeout(timer);
   }
 }, [currentView]);
 // Enhanced journey tab rendering
