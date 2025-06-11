@@ -543,7 +543,13 @@ useEffect(() => {
           )
         );
       }
-
+// Special handling for journey tab
+if (currentView === 'journey') {
+  return e('div', { className: "min-h-screen bg-gradient-card" },
+    e(Navigation),
+    e('div', { id: "journey-container", className: "journey-tab-content" })
+  );
+}
       // Special handling for meals tab
 if (currentView === 'meals') {
   return e('div', { className: "min-h-screen bg-gradient-card" },
