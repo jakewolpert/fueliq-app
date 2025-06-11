@@ -118,7 +118,35 @@
           setGoals(calculateGoals(userProfile));
         }
       }, [userProfile]);
+// ADD THESE NEW USEEFFECT HOOKS RIGHT HERE:
 
+// Meals tab useEffect hooks (must be at top level)
+useEffect(() => {
+  if (currentView === 'meals' && goals.calories) {
+    const userGoalsData = {
+      dailyCalories: goals.calories,
+      protein: goals.protein,
+      carbs: goals.carbs,
+      fat: goals.fat
+    };
+    
+    try {
+      localStorage.setItem('fueliq_user_goals', JSON.stringify(userGoalsData));
+    } catch (e) {
+      console.warn('localStorage not available:', e);
+    }
+  }
+}, [currentView, goals]);
+
+useEffect(() => {
+  if (currentView === 'meals') {
+    setTimeout(() => {
+      if (window.FuelIQMeals && window.FuelIQMeals.renderMealsTab) {
+        window.FuelIQMeals.renderMealsTab('meals-container');
+      }
+    }, 100);
+  }
+}, [currentView]);
       // Navigation component
       function Navigation() {
         return e('div', { className: "bg-gradient-orange-red shadow-xl" },
