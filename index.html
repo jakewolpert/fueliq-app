@@ -100,6 +100,11 @@
   fat: Math.round(fatGrams),
   water: Math.round(weight * 0.67)
 };
+        useEffect(() => {
+        if (userProfile.age && userProfile.weight && userProfile.height) {
+          setGoals(calculateGoals(userProfile));
+        }
+      }, [userProfile]);
       };
      // Enhanced cleanup on view change
 useEffect(() => {
