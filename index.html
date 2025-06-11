@@ -527,6 +527,7 @@ const clearContainer = (containerId) => {
       // REPLACE your Dashboard view section with this improved version:
 
 // Enhanced Dashboard view
+// FuelIQ Branded Dashboard - Matching your site's warm color scheme
 if (currentView === 'dashboard') {
   
   // Get today's date for display
@@ -544,221 +545,300 @@ if (currentView === 'dashboard') {
     hour12: true
   });
 
-  // Enhanced progress calculation with better data handling
+  // Safe progress calculation
   const getProgressPercentage = (current, goal) => {
-    return Math.min((current / goal) * 100, 100);
+    const currentNum = parseFloat(current) || 0;
+    const goalNum = parseFloat(goal) || 1;
+    return Math.min((currentNum / goalNum) * 100, 100);
   };
 
   const getProgressColor = (percentage) => {
     if (percentage >= 90) return 'text-green-600';
-    if (percentage >= 70) return 'text-yellow-600';
-    return 'text-blue-600';
+    if (percentage >= 70) return 'text-orange-600';
+    return 'text-red-600';
   };
 
-  // Metric Card Component
-  const MetricCard = ({ icon, title, current, goal, unit = '', color = 'blue', onClick = null, description = '' }) => {
-    const percentage = getProgressPercentage(current, goal);
-    const isClickable = onClick !== null;
-    
-    return e('button', {
-      onClick: onClick,
-      disabled: !isClickable,
-      className: `relative overflow-hidden group ${isClickable ? 'cursor-pointer transform hover:scale-105' : 'cursor-default'} transition-all duration-200 w-full text-left`
-    },
-      e('div', { className: `p-6 bg-white rounded-2xl shadow-lg border-l-4 border-${color}-500 h-full` },
-        // Header with icon and title
-        e('div', { className: 'flex items-center justify-between mb-4' },
-          e('div', { className: 'flex items-center space-x-3' },
-            e('div', { className: `text-3xl p-2 bg-${color}-100 rounded-lg` }, icon),
-            e('div', null,
-              e('h3', { className: 'text-lg font-semibold text-gray-800' }, title),
-              description && e('p', { className: 'text-xs text-gray-500' }, description)
-            )
-          ),
-          e('div', { className: `text-sm font-medium ${getProgressColor(percentage)}` }, 
-            `${Math.round(percentage)}%`
-          )
-        ),
-        
-        // Current value display
-        e('div', { className: 'mb-3' },
-          e('div', { className: 'flex items-baseline space-x-2' },
-            e('span', { className: 'text-3xl font-bold text-gray-900' }, 
-              typeof current === 'number' ? current.toLocaleString() : current
-            ),
-            e('span', { className: 'text-lg text-gray-600' }, unit),
-            e('span', { className: 'text-gray-400' }, '/'),
-            e('span', { className: 'text-lg text-gray-600' }, 
-              `${typeof goal === 'number' ? goal.toLocaleString() : goal} ${unit}`
-            )
-          )
-        ),
-        
-        // Progress bar
-        e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-          e('div', {
-            className: `bg-${color}-500 h-3 rounded-full transition-all duration-500`,
-            style: { width: `${percentage}%` }
-          })
-        )
-      )
-    );
-  };
-
-  // Macro breakdown component
-  const MacroBreakdown = () => {
-    const macros = [
-      { name: 'Protein', current: totals.protein, goal: goals.protein, color: 'red', unit: 'g' },
-      { name: 'Carbs', current: totals.carbs, goal: goals.carbs, color: 'yellow', unit: 'g' },
-      { name: 'Fat', current: totals.fat, goal: goals.fat, color: 'purple', unit: 'g' },
-      { name: 'Fiber', current: totals.fiber || 0, goal: 25, color: 'green', unit: 'g' }
-    ];
-
-    return e('div', { className: 'bg-white rounded-2xl shadow-lg p-6' },
-      e('h3', { className: 'text-xl font-bold text-gray-800 mb-6 flex items-center' },
-        e('span', { className: 'mr-3 text-2xl' }, '📊'),
-        'Macro Breakdown'
-      ),
-      e('div', { className: 'grid grid-cols-2 gap-4' },
-        macros.map((macro, index) => {
-          const percentage = getProgressPercentage(macro.current, macro.goal);
-          return e('div', { key: index, className: 'space-y-2' },
-            e('div', { className: 'flex justify-between items-center' },
-              e('span', { className: 'font-medium text-gray-700' }, macro.name),
-              e('span', { className: 'text-sm text-gray-600' }, 
-                `${Math.round(macro.current)}/${macro.goal}${macro.unit}`
-              )
-            ),
-            e('div', { className: 'w-full bg-gray-200 rounded-full h-2' },
-              e('div', {
-                className: `bg-${macro.color}-500 h-2 rounded-full transition-all duration-500`,
-                style: { width: `${percentage}%` }
-              })
-            )
-          );
-        })
-      )
-    );
-  };
-
-  return e('div', { className: "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100" },
+  return e('div', { className: "min-h-screen bg-gradient-card" },
     e(Navigation),
     e('div', { className: "max-w-7xl mx-auto p-6" },
       
-      // Welcome Header
-      e('div', { className: "mb-8" },
+      // Welcome Header - Matching your brand style
+      e('div', { className: "bg-gradient-to-r from-orange-500 to-red-600 rounded-3xl shadow-2xl p-6 mb-8 text-white" },
         e('div', { className: "text-center" },
-          e('h1', { className: "text-4xl font-bold text-gray-800 mb-2" }, '🔥 FuelIQ Dashboard'),
-          e('p', { className: "text-lg text-gray-600" }, today),
-          e('p', { className: "text-2xl font-semibold text-indigo-600" }, currentTime)
+          e('h1', { 
+            className: "text-4xl font-bold mb-2", 
+            style: {fontFamily: 'Georgia, Times, serif'} 
+          }, '🔥 FuelIQ Dashboard'),
+          e('p', { className: "text-xl opacity-90" }, today),
+          e('p', { className: "text-2xl font-semibold opacity-95" }, currentTime)
         )
       ),
 
-      // Main Metrics Grid - Enhanced Cards
+      // Main Metrics Grid - Using your brand colors
       e('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" },
-        // Calories Card (with real data)
-        e(MetricCard, {
-          icon: '🍽️',
-          title: 'Calories',
-          current: Math.round(totals.calories),
-          goal: goals.calories || 2000,
-          unit: 'kcal',
-          color: 'indigo',
-          description: 'Daily nutrition target',
+        
+        // Calories Card - Primary brand color
+        e('div', { 
+          className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
           onClick: () => setCurrentView('meals')
-        }),
+        },
+          e('div', { className: 'flex items-center justify-between mb-4' },
+            e('div', { className: 'flex items-center space-x-3' },
+              e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-orange-100 to-red-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '🍽️'),
+              e('div', null,
+                e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Calories'),
+                e('p', { className: 'text-xs text-gray-600' }, 'Daily nutrition target')
+              )
+            ),
+            e('div', { className: 'text-sm font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent' }, 
+              Math.round(getProgressPercentage(totals.calories, goals.calories || 2000)) + '%'
+            )
+          ),
+          e('div', { className: 'mb-4' },
+            e('div', { className: 'flex items-baseline space-x-2' },
+              e('span', { className: 'text-3xl font-bold text-gray-900' }, Math.round(totals.calories || 0)),
+              e('span', { className: 'text-lg text-gray-600' }, 'kcal'),
+              e('span', { className: 'text-gray-400' }, '/'),
+              e('span', { className: 'text-lg text-gray-600' }, `${goals.calories || 2000} kcal`)
+            )
+          ),
+          e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+            e('div', {
+              className: 'bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500',
+              style: { width: `${getProgressPercentage(totals.calories, goals.calories || 2000)}%` }
+            })
+          )
+        ),
         
-        // Water Card (placeholder)
-        e(MetricCard, {
-          icon: '💧',
-          title: 'Water',
-          current: 0,
-          goal: goals.water || 64,
-          unit: 'oz',
-          color: 'blue',
-          description: 'Stay hydrated',
+        // Water Card - Cool blue to complement warm theme
+        e('div', { 
+          className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
           onClick: () => alert('Water tracking coming soon! 🚰')
-        }),
+        },
+          e('div', { className: 'flex items-center justify-between mb-4' },
+            e('div', { className: 'flex items-center space-x-3' },
+              e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-cyan-100 to-blue-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '💧'),
+              e('div', null,
+                e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Water'),
+                e('p', { className: 'text-xs text-gray-600' }, 'Stay hydrated')
+              )
+            ),
+            e('div', { className: 'text-sm font-bold text-cyan-600' }, '0%')
+          ),
+          e('div', { className: 'mb-4' },
+            e('div', { className: 'flex items-baseline space-x-2' },
+              e('span', { className: 'text-3xl font-bold text-gray-900' }, '0'),
+              e('span', { className: 'text-lg text-gray-600' }, 'oz'),
+              e('span', { className: 'text-gray-400' }, '/'),
+              e('span', { className: 'text-lg text-gray-600' }, `${goals.water || 64} oz`)
+            )
+          ),
+          e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+            e('div', {
+              className: 'bg-gradient-to-r from-cyan-500 to-blue-500 h-3 rounded-full transition-all duration-500',
+              style: { width: '0%' }
+            })
+          )
+        ),
         
-        // Steps Card (placeholder)
-        e(MetricCard, {
-          icon: '👟',
-          title: 'Steps',
-          current: 0,
-          goal: 10000,
-          unit: '',
-          color: 'green',
-          description: 'Daily activity goal',
+        // Steps Card - Energetic green
+        e('div', { 
+          className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
           onClick: () => setCurrentView('wearables')
-        }),
+        },
+          e('div', { className: 'flex items-center justify-between mb-4' },
+            e('div', { className: 'flex items-center space-x-3' },
+              e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '👟'),
+              e('div', null,
+                e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Steps'),
+                e('p', { className: 'text-xs text-gray-600' }, 'Daily activity goal')
+              )
+            ),
+            e('div', { className: 'text-sm font-bold text-green-600' }, '0%')
+          ),
+          e('div', { className: 'mb-4' },
+            e('div', { className: 'flex items-baseline space-x-2' },
+              e('span', { className: 'text-3xl font-bold text-gray-900' }, '0'),
+              e('span', { className: 'text-lg text-gray-600' }, ''),
+              e('span', { className: 'text-gray-400' }, '/'),
+              e('span', { className: 'text-lg text-gray-600' }, '10,000')
+            )
+          ),
+          e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+            e('div', {
+              className: 'bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-500',
+              style: { width: '0%' }
+            })
+          )
+        ),
         
-        // Sleep Card (placeholder)
-        e(MetricCard, {
-          icon: '😴',
-          title: 'Sleep',
-          current: '0h',
-          goal: '8h',
-          unit: '',
-          color: 'purple',
-          description: 'Rest & recovery',
-          onClick: () => alert('Sleep tracking via device integration coming soon! 🌙')
-        })
+        // Sleep Card - Calming purple
+        e('div', { 
+          className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
+          onClick: () => alert('Sleep tracking coming soon! 🌙')
+        },
+          e('div', { className: 'flex items-center justify-between mb-4' },
+            e('div', { className: 'flex items-center space-x-3' },
+              e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '😴'),
+              e('div', null,
+                e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Sleep'),
+                e('p', { className: 'text-xs text-gray-600' }, 'Rest & recovery')
+              )
+            ),
+            e('div', { className: 'text-sm font-bold text-purple-600' }, 'NaN%')
+          ),
+          e('div', { className: 'mb-4' },
+            e('div', { className: 'flex items-baseline space-x-2' },
+              e('span', { className: 'text-3xl font-bold text-gray-900' }, '0h'),
+              e('span', { className: 'text-lg text-gray-600' }, ''),
+              e('span', { className: 'text-gray-400' }, '/'),
+              e('span', { className: 'text-lg text-gray-600' }, '8h')
+            )
+          ),
+          e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+            e('div', {
+              className: 'bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500',
+              style: { width: '0%' }
+            })
+          )
+        )
       ),
 
-      // Secondary Information Row
+      // Secondary Information Row - Matching your brand style
       e('div', { className: "grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8" },
-        // Macro Breakdown
-        e(MacroBreakdown),
         
-        // Quick Actions Card
-        e('div', { className: "bg-white rounded-2xl shadow-lg p-6" },
-          e('h3', { className: "text-xl font-bold text-gray-800 mb-6 flex items-center" },
+        // Macro Breakdown - Using your card style
+        e('div', { className: 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20' },
+          e('h3', { className: 'text-2xl font-bold text-gray-800 mb-6 flex items-center' },
+            e('span', { className: 'mr-3 text-2xl' }, '📊'),
+            'Macro Breakdown'
+          ),
+          e('div', { className: 'grid grid-cols-2 gap-6' },
+            // Protein
+            e('div', { className: 'space-y-3' },
+              e('div', { className: 'flex justify-between items-center' },
+                e('span', { className: 'font-bold text-gray-800' }, 'Protein'),
+                e('span', { className: 'text-sm font-medium text-gray-600' }, 
+                  `${Math.round(totals.protein || 0)}/${goals.protein || 150}g`
+                )
+              ),
+              e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+                e('div', {
+                  className: 'bg-gradient-to-r from-red-500 to-pink-500 h-3 rounded-full transition-all duration-500',
+                  style: { width: `${getProgressPercentage(totals.protein, goals.protein || 150)}%` }
+                })
+              )
+            ),
+            // Carbs
+            e('div', { className: 'space-y-3' },
+              e('div', { className: 'flex justify-between items-center' },
+                e('span', { className: 'font-bold text-gray-800' }, 'Carbs'),
+                e('span', { className: 'text-sm font-medium text-gray-600' }, 
+                  `${Math.round(totals.carbs || 0)}/${goals.carbs || 250}g`
+                )
+              ),
+              e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+                e('div', {
+                  className: 'bg-gradient-to-r from-yellow-500 to-orange-500 h-3 rounded-full transition-all duration-500',
+                  style: { width: `${getProgressPercentage(totals.carbs, goals.carbs || 250)}%` }
+                })
+              )
+            ),
+            // Fat
+            e('div', { className: 'space-y-3' },
+              e('div', { className: 'flex justify-between items-center' },
+                e('span', { className: 'font-bold text-gray-800' }, 'Fat'),
+                e('span', { className: 'text-sm font-medium text-gray-600' }, 
+                  `${Math.round(totals.fat || 0)}/${goals.fat || 67}g`
+                )
+              ),
+              e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+                e('div', {
+                  className: 'bg-gradient-to-r from-purple-500 to-indigo-500 h-3 rounded-full transition-all duration-500',
+                  style: { width: `${getProgressPercentage(totals.fat, goals.fat || 67)}%` }
+                })
+              )
+            ),
+            // Fiber
+            e('div', { className: 'space-y-3' },
+              e('div', { className: 'flex justify-between items-center' },
+                e('span', { className: 'font-bold text-gray-800' }, 'Fiber'),
+                e('span', { className: 'text-sm font-medium text-gray-600' }, 
+                  `${Math.round(totals.fiber || 0)}/25g`
+                )
+              ),
+              e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+                e('div', {
+                  className: 'bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-500',
+                  style: { width: `${getProgressPercentage(totals.fiber || 0, 25)}%` }
+                })
+              )
+            )
+          )
+        ),
+        
+        // Quick Actions Card - Matching your button styles
+        e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20" },
+          e('h3', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
             e('span', { className: 'mr-3 text-2xl' }, '⚡'),
             'Quick Actions'
           ),
           e('div', { className: "grid grid-cols-2 gap-4" },
-            [
-              { action: 'Log Meal', icon: '🍽️', color: 'indigo', view: 'meals' },
-              { action: 'Scan Item', icon: '📱', color: 'green', view: 'pantry' },
-              { action: 'Log Weight', icon: '⚖️', color: 'purple', view: 'journey' },
-              { action: 'Add Water', icon: '💧', color: 'blue', action: () => alert('Water tracking coming soon! 🚰') }
-            ].map(({ action, icon, color, view, action: customAction }) => 
-              e('button', {
-                key: action,
-                className: `bg-${color}-100 hover:bg-${color}-200 text-${color}-800 font-semibold py-4 px-4 rounded-lg transition-colors duration-200 flex flex-col items-center space-y-2`,
-                onClick: customAction || (() => setCurrentView(view))
-              },
-                e('span', { className: 'text-2xl' }, icon),
-                e('span', { className: 'text-sm' }, action)
-              )
+            e('button', {
+              className: "p-6 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
+              onClick: () => setCurrentView('meals')
+            },
+              e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '🍽️'),
+              e('span', { className: 'font-bold text-lg' }, 'Log Meal')
+            ),
+            e('button', {
+              className: "p-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
+              onClick: () => setCurrentView('pantry')
+            },
+              e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '📱'),
+              e('span', { className: 'font-bold text-lg' }, 'Scan Item')
+            ),
+            e('button', {
+              className: "p-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
+              onClick: () => setCurrentView('journey')
+            },
+              e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '⚖️'),
+              e('span', { className: 'font-bold text-lg' }, 'Log Weight')
+            ),
+            e('button', {
+              className: "p-6 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
+              onClick: () => alert('Water tracking coming soon! 🚰')
+            },
+              e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '💧'),
+              e('span', { className: 'font-bold text-lg' }, 'Add Water')
             )
           )
         )
       ),
 
-      // Health Insights Card
-      e('div', { className: "bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white" },
-        e('h3', { className: "text-xl font-bold mb-4 flex items-center" },
-          e('span', { className: 'mr-3' }, '💡'),
+      // Health Insights Card - Matching your gradient style
+      e('div', { className: "bg-gradient-to-r from-orange-500 via-red-600 to-pink-600 rounded-3xl shadow-2xl p-8 text-white" },
+        e('h3', { className: "text-2xl font-bold mb-6 flex items-center" },
+          e('span', { className: 'mr-3 text-2xl' }, '💡'),
           'Health Insights'
         ),
-        e('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-4" },
-          e('div', { className: "bg-white bg-opacity-20 rounded-lg p-4" },
-            e('h4', { className: "font-semibold mb-2" }, 'Nutrition Progress'),
-            e('p', { className: "text-sm opacity-90" }, 
-              `You've consumed ${Math.round((totals.calories / (goals.calories || 2000)) * 100)}% of your daily calorie goal. Keep it up!`
+        e('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },
+          e('div', { className: "bg-white/20 rounded-2xl p-6 backdrop-blur-sm" },
+            e('h4', { className: "font-bold text-lg mb-3" }, 'Nutrition Progress'),
+            e('p', { className: "text-sm opacity-90 leading-relaxed" }, 
+              `You've consumed ${Math.round((totals.calories / (goals.calories || 2000)) * 100)}% of your daily calorie goal. ${totals.calories > 0 ? 'Great start!' : 'Ready to fuel your day?'}`
             )
           ),
-          e('div', { className: "bg-white bg-opacity-20 rounded-lg p-4" },
-            e('h4', { className: "font-semibold mb-2" }, 'Device Integration'),
-            e('p', { className: "text-sm opacity-90" }, 
-              'Connect your fitness tracker to automatically sync steps, sleep, and more!'
+          e('div', { className: "bg-white/20 rounded-2xl p-6 backdrop-blur-sm" },
+            e('h4', { className: "font-bold text-lg mb-3" }, 'Device Integration'),
+            e('p', { className: "text-sm opacity-90 leading-relaxed" }, 
+              'Connect your fitness tracker to automatically sync steps, sleep, and health data!'
             )
           ),
-          e('div', { className: "bg-white bg-opacity-20 rounded-lg p-4" },
-            e('h4', { className: "font-semibold mb-2" }, 'Stay Hydrated'),
-            e('p', { className: "text-sm opacity-90" }, 
-              'Remember to track your water intake throughout the day for optimal health.'
+          e('div', { className: "bg-white/20 rounded-2xl p-6 backdrop-blur-sm" },
+            e('h4', { className: "font-bold text-lg mb-3" }, 'Stay Consistent'),
+            e('p', { className: "text-sm opacity-90 leading-relaxed" }, 
+              'Track your nutrition daily for optimal results and lasting healthy habits.'
             )
           )
         )
