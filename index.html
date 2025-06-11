@@ -6,7 +6,7 @@
   <title>FuelIQ - Your Intelligent Nutrition Companion</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="meals-tab.js"></script>
+  <script src="meals-tab.js"></script> <!-- ADD THIS LINE -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .text-gradient {
@@ -498,12 +498,44 @@
                     },
                       e('span', { className: "text-4xl mb-3 block group-hover:scale-110 transition-transform duration-200" }, icon),
                       e('div', { className: "font-bold" }, label)
-                    )
-                  )
-                )
-              )
+                      )
             )
           )
+        );
+      }
+
+      // ADD THIS NEW SECTION - Special handling for meals tab
+      if (currentView === 'meals') {
+        // Save user goals in the format meals tab expects
+        React.useEffect(() => {
+          if (goals.calories) {
+            const userGoalsData = {
+              dailyCalories: goals.calories,
+              protein: goals.protein,
+              carbs: goals.carbs,
+              fat: goals.fat
+            };
+            
+            // Save to localStorage if available, otherwise use memory storage
+            try {
+              localStorage.setItem('fueliq_user_goals', JSON.stringify(userGoalsData));
+            } catch (e) {
+              // Fallback handled by meals module
+              console.warn('localStorage not available:', e);
+            }
+          }
+        }, [goals]);
+
+        // Render meals tab and initialize it
+        React.useEffect(() => {
+          if (window.FuelIQMeals) {
+            window.FuelIQMeals.renderMealsTab('meals-container');
+          }
+        }, []);
+
+        return e('div', { className: "min-h-screen bg-gradient-card" },
+          e(Navigation),
+          e('div', { id: "meals-container", className: "meals-tab-content" })
         );
       }
 
