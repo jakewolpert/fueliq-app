@@ -520,6 +520,7 @@ useEffect(() => {
                  { label: 'Protein', current: totals.protein, goal: goals.protein || 150, color: 'from-red-500 to-pink-500', unit: 'g', icon: '❤️' },
                  { label: 'Carbs', current: totals.carbs, goal: goals.carbs || 250, color: 'from-green-500 to-emerald-500', unit: 'g', icon: '🧠' },
                  { label: 'Fat', current: totals.fat, goal: goals.fat || 67, color: 'from-yellow-500 to-orange-500', unit: 'g', icon: '💧' }
+                  ].map(({ label, current, goal, color, unit = '', icon }) =>  
                   e('div', { key: label, className: "relative overflow-hidden" },
                     e('div', { className: `p-6 bg-gradient-to-br ${color} rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200` },
                       e('div', { className: "flex items-center justify-between mb-2" },
