@@ -24,9 +24,9 @@
 </head>
 <body>
   <div id="root"></div>
-    <script src="meals-tab.js"></script> <!-- ADD THIS LINE -->
-  <script src="pantry-tab.js"></script> <!-- 👈 ADD THIS NEW LINE -->
-    <script src="weight-journey.js"></script>
+  <script src="meals-tab.js"></script>
+  <script src="pantry-tab.js"></script>
+  <script src="weight-journey.js"></script>
   <script>
     const { useState, useEffect, useMemo } = React;
     const { createElement: e } = React;
@@ -48,234 +48,41 @@
       const [goals, setGoals] = useState({});
       const [meals, setMeals] = useState([]);
 
-      // Calculate TDEE and macro goals
-      const calculateGoals = (profile) => {
-        const { age, weight, height, gender, activityLevel, goal } = profile;
-        
-        if (!age || !weight || !height) return {};
-        
-        const weightKg = weight / 2.205;
-        
-        let bmr;
-        if (gender === 'male') {
-          bmr = 10 * weightKg + 6.25 * (height * 2.54) - 5 * age + 5;
-        } else {
-          bmr = 10 * weightKg + 6.25 * (height * 2.54) - 5 * age - 161;
+      // Enhanced container cleanup function
+      const clearContainer = (containerId) => {
+        const container = document.getElementById(containerId);
+        if (container) {
+          // Remove all children
+          while (container.firstChild) {
+            container.removeChild(container.firstChild);
+          }
+          // Clear any inline styles
+          container.style.cssText = '';
+          // Reset classes to default
+          container.className = container.className.split(' ').filter(cls => 
+            cls.includes('tab-content') || cls.includes('container')
+          ).join(' ');
         }
-        
-        const activityMultipliers = {
-          sedentary: 1.2,
-          light: 1.375,
-          moderate: 1.55,
-          active: 1.725,
-          very_active: 1.9
-        };
-        
-        const tdee = bmr * activityMultipliers[activityLevel];
-        
-        const goalAdjustments = {
-          fat_loss: -500,
-          muscle_gain: 300,
-          maintenance: 0,
-          recomp: -200
-        };
-        
-        const targetCalories = tdee + goalAdjustments[goal];
-        
-        const proteinPerKg = goal === 'muscle_gain' ? 2.2 : goal === 'fat_loss' ? 2.0 : 1.8;
-        const proteinGrams = (weightKg * proteinPerKg);
-        const proteinCalories = proteinGrams * 4;
-        
-        const fatPercentage = goal === 'fat_loss' ? 0.25 : 0.30;
-        const fatCalories = targetCalories * fatPercentage;
-        const fatGrams = fatCalories / 9;
-        
-        const carbCalories = targetCalories - proteinCalories - fatCalories;
-        const carbGrams = carbCalories / 4;
-        
-        return {
-  calories: Math.round(targetCalories),
-  protein: Math.round(proteinGrams),
-  carbs: Math.round(carbGrams),
-  fat: Math.round(fatGrams),
-  water: Math.round(weight * 0.67)
-};
-        useEffect(() => {
-        if (userProfile.age && userProfile.weight && userProfile.height) {
-          setGoals(calculateGoals(userProfile));
-        }
-      }, [userProfile]);
       };
-     // Enhanced cleanup on view change
-useEffect(() => {
-  // Force cleanup when changing views
-  forceCleanup();
-}, [currentView]);
 
-// Goals sync for meals tab
-useEffect(() => {
-  if (currentView === 'meals' && goals.calories) {
-    const userGoalsData = {
-      dailyCalories: goals.calories,
-      protein: goals.protein,
-      carbs: goals.carbs,
-      fat: goals.fat
-    };
-    
-    try {
-      localStorage.setItem('fueliq_user_goals', JSON.stringify(userGoalsData));
-    } catch (e) {
-      console.warn('localStorage not available:', e);
-    }
-  }
-}, [currentView, goals]);
-
-// Enhanced meals tab rendering
-useEffect(() => {
-  if (currentView === 'meals') {
-    // Force cleanup first
-    clearContainer('meals-container');
-    
-    // Wait longer for cleanup to complete
-    const timer = setTimeout(() => {
-      try {
-        if (window.FuelIQMeals && window.FuelIQMeals.renderMealsTab) {
-          window.FuelIQMeals.renderMealsTab('meals-container');
-        } else {
-          console.warn('FuelIQMeals module not available');
+      // Enhanced cleanup function
+      const forceCleanup = () => {
+        // Clean all possible containers
+        ['meals-container', 'journey-container', 'pantry-container'].forEach(id => {
+          clearContainer(id);
+        });
+        
+        // Clear any global event listeners that might be stuck
+        if (window.FuelIQMeals && window.FuelIQMeals.cleanup) {
+          window.FuelIQMeals.cleanup();
         }
-      } catch (error) {
-        console.error('Error rendering meals tab:', error);
-      }
-    }, 300); // Increased delay
-    
-    return () => clearTimeout(timer);
-  }
-}, [currentView]);
-// Enhanced journey tab rendering
-useEffect(() => {
-  if (currentView === 'journey') {
-    clearContainer('journey-container');
-    
-    const timer = setTimeout(() => {
-      try {
-        if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.renderWeightJourney) {
-          window.FuelIQWeightJourney.renderWeightJourney('journey-container');
-        } else {
-          console.warn('FuelIQWeightJourney module not available');
+        if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.cleanup) {
+          window.FuelIQWeightJourney.cleanup();
         }
-      } catch (error) {
-        console.error('Error rendering journey tab:', error);
-      }
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }
-}, [currentView]);
-      // 👈 ADD THIS ENTIRE BLOCK RIGHT HERE:
-// Enhanced pantry tab rendering
-useEffect(() => {
-  if (currentView === 'pantry') {
-    clearContainer('pantry-container');
-    
-    const timer = setTimeout(() => {
-      try {
-        if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
-          window.FuelIQPantry.renderSmartPantry('pantry-container');
-        } else {
-          console.warn('FuelIQPantry module not available');
+        if (window.FuelIQPantry && window.FuelIQPantry.cleanup) {
+          window.FuelIQPantry.cleanup();
         }
-      } catch (error) {
-        console.error('Error rendering pantry tab:', error);
-      }
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }
-}, [currentView]);
-
-// Add navigation event listener with enhanced cleanup
-useEffect(() => {
-  const handleNavigation = (event) => {
-    // Force cleanup before navigation
-    forceCleanup();
-    
-    // Small delay to ensure cleanup completes
-    setTimeout(() => {
-      setCurrentView(event.detail);
-    }, 100);
-  };
-  
-  window.addEventListener('navigateToTab', handleNavigation);
-  
-  return () => {
-    window.removeEventListener('navigateToTab', handleNavigation);
-    forceCleanup(); // Cleanup on component unmount
-  };
-}, []);
-      const totals = useMemo(() => {
-  const today = new Date().toISOString().split('T')[0];
-  const key = `fueliq_meals_${today}`;
-  try {
-    const data = JSON.parse(localStorage.getItem(key) || '{}');
-    const allFoods = [...(data.breakfast||[]), ...(data.lunch||[]), ...(data.dinner||[]), ...(data.snacks||[])];
-    return allFoods.reduce((acc, item) => {
-      const mult = (item.servingSize || 100) / 100;
-      return {
-        calories: acc.calories + ((item.calories || 0) * mult),
-        protein: acc.protein + ((item.protein || 0) * mult),
-        carbs: acc.carbs + ((item.carbs || 0) * mult),
-        fat: acc.fat + ((item.fat || 0) * mult)
       };
-    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-  } catch (e) {
-    return { calories: 0, protein: 0, carbs: 0, fat: 0 };
-  }
-}, [currentView]); // This will recalculate when you switch tabs
-      // 👈 ADD THIS FUNCTION HERE:
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .text-gradient {
-      background: linear-gradient(to right, #ea580c, #dc2626);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .bg-gradient-orange-red {
-      background: linear-gradient(to right, #ea580c, #dc2626, #ec4899);
-    }
-    .bg-gradient-card {
-      background: linear-gradient(135deg, #fed7aa, #fecaca, #fbb6ce);
-    }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-    <script src="meals-tab.js"></script> <!-- ADD THIS LINE -->
-  <script src="pantry-tab.js"></script> <!-- 👈 ADD THIS NEW LINE -->
-    <script src="weight-journey.js"></script>
-  <script>
-    const { useState, useEffect, useMemo } = React;
-    const { createElement: e } = React;
-
-    function FuelIQ() {
-      const [currentView, setCurrentView] = useState('setup');
-      const [userProfile, setUserProfile] = useState({
-        age: '',
-        weight: '',
-        height: '',
-        gender: 'male',
-        activityLevel: 'moderate',
-        goal: 'fat_loss',
-        dietaryRestrictions: [],
-        allergies: [],
-        healthConcerns: [],
-        antiBloutPreference: false
-      });
-      const [goals, setGoals] = useState({});
-      const [meals, setMeals] = useState([]);
 
       // Calculate TDEE and macro goals
       const calculateGoals = (profile) => {
@@ -330,200 +137,201 @@ useEffect(() => {
           water: Math.round(weight * 0.67)
         };
       };
-     // Enhanced cleanup on view change
-useEffect(() => {
-  // Force cleanup when changing views
-  forceCleanup();
-}, [currentView]);
 
-// Goals sync for meals tab
-useEffect(() => {
-  if (currentView === 'meals' && goals.calories) {
-    const userGoalsData = {
-      dailyCalories: goals.calories,
-      protein: goals.protein,
-      carbs: goals.carbs,
-      fat: goals.fat
-    };
-    
-    try {
-      localStorage.setItem('fueliq_user_goals', JSON.stringify(userGoalsData));
-    } catch (e) {
-      console.warn('localStorage not available:', e);
-    }
-  }
-}, [currentView, goals]);
-
-useEffect(() => {
-  if (currentView === 'meals') {
-    clearContainer('meals-container');
-    setTimeout(() => {
-      if (window.FuelIQMeals && window.FuelIQMeals.renderMealsTab) {
-        window.FuelIQMeals.renderMealsTab('meals-container');
-      }
-    }, 150);
-  }
-}, [currentView]);
-// Enhanced journey tab rendering
-useEffect(() => {
-  if (currentView === 'journey') {
-    clearContainer('journey-container');
-    
-    const timer = setTimeout(() => {
-      try {
-        if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.renderWeightJourney) {
-          window.FuelIQWeightJourney.renderWeightJourney('journey-container');
-        } else {
-          console.warn('FuelIQWeightJourney module not available');
+      // Calculate goals when user profile changes
+      useEffect(() => {
+        if (userProfile.age && userProfile.weight && userProfile.height) {
+          setGoals(calculateGoals(userProfile));
         }
-      } catch (error) {
-        console.error('Error rendering journey tab:', error);
-      }
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }
-}, [currentView]);
-      // 👈 ADD THIS ENTIRE BLOCK RIGHT HERE:
-// Enhanced pantry tab rendering
-useEffect(() => {
-  if (currentView === 'pantry') {
-    clearContainer('pantry-container');
-    
-    const timer = setTimeout(() => {
-      try {
-        if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
-          window.FuelIQPantry.renderSmartPantry('pantry-container');
-        } else {
-          console.warn('FuelIQPantry module not available');
-        }
-      } catch (error) {
-        console.error('Error rendering pantry tab:', error);
-      }
-    }, 300);
-    
-    return () => clearTimeout(timer);
-  }
-}, [currentView]);
+      }, [userProfile]);
 
-// Add navigation event listener with enhanced cleanup
-useEffect(() => {
-  const handleNavigation = (event) => {
-    // Force cleanup before navigation
-    forceCleanup();
-    
-    // Small delay to ensure cleanup completes
-    setTimeout(() => {
-      setCurrentView(event.detail);
-    }, 100);
-  };
-  
-  window.addEventListener('navigateToTab', handleNavigation);
-  
-  return () => {
-    window.removeEventListener('navigateToTab', handleNavigation);
-    forceCleanup(); // Cleanup on component unmount
-  };
-}, []);
+      // Enhanced cleanup on view change
+      useEffect(() => {
+        forceCleanup();
+      }, [currentView]);
+
+      // Goals sync for meals tab
+      useEffect(() => {
+        if (currentView === 'meals' && goals.calories) {
+          const userGoalsData = {
+            dailyCalories: goals.calories,
+            protein: goals.protein,
+            carbs: goals.carbs,
+            fat: goals.fat
+          };
+          
+          try {
+            localStorage.setItem('fueliq_user_goals', JSON.stringify(userGoalsData));
+          } catch (e) {
+            console.warn('localStorage not available:', e);
+          }
+        }
+      }, [currentView, goals]);
+
+      // Enhanced meals tab rendering
+      useEffect(() => {
+        if (currentView === 'meals') {
+          clearContainer('meals-container');
+          
+          const timer = setTimeout(() => {
+            try {
+              if (window.FuelIQMeals && window.FuelIQMeals.renderMealsTab) {
+                window.FuelIQMeals.renderMealsTab('meals-container');
+              } else {
+                console.warn('FuelIQMeals module not available');
+              }
+            } catch (error) {
+              console.error('Error rendering meals tab:', error);
+            }
+          }, 300);
+          
+          return () => clearTimeout(timer);
+        }
+      }, [currentView]);
+
+      // Enhanced journey tab rendering
+      useEffect(() => {
+        if (currentView === 'journey') {
+          clearContainer('journey-container');
+          
+          const timer = setTimeout(() => {
+            try {
+              if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.renderWeightJourney) {
+                window.FuelIQWeightJourney.renderWeightJourney('journey-container');
+              } else {
+                console.warn('FuelIQWeightJourney module not available');
+              }
+            } catch (error) {
+              console.error('Error rendering journey tab:', error);
+            }
+          }, 300);
+          
+          return () => clearTimeout(timer);
+        }
+      }, [currentView]);
+
+      // Enhanced pantry tab rendering
+      useEffect(() => {
+        if (currentView === 'pantry') {
+          clearContainer('pantry-container');
+          
+          const timer = setTimeout(() => {
+            try {
+              if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
+                window.FuelIQPantry.renderSmartPantry('pantry-container');
+              } else {
+                console.warn('FuelIQPantry module not available');
+              }
+            } catch (error) {
+              console.error('Error rendering pantry tab:', error);
+            }
+          }, 300);
+          
+          return () => clearTimeout(timer);
+        }
+      }, [currentView]);
+
+      // Add navigation event listener with enhanced cleanup
+      useEffect(() => {
+        const handleNavigation = (event) => {
+          forceCleanup();
+          setTimeout(() => {
+            setCurrentView(event.detail);
+          }, 100);
+        };
+        
+        window.addEventListener('navigateToTab', handleNavigation);
+        
+        return () => {
+          window.removeEventListener('navigateToTab', handleNavigation);
+          forceCleanup();
+        };
+      }, []);
+
+      // Calculate current nutrition totals
       const totals = useMemo(() => {
-  const today = new Date().toISOString().split('T')[0];
-  const key = `fueliq_meals_${today}`;
-  try {
-    const data = JSON.parse(localStorage.getItem(key) || '{}');
-    const allFoods = [...(data.breakfast||[]), ...(data.lunch||[]), ...(data.dinner||[]), ...(data.snacks||[])];
-    return allFoods.reduce((acc, item) => {
-      const mult = (item.servingSize || 100) / 100;
-      return {
-        calories: acc.calories + ((item.calories || 0) * mult),
-        protein: acc.protein + ((item.protein || 0) * mult),
-        carbs: acc.carbs + ((item.carbs || 0) * mult),
-        fat: acc.fat + ((item.fat || 0) * mult)
-      };
-    }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
-  } catch (e) {
-    return { calories: 0, protein: 0, carbs: 0, fat: 0 };
-  }
-}, [currentView]); // This will recalculate when you switch tabs
-      // 👈 ADD THIS FUNCTION HERE:
-const forceCleanup = () => {
-  // Clean all possible containers
-  ['meals-container', 'journey-container', 'pantry-container'].forEach(id => {
-    clearContainer(id);
-  });
-  
-  // Clear any global event listeners that might be stuck
-  if (window.FuelIQMeals && window.FuelIQMeals.cleanup) {
-    window.FuelIQMeals.cleanup();
-  }
-  if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.cleanup) {
-    window.FuelIQWeightJourney.cleanup();
-  }
-  if (window.FuelIQPantry && window.FuelIQPantry.cleanup) {
-    window.FuelIQPantry.cleanup();
-  }
-};
+        const today = new Date().toISOString().split('T')[0];
+        const key = `fueliq_meals_${today}`;
+        try {
+          const data = JSON.parse(localStorage.getItem(key) || '{}');
+          const allFoods = [...(data.breakfast||[]), ...(data.lunch||[]), ...(data.dinner||[]), ...(data.snacks||[])];
+          return allFoods.reduce((acc, item) => {
+            const mult = (item.servingSize || 100) / 100;
+            return {
+              calories: acc.calories + ((item.calories || 0) * mult),
+              protein: acc.protein + ((item.protein || 0) * mult),
+              carbs: acc.carbs + ((item.carbs || 0) * mult),
+              fat: acc.fat + ((item.fat || 0) * mult),
+              fiber: acc.fiber + ((item.fiber || 0) * mult)
+            };
+          }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
+        } catch (e) {
+          return { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
+        }
+      }, [currentView]);
+
       // Navigation component
-     function Navigation() {
-  const [isNavigating, setIsNavigating] = useState(false);
-  
-  const handleNavClick = (targetView) => {
-    if (isNavigating) return; // Prevent double-clicks
-    
-    setIsNavigating(true);
-    forceCleanup();
-    
-    setTimeout(() => {
-      setCurrentView(targetView);
-      setIsNavigating(false);
-    }, 100);
-  };
-  
-  return e('div', { className: "bg-gradient-orange-red shadow-xl" },
-    e('div', { className: "max-w-7xl mx-auto px-6" },
-      e('div', { className: "flex items-center justify-between py-4" },
-        e('div', { className: "flex items-center space-x-4" },
-          e('div', { className: "flex items-center space-x-2" },
-            e('div', { className: "w-10 h-10 bg-white rounded-xl flex items-center justify-center" },
-              e('span', { className: "text-2xl text-orange-600" }, '⚡')
-            ),
-            e('h1', { 
-              className: "text-2xl font-bold text-white tracking-tight", 
-              style: {fontFamily: 'Georgia, Times, serif'} 
-            }, "FuelIQ")
-          )
-        ),
+      function Navigation() {
+        const [isNavigating, setIsNavigating] = useState(false);
         
-        e('div', { className: "flex space-x-1 bg-white/10 rounded-2xl p-1 overflow-x-auto backdrop-blur-sm" },
-          [
-            { id: 'setup', label: 'Setup', icon: '⚙️' },
-            { id: 'journey', label: 'Journey', icon: '⚖️' },
-            { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-            { id: 'meals', label: 'Meals', icon: '🍽️' },
-            { id: 'pantry', label: 'Pantry', icon: '🛒' },
-            { id: 'planning', label: 'Planning', icon: '📅' },
-            { id: 'wearables', label: 'Devices', icon: '⌚' },
-            { id: 'analytics', label: 'Analytics', icon: '📈' },
-            { id: 'chat', label: 'AI Chat', icon: '💬' }
-          ].map(({ id, label, icon }) => 
-            e('button', {
-              key: id,
-              onClick: () => handleNavClick(id),
-              disabled: isNavigating,
-              className: `flex items-center space-x-2 px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all duration-200 ${
-                currentView === id
-                  ? 'bg-white text-orange-600 shadow-lg'
-                  : 'text-white/80 hover:text-white hover:bg-white/10'
-              } ${isNavigating ? 'opacity-50 cursor-not-allowed' : ''}`
-            },
-              e('span', { className: "text-lg" }, icon),
-              e('span', { className: "hidden md:inline" }, label)
+        const handleNavClick = (targetView) => {
+          if (isNavigating) return;
+          
+          setIsNavigating(true);
+          forceCleanup();
+          
+          setTimeout(() => {
+            setCurrentView(targetView);
+            setIsNavigating(false);
+          }, 100);
+        };
+        
+        return e('div', { className: "bg-gradient-orange-red shadow-xl" },
+          e('div', { className: "max-w-7xl mx-auto px-6" },
+            e('div', { className: "flex items-center justify-between py-4" },
+              e('div', { className: "flex items-center space-x-4" },
+                e('div', { className: "flex items-center space-x-2" },
+                  e('div', { className: "w-10 h-10 bg-white rounded-xl flex items-center justify-center" },
+                    e('span', { className: "text-2xl text-orange-600" }, '⚡')
+                  ),
+                  e('h1', { 
+                    className: "text-2xl font-bold text-white tracking-tight", 
+                    style: {fontFamily: 'Georgia, Times, serif'} 
+                  }, "FuelIQ")
+                )
+              ),
+              
+              e('div', { className: "flex space-x-1 bg-white/10 rounded-2xl p-1 overflow-x-auto backdrop-blur-sm" },
+                [
+                  { id: 'setup', label: 'Setup', icon: '⚙️' },
+                  { id: 'journey', label: 'Journey', icon: '⚖️' },
+                  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+                  { id: 'meals', label: 'Meals', icon: '🍽️' },
+                  { id: 'pantry', label: 'Pantry', icon: '🛒' },
+                  { id: 'planning', label: 'Planning', icon: '📅' },
+                  { id: 'wearables', label: 'Devices', icon: '⌚' },
+                  { id: 'analytics', label: 'Analytics', icon: '📈' },
+                  { id: 'chat', label: 'AI Chat', icon: '💬' }
+                ].map(({ id, label, icon }) => 
+                  e('button', {
+                    key: id,
+                    onClick: () => handleNavClick(id),
+                    disabled: isNavigating,
+                    className: `flex items-center space-x-2 px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all duration-200 ${
+                      currentView === id
+                        ? 'bg-white text-orange-600 shadow-lg'
+                        : 'text-white/80 hover:text-white hover:bg-white/10'
+                    } ${isNavigating ? 'opacity-50 cursor-not-allowed' : ''}`
+                  },
+                    e('span', { className: "text-lg" }, icon),
+                    e('span', { className: "hidden md:inline" }, label)
+                  )
+                )
+              )
             )
           )
-        )
-      )
-    )
-  );
-}
+        );
+      }
 
       // Setup view
       if (currentView === 'setup') {
@@ -797,1079 +605,341 @@ const forceCleanup = () => {
         );
       }
 
-      // REPLACE your Dashboard view section with this improved version:
-
-// Enhanced Dashboard view
-// FuelIQ Branded Dashboard - Matching your site's warm color scheme
-if (currentView === 'dashboard') {
-  
-  // Get today's date for display
-  const now = new Date();
-  const today = now.toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
-  
-  const currentTime = now.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  });
-
-  // Safe progress calculation
-  const getProgressPercentage = (current, goal) => {
-    const currentNum = parseFloat(current) || 0;
-    const goalNum = parseFloat(goal) || 1;
-    return Math.min((currentNum / goalNum) * 100, 100);
-  };
-
-  const getProgressColor = (percentage) => {
-    if (percentage >= 90) return 'text-green-600';
-    if (percentage >= 70) return 'text-orange-600';
-    return 'text-red-600';
-  };
-
-  return e('div', { className: "min-h-screen bg-gradient-card" },
-    e(Navigation),
-    e('div', { className: "max-w-7xl mx-auto p-6" },
-      
-      // Welcome Header - Matching your brand style
-      e('div', { className: "bg-gradient-to-r from-orange-500 to-red-600 rounded-3xl shadow-2xl p-6 mb-8 text-white" },
-        e('div', { className: "text-center" },
-          e('h1', { 
-            className: "text-4xl font-bold mb-2", 
-            style: {fontFamily: 'Georgia, Times, serif'} 
-          }, '🔥 FuelIQ Dashboard'),
-          e('p', { className: "text-xl opacity-90" }, today),
-          e('p', { className: "text-2xl font-semibold opacity-95" }, currentTime)
-        )
-      ),
-
-      // Main Metrics Grid - Using your brand colors
-      e('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" },
+      // Enhanced Dashboard view
+      if (currentView === 'dashboard') {
+        const now = new Date();
+        const today = now.toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
         
-        // Calories Card - Primary brand color
-        e('div', { 
-          className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
-          onClick: () => setCurrentView('meals')
-        },
-          e('div', { className: 'flex items-center justify-between mb-4' },
-            e('div', { className: 'flex items-center space-x-3' },
-              e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-orange-100 to-red-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '🍽️'),
-              e('div', null,
-                e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Calories'),
-                e('p', { className: 'text-xs text-gray-600' }, 'Daily nutrition target')
-              )
-            ),
-            e('div', { className: 'text-sm font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent' }, 
-              Math.round(getProgressPercentage(totals.calories, goals.calories || 2000)) + '%'
-            )
-          ),
-          e('div', { className: 'mb-4' },
-            e('div', { className: 'flex items-baseline space-x-2' },
-              e('span', { className: 'text-3xl font-bold text-gray-900' }, Math.round(totals.calories || 0)),
-              e('span', { className: 'text-lg text-gray-600' }, 'kcal'),
-              e('span', { className: 'text-gray-400' }, '/'),
-              e('span', { className: 'text-lg text-gray-600' }, `${goals.calories || 2000} kcal`)
-            )
-          ),
-          e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-            e('div', {
-              className: 'bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500',
-              style: { width: `${getProgressPercentage(totals.calories, goals.calories || 2000)}%` }
-            })
-          )
-        ),
-        
-        // Water Card - Cool blue to complement warm theme
-        e('div', { 
-          className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
-          onClick: () => alert('Water tracking coming soon! 🚰')
-        },
-          e('div', { className: 'flex items-center justify-between mb-4' },
-            e('div', { className: 'flex items-center space-x-3' },
-              e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-cyan-100 to-blue-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '💧'),
-              e('div', null,
-                e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Water'),
-                e('p', { className: 'text-xs text-gray-600' }, 'Stay hydrated')
-              )
-            ),
-            e('div', { className: 'text-sm font-bold text-cyan-600' }, '0%')
-          ),
-          e('div', { className: 'mb-4' },
-            e('div', { className: 'flex items-baseline space-x-2' },
-              e('span', { className: 'text-3xl font-bold text-gray-900' }, '0'),
-              e('span', { className: 'text-lg text-gray-600' }, 'oz'),
-              e('span', { className: 'text-gray-400' }, '/'),
-              e('span', { className: 'text-lg text-gray-600' }, `${goals.water || 64} oz`)
-            )
-          ),
-          e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-            e('div', {
-              className: 'bg-gradient-to-r from-cyan-500 to-blue-500 h-3 rounded-full transition-all duration-500',
-              style: { width: '0%' }
-            })
-          )
-        ),
-        
-        // Steps Card - Energetic green
-        e('div', { 
-          className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
-          onClick: () => setCurrentView('wearables')
-        },
-          e('div', { className: 'flex items-center justify-between mb-4' },
-            e('div', { className: 'flex items-center space-x-3' },
-              e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '👟'),
-              e('div', null,
-                e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Steps'),
-                e('p', { className: 'text-xs text-gray-600' }, 'Daily activity goal')
-              )
-            ),
-            e('div', { className: 'text-sm font-bold text-green-600' }, '0%')
-          ),
-          e('div', { className: 'mb-4' },
-            e('div', { className: 'flex items-baseline space-x-2' },
-              e('span', { className: 'text-3xl font-bold text-gray-900' }, '0'),
-              e('span', { className: 'text-lg text-gray-600' }, ''),
-              e('span', { className: 'text-gray-400' }, '/'),
-              e('span', { className: 'text-lg text-gray-600' }, '10,000')
-            )
-          ),
-          e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-            e('div', {
-              className: 'bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-500',
-              style: { width: '0%' }
-            })
-          )
-        ),
-        
-        // Sleep Card - Calming purple
-        e('div', { 
-          className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
-          onClick: () => alert('Sleep tracking coming soon! 🌙')
-        },
-          e('div', { className: 'flex items-center justify-between mb-4' },
-            e('div', { className: 'flex items-center space-x-3' },
-              e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '😴'),
-              e('div', null,
-                e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Sleep'),
-                e('p', { className: 'text-xs text-gray-600' }, 'Rest & recovery')
-              )
-            ),
-e('div', { className: 'text-sm font-bold text-purple-600' }, '0%')
-          ),
-          e('div', { className: 'mb-4' },
-            e('div', { className: 'flex items-baseline space-x-2' },
-              e('span', { className: 'text-3xl font-bold text-gray-900' }, '0h'),
-              e('span', { className: 'text-lg text-gray-600' }, ''),
-              e('span', { className: 'text-gray-400' }, '/'),
-              e('span', { className: 'text-lg text-gray-600' }, '8h')
-            )
-          ),
-          e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-            e('div', {
-              className: 'bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500',
-              style: { width: '0%' }
-            })
-          )
-        )
-      ),
+        const currentTime = now.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
 
-      // Secondary Information Row - Matching your brand style
-      e('div', { className: "grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8" },
-        
-        // Macro Breakdown - Using your card style
-        e('div', { className: 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20' },
-          e('h3', { className: 'text-2xl font-bold text-gray-800 mb-6 flex items-center' },
-            e('span', { className: 'mr-3 text-2xl' }, '📊'),
-            'Macro Breakdown'
-          ),
-          e('div', { className: 'grid grid-cols-2 gap-6' },
-            // Protein
-            e('div', { className: 'space-y-3' },
-              e('div', { className: 'flex justify-between items-center' },
-                e('span', { className: 'font-bold text-gray-800' }, 'Protein'),
-                e('span', { className: 'text-sm font-medium text-gray-600' }, 
-                  `${Math.round(totals.protein || 0)}/${goals.protein || 150}g`
-                )
-              ),
-              e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-                e('div', {
-                  className: 'bg-gradient-to-r from-red-500 to-pink-500 h-3 rounded-full transition-all duration-500',
-                  style: { width: `${getProgressPercentage(totals.protein, goals.protein || 150)}%` }
-                })
-              )
-            ),
-            // Carbs
-            e('div', { className: 'space-y-3' },
-              e('div', { className: 'flex justify-between items-center' },
-                e('span', { className: 'font-bold text-gray-800' }, 'Carbs'),
-                e('span', { className: 'text-sm font-medium text-gray-600' }, 
-                  `${Math.round(totals.carbs || 0)}/${goals.carbs || 250}g`
-                )
-              ),
-              e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-                e('div', {
-                  className: 'bg-gradient-to-r from-yellow-500 to-orange-500 h-3 rounded-full transition-all duration-500',
-                  style: { width: `${getProgressPercentage(totals.carbs, goals.carbs || 250)}%` }
-                })
-              )
-            ),
-            // Fat
-            e('div', { className: 'space-y-3' },
-              e('div', { className: 'flex justify-between items-center' },
-                e('span', { className: 'font-bold text-gray-800' }, 'Fat'),
-                e('span', { className: 'text-sm font-medium text-gray-600' }, 
-                  `${Math.round(totals.fat || 0)}/${goals.fat || 67}g`
-                )
-              ),
-              e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-                e('div', {
-                  className: 'bg-gradient-to-r from-purple-500 to-indigo-500 h-3 rounded-full transition-all duration-500',
-                  style: { width: `${getProgressPercentage(totals.fat, goals.fat || 67)}%` }
-                })
-              )
-            ),
-            // Fiber
-            e('div', { className: 'space-y-3' },
-              e('div', { className: 'flex justify-between items-center' },
-                e('span', { className: 'font-bold text-gray-800' }, 'Fiber'),
-                e('span', { className: 'text-sm font-medium text-gray-600' }, 
-                  `${Math.round(totals.fiber || 0)}/25g`
-                )
-              ),
-              e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-                e('div', {
-                  className: 'bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-500',
-                  style: { width: `${getProgressPercentage(totals.fiber || 0, 25)}%` }
-                })
-              )
-            )
-          )
-        ),
-        
-        // Quick Actions Card - Matching your button styles
-        e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20" },
-          e('h3', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
-            e('span', { className: 'mr-3 text-2xl' }, '⚡'),
-            'Quick Actions'
-          ),
-          e('div', { className: "grid grid-cols-2 gap-4" },
-            e('button', {
-              className: "p-6 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
-              onClick: () => setCurrentView('meals')
-            },
-              e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '🍽️'),
-              e('span', { className: 'font-bold text-lg' }, 'Log Meal')
-            ),
-            e('button', {
-              className: "p-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
-              onClick: () => setCurrentView('pantry')
-            },
-              e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '📱'),
-              e('span', { className: 'font-bold text-lg' }, 'Scan Item')
-            ),
-            e('button', {
-              className: "p-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
-              onClick: () => setCurrentView('journey')
-            },
-              e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '⚖️'),
-              e('span', { className: 'font-bold text-lg' }, 'Log Weight')
-            ),
-            e('button', {
-              className: "p-6 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
-              onClick: () => alert('Water tracking coming soon! 🚰')
-            },
-              e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '💧'),
-              e('span', { className: 'font-bold text-lg' }, 'Add Water')
-            )
-          )
-        )
-      ),
-
-      // Health Insights Card - Matching your gradient style
-      e('div', { className: "bg-gradient-to-r from-orange-500 via-red-600 to-pink-600 rounded-3xl shadow-2xl p-8 text-white" },
-        e('h3', { className: "text-2xl font-bold mb-6 flex items-center" },
-          e('span', { className: 'mr-3 text-2xl' }, '💡'),
-          'Health Insights'
-        ),
-        e('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },
-          e('div', { className: "bg-white/20 rounded-2xl p-6 backdrop-blur-sm" },
-            e('h4', { className: "font-bold text-lg mb-3" }, 'Nutrition Progress'),
-            e('p', { className: "text-sm opacity-90 leading-relaxed" }, 
-              `You've consumed ${Math.round((totals.calories / (goals.calories || 2000)) * 100)}% of your daily calorie goal. ${totals.calories > 0 ? 'Great start!' : 'Ready to fuel your day?'}`
-            )
-          ),
-          e('div', { className: "bg-white/20 rounded-2xl p-6 backdrop-blur-sm" },
-            e('h4', { className: "font-bold text-lg mb-3" }, 'Device Integration'),
-            e('p', { className: "text-sm opacity-90 leading-relaxed" }, 
-              'Connect your fitness tracker to automatically sync steps, sleep, and health data!'
-            )
-          ),
-          e('div', { className: "bg-white/20 rounded-2xl p-6 backdrop-blur-sm" },
-            e('h4', { className: "font-bold text-lg mb-3" }, 'Stay Consistent'),
-            e('p', { className: "text-sm opacity-90 leading-relaxed" }, 
-              'Track your nutrition daily for optimal results and lasting healthy habits.'
-            )
-          )
-        )
-      )
-    )
-  );
-}
-// Special handling for journey tab
-if (currentView === 'journey') {
-  return e('div', { className: "min-h-screen bg-gradient-card" },
-    e(Navigation),
-    e('div', { id: "journey-container", className: "journey-tab-content" })
-  );
-}
-      // Special handling for meals tab
-if (currentView === 'meals') {
-  return e('div', { className: "min-h-screen bg-gradient-card" },
-    e(Navigation),
-    e('div', { id: "meals-container", className: "meals-tab-content" })
-  );
-}
-      // 👈 ADD THIS ENTIRE BLOCK RIGHT HERE:
-// Special handling for pantry tab
-if (currentView === 'pantry') {
-  return e('div', { className: "min-h-screen bg-gradient-card" },
-    e(Navigation),
-    e('div', { id: "pantry-container", className: "pantry-tab-content" })
-  );
-}
-      // Default view for other sections
-      return e('div', { className: "min-h-screen bg-gradient-card" },
-        e(Navigation),
-        e('div', { className: "max-w-6xl mx-auto p-6" },
-          e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20 text-center" },
-            e('div', { className: "w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6" },
-              e('span', { className: "text-4xl text-white" }, '⚙️')
-            ),
-            e('h2', { className: "text-3xl font-bold mb-4 text-gradient" },
-              {
-                'journey': 'Weight Journey',
-                'meals': 'Food Logging',
-                'pantry': 'Smart Pantry',
-                'wearables': 'Wearable Devices',
-                'planning': 'Meal Planning',
-                'analytics': 'Analytics & Reports',
-                'chat': 'AI Assistant'
-              }[currentView] || 'Feature Coming Soon'
-            ),
-            e('p', { className: "text-xl text-gray-600 mb-8" }, "This section is coming soon with enhanced features!"),
-            e('button', {
-              onClick: () => setCurrentView('dashboard'),
-              className: "px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl hover:from-orange-600 hover:to-red-700 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200"
-            }, "Back to Dashboard")
-          )
-        )
-      );
-    }
-
-    ReactDOM.render(e(FuelIQ), document.getElementById('root'));
-  </script>
-</body>
-</html>
-const forceCleanup = () => {
-  // Clean all possible containers
-  ['meals-container', 'journey-container', 'pantry-container'].forEach(id => {
-    clearContainer(id);
-  });
-  
-  // Clear any global event listeners that might be stuck
-  if (window.FuelIQMeals && window.FuelIQMeals.cleanup) {
-    window.FuelIQMeals.cleanup();
-  }
-  if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.cleanup) {
-    window.FuelIQWeightJourney.cleanup();
-  }
-  if (window.FuelIQPantry && window.FuelIQPantry.cleanup) {
-    window.FuelIQPantry.cleanup();
-  }
-};
-      // Navigation component
-     function Navigation() {
-  const [isNavigating, setIsNavigating] = useState(false);
-  
-  const handleNavClick = (targetView) => {
-    if (isNavigating) return; // Prevent double-clicks
-    
-    setIsNavigating(true);
-    forceCleanup();
-    
-    setTimeout(() => {
-      setCurrentView(targetView);
-      setIsNavigating(false);
-    }, 100);
-  };
-  
-  return e('div', { className: "bg-gradient-orange-red shadow-xl" },
-    e('div', { className: "max-w-7xl mx-auto px-6" },
-      e('div', { className: "flex items-center justify-between py-4" },
-        e('div', { className: "flex items-center space-x-4" },
-          e('div', { className: "flex items-center space-x-2" },
-            e('div', { className: "w-10 h-10 bg-white rounded-xl flex items-center justify-center" },
-              e('span', { className: "text-2xl text-orange-600" }, '⚡')
-            ),
-            e('h1', { 
-              className: "text-2xl font-bold text-white tracking-tight", 
-              style: {fontFamily: 'Georgia, Times, serif'} 
-            }, "FuelIQ")
-          )
-        ),
-        
-        e('div', { className: "flex space-x-1 bg-white/10 rounded-2xl p-1 overflow-x-auto backdrop-blur-sm" },
-          [
-            { id: 'setup', label: 'Setup', icon: '⚙️' },
-            { id: 'journey', label: 'Journey', icon: '⚖️' },
-            { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-            { id: 'meals', label: 'Meals', icon: '🍽️' },
-            { id: 'pantry', label: 'Pantry', icon: '🛒' },
-            { id: 'planning', label: 'Planning', icon: '📅' },
-            { id: 'wearables', label: 'Devices', icon: '⌚' },
-            { id: 'analytics', label: 'Analytics', icon: '📈' },
-            { id: 'chat', label: 'AI Chat', icon: '💬' }
-          ].map(({ id, label, icon }) => 
-            e('button', {
-              key: id,
-              onClick: () => handleNavClick(id),
-              disabled: isNavigating,
-              className: `flex items-center space-x-2 px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all duration-200 ${
-                currentView === id
-                  ? 'bg-white text-orange-600 shadow-lg'
-                  : 'text-white/80 hover:text-white hover:bg-white/10'
-              } ${isNavigating ? 'opacity-50 cursor-not-allowed' : ''}`
-            },
-              e('span', { className: "text-lg" }, icon),
-              e('span', { className: "hidden md:inline" }, label)
-            )
-          )
-        )
-      )
-    )
-  );
-}
-
-      // Setup view
-      if (currentView === 'setup') {
-        const dietaryOptions = [
-          'Vegetarian', 'Vegan', 'Pescatarian', 'Keto', 'Paleo', 'Mediterranean', 
-          'Low Carb', 'Low Fat', 'Gluten-Free', 'Dairy-Free', 'Sugar-Free', 
-          'Intermittent Fasting', 'FODMAP', 'Whole30', 'Raw Food', 'Flexitarian'
-        ];
-
-        const allergyOptions = [
-          'Dairy/Lactose', 'Gluten/Wheat', 'Nuts (Tree Nuts)', 'Peanuts', 'Shellfish', 
-          'Fish', 'Eggs', 'Soy', 'Sesame', 'Corn', 'Nightshades', 'Sulfites'
-        ];
-
-        const healthConcernOptions = [
-          'Diabetes Type 1', 'Diabetes Type 2', 'High Blood Pressure', 'High Cholesterol', 
-          'Heart Disease', 'PCOS', 'Thyroid Issues', 'IBS/IBD', 'Acid Reflux/GERD', 
-          'Kidney Disease', 'Liver Disease', 'Celiac Disease', 'Crohn\'s Disease', 
-          'Food Intolerances', 'Eating Disorder History'
-        ];
+        const getProgressPercentage = (current, goal) => {
+          const currentNum = parseFloat(current) || 0;
+          const goalNum = parseFloat(goal) || 1;
+          return Math.min((currentNum / goalNum) * 100, 100);
+        };
 
         return e('div', { className: "min-h-screen bg-gradient-card" },
           e(Navigation),
-          e('div', { className: "max-w-6xl mx-auto p-6" },
-            e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20" },
-              // Header
-              e('div', { className: "text-center mb-8" },
-                e('div', { className: "w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4" },
-                  e('span', { className: "text-4xl text-white" }, '⚡')
-                ),
+          e('div', { className: "max-w-7xl mx-auto p-6" },
+            
+            // Welcome Header
+            e('div', { className: "bg-gradient-to-r from-orange-500 to-red-600 rounded-3xl shadow-2xl p-6 mb-8 text-white" },
+              e('div', { className: "text-center" },
                 e('h1', { 
-                  className: "text-4xl font-bold text-gradient mb-4", 
+                  className: "text-4xl font-bold mb-2", 
                   style: {fontFamily: 'Georgia, Times, serif'} 
-                }, "Welcome to FuelIQ"),
-                e('p', { className: "text-xl text-gray-600 font-medium" }, "Your intelligent nutrition and wellness companion")
-              ),
+                }, '🔥 FuelIQ Dashboard'),
+                e('p', { className: "text-xl opacity-90" }, today),
+                e('p', { className: "text-2xl font-semibold opacity-95" }, currentTime)
+              )
+            ),
+
+            // Main Metrics Grid
+            e('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" },
               
-              // Basic Information
-              e('div', { className: "mb-8" },
-                e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
-                  e('span', { className: "mr-3 text-2xl" }, '⚙️'),
-                  "Basic Information"
-                ),
-                e('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
-                  e('div', { className: "space-y-2" },
-                    e('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Age"),
-                    e('input', {
-                      type: "number",
-                      value: userProfile.age,
-                      onChange: (e) => setUserProfile({...userProfile, age: e.target.value}),
-                      className: "w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium",
-                      placeholder: "25"
-                    })
-                  ),
-                  
-                  e('div', { className: "space-y-2" },
-                    e('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Weight (lbs)"),
-                    e('input', {
-                      type: "number",
-                      value: userProfile.weight,
-                      onChange: (e) => setUserProfile({...userProfile, weight: e.target.value}),
-                      className: "w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium",
-                      placeholder: "180"
-                    })
-                  ),
-                  
-                  e('div', { className: "space-y-2" },
-                    e('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Height (inches)"),
-                    e('input', {
-                      type: "number",
-                      value: userProfile.height,
-                      onChange: (e) => setUserProfile({...userProfile, height: e.target.value}),
-                      className: "w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium",
-                      placeholder: "70"
-                    })
-                  ),
-                  
-                  e('div', { className: "space-y-2" },
-                    e('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Gender"),
-                    e('select', {
-                      value: userProfile.gender,
-                      onChange: (e) => setUserProfile({...userProfile, gender: e.target.value}),
-                      className: "w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium"
-                    },
-                      e('option', { value: "male" }, "Male"),
-                      e('option', { value: "female" }, "Female")
-                    )
-                  ),
-                  
-                  e('div', { className: "space-y-2" },
-                    e('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Activity Level"),
-                    e('select', {
-                      value: userProfile.activityLevel,
-                      onChange: (e) => setUserProfile({...userProfile, activityLevel: e.target.value}),
-                      className: "w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium"
-                    },
-                      e('option', { value: "sedentary" }, "Sedentary (desk job, no exercise)"),
-                      e('option', { value: "light" }, "Light (light exercise 1-3 days/week)"),
-                      e('option', { value: "moderate" }, "Moderate (moderate exercise 3-5 days/week)"),
-                      e('option', { value: "active" }, "Active (hard exercise 6-7 days/week)"),
-                      e('option', { value: "very_active" }, "Very Active (2x/day, intense training)")
-                    )
-                  ),
-                  
-                  e('div', { className: "space-y-2" },
-                    e('label', { className: "block text-sm font-semibold text-gray-700 mb-2" }, "Primary Goal"),
-                    e('select', {
-                      value: userProfile.goal,
-                      onChange: (e) => setUserProfile({...userProfile, goal: e.target.value}),
-                      className: "w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 font-medium"
-                    },
-                      e('option', { value: "fat_loss" }, "Fat Loss"),
-                      e('option', { value: "muscle_gain" }, "Muscle Gain"),
-                      e('option', { value: "maintenance" }, "Maintenance"),
-                      e('option', { value: "recomp" }, "Body Recomposition")
-                    )
-                  )
-                )
-              ),
-
-              // Dietary Preferences
-              e('div', { className: "mb-8" },
-                e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
-                  e('span', { className: "mr-3 text-2xl" }, '🍽️'),
-                  "Dietary Preferences"
-                ),
-                e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-3" },
-                  dietaryOptions.map(option => 
-                    e('button', {
-                      key: option,
-                      onClick: () => {
-                        const newRestrictions = userProfile.dietaryRestrictions.includes(option)
-                          ? userProfile.dietaryRestrictions.filter(r => r !== option)
-                          : [...userProfile.dietaryRestrictions, option];
-                        setUserProfile({...userProfile, dietaryRestrictions: newRestrictions});
-                      },
-                      className: `p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
-                        userProfile.dietaryRestrictions.includes(option)
-                          ? 'border-orange-500 bg-gradient-to-r from-orange-50 to-red-50 text-orange-700'
-                          : 'border-gray-200 bg-white/50 text-gray-600 hover:border-orange-300'
-                      }`
-                    }, option)
-                  )
-                )
-              ),
-
-              // Allergies & Intolerances
-              e('div', { className: "mb-8" },
-                e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
-                  e('span', { className: "mr-3 text-2xl" }, '⚠️'),
-                  "Allergies & Intolerances"
-                ),
-                e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-3" },
-                  allergyOptions.map(allergy => 
-                    e('button', {
-                      key: allergy,
-                      onClick: () => {
-                        const newAllergies = userProfile.allergies.includes(allergy)
-                          ? userProfile.allergies.filter(a => a !== allergy)
-                          : [...userProfile.allergies, allergy];
-                        setUserProfile({...userProfile, allergies: newAllergies});
-                      },
-                      className: `p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
-                        userProfile.allergies.includes(allergy)
-                          ? 'border-red-500 bg-gradient-to-r from-red-50 to-pink-50 text-red-700'
-                          : 'border-gray-200 bg-white/50 text-gray-600 hover:border-red-300'
-                      }`
-                    }, allergy)
-                  )
-                )
-              ),
-
-              // Health Concerns
-              e('div', { className: "mb-8" },
-                e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
-                  e('span', { className: "mr-3 text-2xl" }, '❤️'),
-                  "Health Concerns"
-                ),
-                e('p', { className: "text-sm text-gray-600 mb-4" },
-                  "Select any health conditions to get personalized nutrition recommendations"
-                ),
-                e('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-3" },
-                  healthConcernOptions.map(concern => 
-                    e('button', {
-                      key: concern,
-                      onClick: () => {
-                        const newConcerns = userProfile.healthConcerns.includes(concern)
-                          ? userProfile.healthConcerns.filter(c => c !== concern)
-                          : [...userProfile.healthConcerns, concern];
-                        setUserProfile({...userProfile, healthConcerns: newConcerns});
-                      },
-                      className: `p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 text-left ${
-                        userProfile.healthConcerns.includes(concern)
-                          ? 'border-pink-500 bg-gradient-to-r from-pink-50 to-red-50 text-pink-700'
-                          : 'border-gray-200 bg-white/50 text-gray-600 hover:border-pink-300'
-                      }`
-                    }, concern)
-                  )
-                )
-              ),
-
-              // Special Preferences
-              e('div', { className: "mb-8" },
-                e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
-                  e('span', { className: "mr-3 text-2xl" }, '🧠'),
-                  "Special Preferences"
-                ),
-                e('div', { className: "space-y-4" },
-                  e('label', { className: "flex items-center p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border-2 border-orange-200" },
-                    e('input', {
-                      type: "checkbox",
-                      checked: userProfile.antiBloutPreference,
-                      onChange: (e) => setUserProfile({...userProfile, antiBloutPreference: e.target.checked}),
-                      className: "mr-3 w-5 h-5 text-orange-600 border-2 border-gray-300 rounded focus:ring-orange-500"
-                    }),
-                    e('span', { className: "font-medium text-gray-700" }, "Prioritize anti-bloat food recommendations")
-                  )
-                )
-              ),
-
-              // Smart recommendations notification
-              (userProfile.allergies.includes('Dairy/Lactose') || userProfile.dietaryRestrictions.includes('Gluten-Free')) && 
-                e('div', { className: "mb-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200" },
-                  e('h3', { className: "font-bold text-green-800 mb-3 flex items-center" },
-                    e('span', { className: "mr-2 text-xl" }, '💡'),
-                    "Smart Recommendations Activated!"
-                  ),
-                  e('p', { className: "text-sm text-green-700" },
-                    "Based on your selections, we'll automatically filter out dairy products and prioritize gluten-free options in your meal suggestions and grocery lists."
-                  )
-                ),
-              
-              // Goals display
-              goals.calories && 
-                e('div', { className: "mb-8 p-6 bg-gradient-to-r from-orange-50 via-red-50 to-pink-50 rounded-2xl border border-orange-200" },
-                  e('h3', { className: "text-xl font-bold text-gray-800 mb-6 flex items-center" },
-                    e('span', { className: "mr-2 text-2xl" }, '🎯'),
-                    "Your Calculated Goals"
-                  ),
-                  e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-4" },
-                    e('div', { className: "text-center p-4 bg-white/60 rounded-xl" },
-                      e('div', { className: "text-3xl font-bold text-orange-600 mb-1" }, goals.calories),
-                      e('div', { className: "text-sm font-medium text-gray-600" }, "Calories")
-                    ),
-                    e('div', { className: "text-center p-4 bg-white/60 rounded-xl" },
-                      e('div', { className: "text-3xl font-bold text-red-500 mb-1" }, goals.protein + "g"),
-                      e('div', { className: "text-sm font-medium text-gray-600" }, "Protein")
-                    ),
-                    e('div', { className: "text-center p-4 bg-white/60 rounded-xl" },
-                      e('div', { className: "text-3xl font-bold text-green-500 mb-1" }, goals.carbs + "g"),
-                      e('div', { className: "text-sm font-medium text-gray-600" }, "Carbs")
-                    ),
-                    e('div', { className: "text-center p-4 bg-white/60 rounded-xl" },
-                      e('div', { className: "text-3xl font-bold text-yellow-500 mb-1" }, goals.fat + "g"),
-                      e('div', { className: "text-sm font-medium text-gray-600" }, "Fat")
-                    )
-                  )
-                ),
-              
-              // Continue button
-              e('button', {
-                onClick: () => setCurrentView('dashboard'),
-                disabled: !goals.calories,
-                className: "w-full px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl hover:from-orange-600 hover:to-red-700 disabled:from-gray-300 disabled:to-gray-400 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center"
+              // Calories Card
+              e('div', { 
+                className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
+                onClick: () => setCurrentView('meals')
               },
-                "Continue to Dashboard ",
-                e('span', { className: "ml-2 text-xl" }, '→')
+                e('div', { className: 'flex items-center justify-between mb-4' },
+                  e('div', { className: 'flex items-center space-x-3' },
+                    e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-orange-100 to-red-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '🍽️'),
+                    e('div', null,
+                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Calories'),
+                      e('p', { className: 'text-xs text-gray-600' }, 'Daily nutrition target')
+                    )
+                  ),
+                  e('div', { className: 'text-sm font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent' }, 
+                    Math.round(getProgressPercentage(totals.calories, goals.calories || 2000)) + '%'
+                  )
+                ),
+                e('div', { className: 'mb-4' },
+                  e('div', { className: 'flex items-baseline space-x-2' },
+                    e('span', { className: 'text-3xl font-bold text-gray-900' }, Math.round(totals.calories || 0)),
+                    e('span', { className: 'text-lg text-gray-600' }, 'kcal'),
+                    e('span', { className: 'text-gray-400' }, '/'),
+                    e('span', { className: 'text-lg text-gray-600' }, `${goals.calories || 2000} kcal`)
+                  )
+                ),
+                e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+                  e('div', {
+                    className: 'bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500',
+                    style: { width: `${getProgressPercentage(totals.calories, goals.calories || 2000)}%` }
+                  })
+                )
+              ),
+              
+              // Water Card
+              e('div', { 
+                className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
+                onClick: () => alert('Water tracking coming soon! 🚰')
+              },
+                e('div', { className: 'flex items-center justify-between mb-4' },
+                  e('div', { className: 'flex items-center space-x-3' },
+                    e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-cyan-100 to-blue-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '💧'),
+                    e('div', null,
+                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Water'),
+                      e('p', { className: 'text-xs text-gray-600' }, 'Stay hydrated')
+                    )
+                  ),
+                  e('div', { className: 'text-sm font-bold text-cyan-600' }, '0%')
+                ),
+                e('div', { className: 'mb-4' },
+                  e('div', { className: 'flex items-baseline space-x-2' },
+                    e('span', { className: 'text-3xl font-bold text-gray-900' }, '0'),
+                    e('span', { className: 'text-lg text-gray-600' }, 'oz'),
+                    e('span', { className: 'text-gray-400' }, '/'),
+                    e('span', { className: 'text-lg text-gray-600' }, `${goals.water || 64} oz`)
+                  )
+                ),
+                e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+                  e('div', {
+                    className: 'bg-gradient-to-r from-cyan-500 to-blue-500 h-3 rounded-full transition-all duration-500',
+                    style: { width: '0%' }
+                  })
+                )
+              ),
+              
+              // Steps Card
+              e('div', { 
+                className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
+                onClick: () => setCurrentView('wearables')
+              },
+                e('div', { className: 'flex items-center justify-between mb-4' },
+                  e('div', { className: 'flex items-center space-x-3' },
+                    e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '👟'),
+                    e('div', null,
+                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Steps'),
+                      e('p', { className: 'text-xs text-gray-600' }, 'Daily activity goal')
+                    )
+                  ),
+                  e('div', { className: 'text-sm font-bold text-green-600' }, '0%')
+                ),
+                e('div', { className: 'mb-4' },
+                  e('div', { className: 'flex items-baseline space-x-2' },
+                    e('span', { className: 'text-3xl font-bold text-gray-900' }, '0'),
+                    e('span', { className: 'text-lg text-gray-600' }, ''),
+                    e('span', { className: 'text-gray-400' }, '/'),
+                    e('span', { className: 'text-lg text-gray-600' }, '10,000')
+                  )
+                ),
+                e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+                  e('div', {
+                    className: 'bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-500',
+                    style: { width: '0%' }
+                  })
+                )
+              ),
+              
+              // Sleep Card
+              e('div', { 
+                className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
+                onClick: () => alert('Sleep tracking coming soon! 🌙')
+              },
+                e('div', { className: 'flex items-center justify-between mb-4' },
+                  e('div', { className: 'flex items-center space-x-3' },
+                    e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '😴'),
+                    e('div', null,
+                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Sleep'),
+                      e('p', { className: 'text-xs text-gray-600' }, 'Rest & recovery')
+                    )
+                  ),
+                  e('div', { className: 'text-sm font-bold text-purple-600' }, '0%')
+                ),
+                e('div', { className: 'mb-4' },
+                  e('div', { className: 'flex items-baseline space-x-2' },
+                    e('span', { className: 'text-3xl font-bold text-gray-900' }, '0h'),
+                    e('span', { className: 'text-lg text-gray-600' }, ''),
+                    e('span', { className: 'text-gray-400' }, '/'),
+                    e('span', { className: 'text-lg text-gray-600' }, '8h')
+                  )
+                ),
+                e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+                  e('div', {
+                    className: 'bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500',
+                    style: { width: '0%' }
+                  })
+                )
+              )
+            ),
+
+            // Secondary Information Row
+            e('div', { className: "grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8" },
+              
+              // Macro Breakdown
+              e('div', { className: 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20' },
+                e('h3', { className: 'text-2xl font-bold text-gray-800 mb-6 flex items-center' },
+                  e('span', { className: 'mr-3 text-2xl' }, '📊'),
+                  'Macro Breakdown'
+                ),
+                e('div', { className: 'grid grid-cols-2 gap-6' },
+                  // Protein
+                  e('div', { className: 'space-y-3' },
+                    e('div', { className: 'flex justify-between items-center' },
+                      e('span', { className: 'font-bold text-gray-800' }, 'Protein'),
+                      e('span', { className: 'text-sm font-medium text-gray-600' }, 
+                        `${Math.round(totals.protein || 0)}/${goals.protein || 150}g`
+                      )
+                    ),
+                    e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+                      e('div', {
+                        className: 'bg-gradient-to-r from-red-500 to-pink-500 h-3 rounded-full transition-all duration-500',
+                        style: { width: `${getProgressPercentage(totals.protein, goals.protein || 150)}%` }
+                      })
+                    )
+                  ),
+                  // Carbs
+                  e('div', { className: 'space-y-3' },
+                    e('div', { className: 'flex justify-between items-center' },
+                      e('span', { className: 'font-bold text-gray-800' }, 'Carbs'),
+                      e('span', { className: 'text-sm font-medium text-gray-600' }, 
+                        `${Math.round(totals.carbs || 0)}/${goals.carbs || 250}g`
+                      )
+                    ),
+                    e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+                      e('div', {
+                        className: 'bg-gradient-to-r from-yellow-500 to-orange-500 h-3 rounded-full transition-all duration-500',
+                        style: { width: `${getProgressPercentage(totals.carbs, goals.carbs || 250)}%` }
+                      })
+                    )
+                  ),
+                  // Fat
+                  e('div', { className: 'space-y-3' },
+                    e('div', { className: 'flex justify-between items-center' },
+                      e('span', { className: 'font-bold text-gray-800' }, 'Fat'),
+                      e('span', { className: 'text-sm font-medium text-gray-600' }, 
+                        `${Math.round(totals.fat || 0)}/${goals.fat || 67}g`
+                      )
+                    ),
+                    e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+                      e('div', {
+                        className: 'bg-gradient-to-r from-purple-500 to-indigo-500 h-3 rounded-full transition-all duration-500',
+                        style: { width: `${getProgressPercentage(totals.fat, goals.fat || 67)}%` }
+                      })
+                    )
+                  ),
+                  // Fiber
+                  e('div', { className: 'space-y-3' },
+                    e('div', { className: 'flex justify-between items-center' },
+                      e('span', { className: 'font-bold text-gray-800' }, 'Fiber'),
+                      e('span', { className: 'text-sm font-medium text-gray-600' }, 
+                        `${Math.round(totals.fiber || 0)}/25g`
+                      )
+                    ),
+                    e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+                      e('div', {
+                        className: 'bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-500',
+                        style: { width: `${getProgressPercentage(totals.fiber || 0, 25)}%` }
+                      })
+                    )
+                  )
+                )
+              ),
+              
+              // Quick Actions Card
+              e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20" },
+                e('h3', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
+                  e('span', { className: 'mr-3 text-2xl' }, '⚡'),
+                  'Quick Actions'
+                ),
+                e('div', { className: "grid grid-cols-2 gap-4" },
+                  e('button', {
+                    className: "p-6 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
+                    onClick: () => setCurrentView('meals')
+                  },
+                    e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '🍽️'),
+                    e('span', { className: 'font-bold text-lg' }, 'Log Meal')
+                  ),
+                  e('button', {
+                    className: "p-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
+                    onClick: () => setCurrentView('pantry')
+                  },
+                    e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '📱'),
+                    e('span', { className: 'font-bold text-lg' }, 'Scan Item')
+                  ),
+                  e('button', {
+                    className: "p-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
+                    onClick: () => setCurrentView('journey')
+                  },
+                    e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '⚖️'),
+                    e('span', { className: 'font-bold text-lg' }, 'Log Weight')
+                  ),
+                  e('button', {
+                    className: "p-6 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
+                    onClick: () => alert('Water tracking coming soon! 🚰')
+                  },
+                    e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '💧'),
+                    e('span', { className: 'font-bold text-lg' }, 'Add Water')
+                  )
+                )
+              )
+            ),
+
+            // Health Insights Card
+            e('div', { className: "bg-gradient-to-r from-orange-500 via-red-600 to-pink-600 rounded-3xl shadow-2xl p-8 text-white" },
+              e('h3', { className: "text-2xl font-bold mb-6 flex items-center" },
+                e('span', { className: 'mr-3 text-2xl' }, '💡'),
+                'Health Insights'
+              ),
+              e('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },
+                e('div', { className: "bg-white/20 rounded-2xl p-6 backdrop-blur-sm" },
+                  e('h4', { className: "font-bold text-lg mb-3" }, 'Nutrition Progress'),
+                  e('p', { className: "text-sm opacity-90 leading-relaxed" }, 
+                    `You've consumed ${Math.round((totals.calories / (goals.calories || 2000)) * 100)}% of your daily calorie goal. ${totals.calories > 0 ? 'Great start!' : 'Ready to fuel your day?'}`
+                  )
+                ),
+                e('div', { className: "bg-white/20 rounded-2xl p-6 backdrop-blur-sm" },
+                  e('h4', { className: "font-bold text-lg mb-3" }, 'Device Integration'),
+                  e('p', { className: "text-sm opacity-90 leading-relaxed" }, 
+                    'Connect your fitness tracker to automatically sync steps, sleep, and health data!'
+                  )
+                ),
+                e('div', { className: "bg-white/20 rounded-2xl p-6 backdrop-blur-sm" },
+                  e('h4', { className: "font-bold text-lg mb-3" }, 'Stay Consistent'),
+                  e('p', { className: "text-sm opacity-90 leading-relaxed" }, 
+                    'Track your nutrition daily for optimal results and lasting healthy habits.'
+                  )
+                )
               )
             )
           )
         );
       }
 
-      // REPLACE your Dashboard view section with this improved version:
+      // Special handling for journey tab
+      if (currentView === 'journey') {
+        return e('div', { className: "min-h-screen bg-gradient-card" },
+          e(Navigation),
+          e('div', { id: "journey-container", className: "journey-tab-content" })
+        );
+      }
 
-// Enhanced Dashboard view
-// FuelIQ Branded Dashboard - Matching your site's warm color scheme
-if (currentView === 'dashboard') {
-  
-  // Get today's date for display
-  const now = new Date();
-  const today = now.toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  });
-  
-  const currentTime = now.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  });
-
-  // Safe progress calculation
-  const getProgressPercentage = (current, goal) => {
-    const currentNum = parseFloat(current) || 0;
-    const goalNum = parseFloat(goal) || 1;
-    return Math.min((currentNum / goalNum) * 100, 100);
-  };
-
-  const getProgressColor = (percentage) => {
-    if (percentage >= 90) return 'text-green-600';
-    if (percentage >= 70) return 'text-orange-600';
-    return 'text-red-600';
-  };
-
-  return e('div', { className: "min-h-screen bg-gradient-card" },
-    e(Navigation),
-    e('div', { className: "max-w-7xl mx-auto p-6" },
-      
-      // Welcome Header - Matching your brand style
-      e('div', { className: "bg-gradient-to-r from-orange-500 to-red-600 rounded-3xl shadow-2xl p-6 mb-8 text-white" },
-        e('div', { className: "text-center" },
-          e('h1', { 
-            className: "text-4xl font-bold mb-2", 
-            style: {fontFamily: 'Georgia, Times, serif'} 
-          }, '🔥 FuelIQ Dashboard'),
-          e('p', { className: "text-xl opacity-90" }, today),
-          e('p', { className: "text-2xl font-semibold opacity-95" }, currentTime)
-        )
-      ),
-
-      // Main Metrics Grid - Using your brand colors
-      e('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" },
-        
-        // Calories Card - Primary brand color
-        e('div', { 
-          className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
-          onClick: () => setCurrentView('meals')
-        },
-          e('div', { className: 'flex items-center justify-between mb-4' },
-            e('div', { className: 'flex items-center space-x-3' },
-              e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-orange-100 to-red-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '🍽️'),
-              e('div', null,
-                e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Calories'),
-                e('p', { className: 'text-xs text-gray-600' }, 'Daily nutrition target')
-              )
-            ),
-            e('div', { className: 'text-sm font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent' }, 
-              Math.round(getProgressPercentage(totals.calories, goals.calories || 2000)) + '%'
-            )
-          ),
-          e('div', { className: 'mb-4' },
-            e('div', { className: 'flex items-baseline space-x-2' },
-              e('span', { className: 'text-3xl font-bold text-gray-900' }, Math.round(totals.calories || 0)),
-              e('span', { className: 'text-lg text-gray-600' }, 'kcal'),
-              e('span', { className: 'text-gray-400' }, '/'),
-              e('span', { className: 'text-lg text-gray-600' }, `${goals.calories || 2000} kcal`)
-            )
-          ),
-          e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-            e('div', {
-              className: 'bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500',
-              style: { width: `${getProgressPercentage(totals.calories, goals.calories || 2000)}%` }
-            })
-          )
-        ),
-        
-        // Water Card - Cool blue to complement warm theme
-        e('div', { 
-          className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
-          onClick: () => alert('Water tracking coming soon! 🚰')
-        },
-          e('div', { className: 'flex items-center justify-between mb-4' },
-            e('div', { className: 'flex items-center space-x-3' },
-              e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-cyan-100 to-blue-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '💧'),
-              e('div', null,
-                e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Water'),
-                e('p', { className: 'text-xs text-gray-600' }, 'Stay hydrated')
-              )
-            ),
-            e('div', { className: 'text-sm font-bold text-cyan-600' }, '0%')
-          ),
-          e('div', { className: 'mb-4' },
-            e('div', { className: 'flex items-baseline space-x-2' },
-              e('span', { className: 'text-3xl font-bold text-gray-900' }, '0'),
-              e('span', { className: 'text-lg text-gray-600' }, 'oz'),
-              e('span', { className: 'text-gray-400' }, '/'),
-              e('span', { className: 'text-lg text-gray-600' }, `${goals.water || 64} oz`)
-            )
-          ),
-          e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-            e('div', {
-              className: 'bg-gradient-to-r from-cyan-500 to-blue-500 h-3 rounded-full transition-all duration-500',
-              style: { width: '0%' }
-            })
-          )
-        ),
-        
-        // Steps Card - Energetic green
-        e('div', { 
-          className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
-          onClick: () => setCurrentView('wearables')
-        },
-          e('div', { className: 'flex items-center justify-between mb-4' },
-            e('div', { className: 'flex items-center space-x-3' },
-              e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '👟'),
-              e('div', null,
-                e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Steps'),
-                e('p', { className: 'text-xs text-gray-600' }, 'Daily activity goal')
-              )
-            ),
-            e('div', { className: 'text-sm font-bold text-green-600' }, '0%')
-          ),
-          e('div', { className: 'mb-4' },
-            e('div', { className: 'flex items-baseline space-x-2' },
-              e('span', { className: 'text-3xl font-bold text-gray-900' }, '0'),
-              e('span', { className: 'text-lg text-gray-600' }, ''),
-              e('span', { className: 'text-gray-400' }, '/'),
-              e('span', { className: 'text-lg text-gray-600' }, '10,000')
-            )
-          ),
-          e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-            e('div', {
-              className: 'bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-500',
-              style: { width: '0%' }
-            })
-          )
-        ),
-        
-        // Sleep Card - Calming purple
-        e('div', { 
-          className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
-          onClick: () => alert('Sleep tracking coming soon! 🌙')
-        },
-          e('div', { className: 'flex items-center justify-between mb-4' },
-            e('div', { className: 'flex items-center space-x-3' },
-              e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '😴'),
-              e('div', null,
-                e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Sleep'),
-                e('p', { className: 'text-xs text-gray-600' }, 'Rest & recovery')
-              )
-            ),
-e('div', { className: 'text-sm font-bold text-purple-600' }, '0%')
-          ),
-          e('div', { className: 'mb-4' },
-            e('div', { className: 'flex items-baseline space-x-2' },
-              e('span', { className: 'text-3xl font-bold text-gray-900' }, '0h'),
-              e('span', { className: 'text-lg text-gray-600' }, ''),
-              e('span', { className: 'text-gray-400' }, '/'),
-              e('span', { className: 'text-lg text-gray-600' }, '8h')
-            )
-          ),
-          e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-            e('div', {
-              className: 'bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500',
-              style: { width: '0%' }
-            })
-          )
-        )
-      ),
-
-      // Secondary Information Row - Matching your brand style
-      e('div', { className: "grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8" },
-        
-        // Macro Breakdown - Using your card style
-        e('div', { className: 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20' },
-          e('h3', { className: 'text-2xl font-bold text-gray-800 mb-6 flex items-center' },
-            e('span', { className: 'mr-3 text-2xl' }, '📊'),
-            'Macro Breakdown'
-          ),
-          e('div', { className: 'grid grid-cols-2 gap-6' },
-            // Protein
-            e('div', { className: 'space-y-3' },
-              e('div', { className: 'flex justify-between items-center' },
-                e('span', { className: 'font-bold text-gray-800' }, 'Protein'),
-                e('span', { className: 'text-sm font-medium text-gray-600' }, 
-                  `${Math.round(totals.protein || 0)}/${goals.protein || 150}g`
-                )
-              ),
-              e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-                e('div', {
-                  className: 'bg-gradient-to-r from-red-500 to-pink-500 h-3 rounded-full transition-all duration-500',
-                  style: { width: `${getProgressPercentage(totals.protein, goals.protein || 150)}%` }
-                })
-              )
-            ),
-            // Carbs
-            e('div', { className: 'space-y-3' },
-              e('div', { className: 'flex justify-between items-center' },
-                e('span', { className: 'font-bold text-gray-800' }, 'Carbs'),
-                e('span', { className: 'text-sm font-medium text-gray-600' }, 
-                  `${Math.round(totals.carbs || 0)}/${goals.carbs || 250}g`
-                )
-              ),
-              e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-                e('div', {
-                  className: 'bg-gradient-to-r from-yellow-500 to-orange-500 h-3 rounded-full transition-all duration-500',
-                  style: { width: `${getProgressPercentage(totals.carbs, goals.carbs || 250)}%` }
-                })
-              )
-            ),
-            // Fat
-            e('div', { className: 'space-y-3' },
-              e('div', { className: 'flex justify-between items-center' },
-                e('span', { className: 'font-bold text-gray-800' }, 'Fat'),
-                e('span', { className: 'text-sm font-medium text-gray-600' }, 
-                  `${Math.round(totals.fat || 0)}/${goals.fat || 67}g`
-                )
-              ),
-              e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-                e('div', {
-                  className: 'bg-gradient-to-r from-purple-500 to-indigo-500 h-3 rounded-full transition-all duration-500',
-                  style: { width: `${getProgressPercentage(totals.fat, goals.fat || 67)}%` }
-                })
-              )
-            ),
-            // Fiber
-            e('div', { className: 'space-y-3' },
-              e('div', { className: 'flex justify-between items-center' },
-                e('span', { className: 'font-bold text-gray-800' }, 'Fiber'),
-                e('span', { className: 'text-sm font-medium text-gray-600' }, 
-                  `${Math.round(totals.fiber || 0)}/25g`
-                )
-              ),
-              e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-                e('div', {
-                  className: 'bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-500',
-                  style: { width: `${getProgressPercentage(totals.fiber || 0, 25)}%` }
-                })
-              )
-            )
-          )
-        ),
-        
-        // Quick Actions Card - Matching your button styles
-        e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20" },
-          e('h3', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
-            e('span', { className: 'mr-3 text-2xl' }, '⚡'),
-            'Quick Actions'
-          ),
-          e('div', { className: "grid grid-cols-2 gap-4" },
-            e('button', {
-              className: "p-6 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
-              onClick: () => setCurrentView('meals')
-            },
-              e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '🍽️'),
-              e('span', { className: 'font-bold text-lg' }, 'Log Meal')
-            ),
-            e('button', {
-              className: "p-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
-              onClick: () => setCurrentView('pantry')
-            },
-              e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '📱'),
-              e('span', { className: 'font-bold text-lg' }, 'Scan Item')
-            ),
-            e('button', {
-              className: "p-6 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
-              onClick: () => setCurrentView('journey')
-            },
-              e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '⚖️'),
-              e('span', { className: 'font-bold text-lg' }, 'Log Weight')
-            ),
-            e('button', {
-              className: "p-6 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
-              onClick: () => alert('Water tracking coming soon! 🚰')
-            },
-              e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '💧'),
-              e('span', { className: 'font-bold text-lg' }, 'Add Water')
-            )
-          )
-        )
-      ),
-
-      // Health Insights Card - Matching your gradient style
-      e('div', { className: "bg-gradient-to-r from-orange-500 via-red-600 to-pink-600 rounded-3xl shadow-2xl p-8 text-white" },
-        e('h3', { className: "text-2xl font-bold mb-6 flex items-center" },
-          e('span', { className: 'mr-3 text-2xl' }, '💡'),
-          'Health Insights'
-        ),
-        e('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },
-          e('div', { className: "bg-white/20 rounded-2xl p-6 backdrop-blur-sm" },
-            e('h4', { className: "font-bold text-lg mb-3" }, 'Nutrition Progress'),
-            e('p', { className: "text-sm opacity-90 leading-relaxed" }, 
-              `You've consumed ${Math.round((totals.calories / (goals.calories || 2000)) * 100)}% of your daily calorie goal. ${totals.calories > 0 ? 'Great start!' : 'Ready to fuel your day?'}`
-            )
-          ),
-          e('div', { className: "bg-white/20 rounded-2xl p-6 backdrop-blur-sm" },
-            e('h4', { className: "font-bold text-lg mb-3" }, 'Device Integration'),
-            e('p', { className: "text-sm opacity-90 leading-relaxed" }, 
-              'Connect your fitness tracker to automatically sync steps, sleep, and health data!'
-            )
-          ),
-          e('div', { className: "bg-white/20 rounded-2xl p-6 backdrop-blur-sm" },
-            e('h4', { className: "font-bold text-lg mb-3" }, 'Stay Consistent'),
-            e('p', { className: "text-sm opacity-90 leading-relaxed" }, 
-              'Track your nutrition daily for optimal results and lasting healthy habits.'
-            )
-          )
-        )
-      )
-    )
-  );
-}
-// Special handling for journey tab
-if (currentView === 'journey') {
-  return e('div', { className: "min-h-screen bg-gradient-card" },
-    e(Navigation),
-    e('div', { id: "journey-container", className: "journey-tab-content" })
-  );
-}
       // Special handling for meals tab
-if (currentView === 'meals') {
-  return e('div', { className: "min-h-screen bg-gradient-card" },
-    e(Navigation),
-    e('div', { id: "meals-container", className: "meals-tab-content" })
-  );
-}
-      // 👈 ADD THIS ENTIRE BLOCK RIGHT HERE:
-// Special handling for pantry tab
-if (currentView === 'pantry') {
-  return e('div', { className: "min-h-screen bg-gradient-card" },
-    e(Navigation),
-    e('div', { id: "pantry-container", className: "pantry-tab-content" })
-  );
-}
+      if (currentView === 'meals') {
+        return e('div', { className: "min-h-screen bg-gradient-card" },
+          e(Navigation),
+          e('div', { id: "meals-container", className: "meals-tab-content" })
+        );
+      }
+
+      // Special handling for pantry tab
+      if (currentView === 'pantry') {
+        return e('div', { className: "min-h-screen bg-gradient-card" },
+          e(Navigation),
+          e('div', { id: "pantry-container", className: "pantry-tab-content" })
+        );
+      }
+
       // Default view for other sections
       return e('div', { className: "min-h-screen bg-gradient-card" },
         e(Navigation),
