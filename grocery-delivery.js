@@ -788,14 +788,121 @@
   }
 
   function importFromMealPlan() {
+  // First try to get pending grocery list from meal planning integration
+  let groceryList = null;
+  try {
+    const pendingList = localStorage.getItem('fueliq_pending_grocery_list');
+    if (pendingList) {
+      groceryList = JSON.parse(pendingList);
+      console.log('📋 Found pending grocery list from meal planning:', groceryList);
+    }
+  } catch (e) {
+    console.warn('Could not load pending grocery list:', e);
+  }
+
+  // If no pending list, try the integration system
+  if (!groceryList && window.FuelIQIntegration) {
+    try {
+      const mealPlans = window.FuelIQIntegration.getSharedData('mealPlans');
+      
+      if (!mealPlans || Object.keys(mealPlans).length === 0) {
+        alert('❌ No meal plan found. Please create a meal plan first.');
+        return;
+      }
+      
+      const groceryListData = window.FuelIQIntegration.generateGroceryListFromMealPlan(mealPlans);
+      groceryList = Object.values(groceryListData.ingredients || {});
+      
+    } catch (e) {
+      console.error('Integration error:', e);
+      alert('❌ Error importing meal plan. Please try again.');
+      return;
+    }
+  }
+
+  // If still no list, try fallback method
+  if (!groceryList) {
+    try {
+      const mealPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
+      
+      if (Object.keys(mealPlan).length === 0) {
+        alert('❌ No meal plan found. Please create a meal plan first.');
+        return;
+      }
+      
+      groceryList = convertMealPlanToGroceryList(mealPlan);
+    } catch (e) {
+      alert('❌ No meal plan found. Please create a meal plan first.');
+      return;
+    }
+  }
+
+  // Convert and add items to cart
+  let addedCount = 0;
+  const failedItems = [];
+
+  groceryList.forEach(item => {
+    const itemName = item.name || item.ingredient?.name || 'Unknown';
+    const product = findBestProductMatch(itemName);
+    if (product) {
+      const quantity = item.neededAmount || item.totalAmount || item.amount || 1;
+      addToCart(itemName.toLowerCase(), Math.ceil(quantity), false);
+      addedCount++;
+    } else {
+      failedItems.push(itemName);
+    }
+  });
+
+  updateCart();
+  
+  // Clear pending grocery list
+  localStorage.removeItem('fueliq_pending_grocery_list');
+  
+  // Show success message
+  if (addedCount > 0) {
+    let message = `✅ Imported ${addedCount} items from meal plan!`;
+    if (failedItems.length > 0) {
+      message += `\n\n❌ Could not find matches for: ${failedItems.slice(0, 3).join(', ')}`;
+      if (failedItems.length > 3) message += ` and ${failedItems.length - 3} more`;
+    }
+    
     if (window.FuelIQIntegration) {
-      try {
-        const mealPlans = window.FuelIQIntegration.getSharedData('mealPlans');
-        
-        if (!mealPlans || Object.keys(mealPlans).length === 0) {
-          alert('❌ No meal plan found. Please create a meal plan first.');
-          return;
-        }
+      window.FuelIQIntegration.utils.showSuccessMessage(message);
+    } else {
+      alert(message);
+    }
+  } else {
+    alert('❌ No compatible items found in meal plan.');
+  }
+}
+
+// Helper function to convert meal plan format - ADD THIS AFTER THE FUNCTION ABOVE
+function convertMealPlanToGroceryList(mealPlan) {
+  const ingredientsList = {};
+  
+  Object.values(mealPlan).forEach(dayPlan => {
+    ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+      const meal = dayPlan[mealType];
+      if (meal && meal.ingredients) {
+        meal.ingredients.forEach(ingredient => {
+          const key = ingredient.name.toLowerCase();
+          if (ingredientsList[key]) {
+            ingredientsList[key].totalAmount += parseFloat(ingredient.amount) || 1;
+          } else {
+            ingredientsList[key] = {
+              name: ingredient.name,
+              totalAmount: parseFloat(ingredient.amount) || 1,
+              unit: ingredient.unit || 'item',
+              category: ingredient.category || 'other'
+            };
+          }
+        });
+      }
+    });
+  });
+
+  return Object.values(ingredientsList);
+}
         
         const groceryList = window.FuelIQIntegration.generateGroceryListFromMealPlan(mealPlans);
         
