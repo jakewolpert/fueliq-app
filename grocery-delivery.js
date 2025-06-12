@@ -1136,5 +1136,22 @@ Items automatically added to your pantry!`);
     renderGroceryDelivery: createGroceryDeliveryInterface,
     cleanup: cleanup
   };
+// Integration status monitoring
+  function showIntegrationStatus() {
+    if (window.FuelIQIntegration) {
+      const status = window.FuelIQIntegration.getIntegrationStatus();
+      console.log('🔗 Grocery Delivery Integration Status:', status);
+      
+      // Create status indicator if it doesn't exist
+      if (!document.getElementById('integration-status')) {
+        const statusDiv = document.createElement('div');
+        statusDiv.id = 'integration-status';
+        document.body.appendChild(statusDiv);
+        window.FuelIQIntegration.utils.showIntegrationStatus();
+      }
+    }
+  }
 
+  // Initialize integration when grocery delivery loads
+  setTimeout(showIntegrationStatus, 1000);
 })();
