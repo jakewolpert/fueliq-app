@@ -921,7 +921,7 @@ saveMealPlanWithIntegration(mealPlan);
 function saveMealPlanWithIntegration(weekPlan) {
   // Save to localStorage (existing functionality)
   try {
-saveMealPlanWithIntegration(weekPlan);
+localStorage.setItem('fueliq_meal_plan', JSON.stringify(weekPlan));
   } catch (e) {
     console.warn('Could not save meal plan to localStorage:', e);
   }
