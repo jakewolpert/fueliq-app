@@ -179,24 +179,53 @@
 
       // Enhanced meals tab rendering
       useEffect(() => {
-        if (currentView === 'meals') {
-          clearContainer('meals-container');
-          
-          const timer = setTimeout(() => {
-            try {
-              if (window.FuelIQMeals && window.FuelIQMeals.renderMealsTab) {
-                window.FuelIQMeals.renderMealsTab('meals-container');
-              } else {
-                console.warn('FuelIQMeals module not available');
-              }
-            } catch (error) {
-              console.error('Error rendering meals tab:', error);
-            }
-          }, 300);
-          
-          return () => clearTimeout(timer);
+  if (currentView === 'meals') {
+    clearContainer('meals-container');
+    
+    // Enhanced loading with retry mechanism
+    let retryCount = 0;
+    const maxRetries = 10;
+    
+    const tryRenderMeals = () => {
+      if (window.FuelIQMeals && window.FuelIQMeals.renderMealsTab) {
+        try {
+          window.FuelIQMeals.renderMealsTab('meals-container');
+          console.log('✅ Meals tab rendered successfully');
+        } catch (error) {
+          console.error('Error rendering meals tab:', error);
         }
-      }, [currentView]);
+      } else {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Waiting for FuelIQMeals module... (${retryCount}/${maxRetries})`);
+          setTimeout(tryRenderMeals, 200);
+        } else {
+          console.warn('❌ FuelIQMeals module failed to load after', maxRetries, 'attempts');
+          // Show fallback message
+          const container = document.getElementById('meals-container');
+          if (container) {
+            container.innerHTML = `
+              <div class="flex items-center justify-center min-h-96">
+                <div class="text-center p-8">
+                  <div class="text-6xl mb-4">🔄</div>
+                  <h3 class="text-xl font-bold text-gray-800 mb-2">Loading Meals Tab...</h3>
+                  <p class="text-gray-600 mb-4">If this takes too long, please refresh the page.</p>
+                  <button onclick="location.reload()" 
+                          class="px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 font-bold">
+                    Refresh Page
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+        }
+      }
+    };
+    
+    // Start with a small delay to ensure DOM is ready
+    setTimeout(tryRenderMeals, 100);
+  }
+}, [currentView]);
 
       // Enhanced journey tab rendering
       useEffect(() => {
