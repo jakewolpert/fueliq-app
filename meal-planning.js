@@ -1516,21 +1516,6 @@ window.generateMealPlanWithChoices = function() {
   return weekPlan;
 };
 
-// Enhanced selectBestRecipe function
-const selectBestRecipe = (scoredRecipes, mealType, usedRecipes) => {
-  const availableRecipes = scoredRecipes.filter(recipe => 
-    recipe.mealType === mealType && !usedRecipes.includes(recipe.id)
-  );
-
-  if (availableRecipes.length === 0) {
-    const fallback = scoredRecipes.find(recipe => recipe.mealType === mealType);
-    return fallback || null;
-  }
-
-  const selected = availableRecipes[0];
-  usedRecipes.push(selected.id);
-  return selected;
-};
   // Cleanup function
   const cleanup = () => {
     // Remove event listeners if needed
