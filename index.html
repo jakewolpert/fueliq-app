@@ -806,14 +806,6 @@ const cuisineOptions = [
       userProfile.cuisinePreferences.length > 0 && e('div', null, `• Featuring cuisines: ${userProfile.cuisinePreferences.join(', ')}`)
     )
   ),
-                    e('span', { className: "mr-2 text-xl" }, '💡'),
-                    "Smart Recommendations Activated!"
-                  ),
-                  e('p', { className: "text-sm text-green-700" },
-                    "Based on your selections, we'll automatically filter out dairy products and prioritize gluten-free options in your meal suggestions and grocery lists."
-                  )
-                ),
-              
               // Goals display
               goals.calories && 
                 e('div', { className: "mb-8 p-6 bg-gradient-to-r from-orange-50 via-red-50 to-pink-50 rounded-2xl border border-orange-200" },
