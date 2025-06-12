@@ -228,26 +228,36 @@
 }, [currentView]);
 
       // Enhanced journey tab rendering
-      useEffect(() => {
-        if (currentView === 'journey') {
-          clearContainer('journey-container');
-          
-          const timer = setTimeout(() => {
-            try {
-              if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.renderWeightJourney) {
-                window.FuelIQWeightJourney.renderWeightJourney('journey-container');
-              } else {
-                console.warn('FuelIQWeightJourney module not available');
-              }
-            } catch (error) {
-              console.error('Error rendering journey tab:', error);
-            }
-          }, 300);
-          
-          return () => clearTimeout(timer);
+      // Enhanced journey tab rendering
+useEffect(() => {
+  if (currentView === 'journey') {
+    clearContainer('journey-container');
+    
+    let retryCount = 0;
+    const maxRetries = 10;
+    
+    const tryRenderJourney = () => {
+      if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.renderWeightJourney) {
+        try {
+          window.FuelIQWeightJourney.renderWeightJourney('journey-container');
+          console.log('✅ Journey tab rendered successfully');
+        } catch (error) {
+          console.error('Error rendering journey tab:', error);
         }
-      }, [currentView]);
-
+      } else {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Waiting for FuelIQWeightJourney module... (${retryCount}/${maxRetries})`);
+          setTimeout(tryRenderJourney, 200);
+        } else {
+          console.warn('❌ FuelIQWeightJourney module failed to load');
+        }
+      }
+    };
+    
+    setTimeout(tryRenderJourney, 100);
+  }
+}, [currentView]);
       // Enhanced pantry tab rendering
       useEffect(() => {
         if (currentView === 'pantry') {
