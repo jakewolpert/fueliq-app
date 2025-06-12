@@ -1,5 +1,5 @@
-// FuelIQ Smart Pantry Module with Barcode Scanning
-// Save this as: pantry-tab.js
+// Enhanced FuelIQ Smart Pantry Module with Receipt OCR
+// Replace your existing pantry-tab.js with this enhanced version
 
 (function() {
     // Prevent multiple loading
@@ -7,7 +7,7 @@
         return;
     }
 
-    // Safe Storage Functions
+    // Safe Storage Functions (unchanged)
     const isLocalStorageAvailable = () => {
         try {
             const test = '__localStorage_test__';
@@ -58,10 +58,150 @@
         };
     };
 
-    // Barcode API Functions
+    // OCR Processing Functions
+    let tesseractWorker = null;
+
+    const initTesseract = async () => {
+        if (tesseractWorker) return tesseractWorker;
+        
+        try {
+            // Load Tesseract.js from CDN
+            if (!window.Tesseract) {
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js';
+                document.head.appendChild(script);
+                
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                });
+            }
+            
+            tesseractWorker = await window.Tesseract.createWorker();
+            await tesseractWorker.loadLanguage('eng');
+            await tesseractWorker.initialize('eng');
+            
+            return tesseractWorker;
+        } catch (error) {
+            console.error('Failed to initialize Tesseract:', error);
+            throw new Error('OCR initialization failed');
+        }
+    };
+
+    const processReceiptImage = async (imageFile) => {
+        try {
+            const worker = await initTesseract();
+            const { data: { text } } = await worker.recognize(imageFile);
+            return text;
+        } catch (error) {
+            console.error('OCR processing failed:', error);
+            throw new Error('Failed to read receipt text');
+        }
+    };
+
+    // Receipt Parsing Functions
+    const parseReceiptText = (text) => {
+        const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+        const items = [];
+        
+        // Common grocery store patterns
+        const itemPatterns = [
+            /^(.+?)\s+(\d+\.\d{2})$/,  // Item Name + Price
+            /^(.+?)\s+(\d+)\s*@\s*(\d+\.\d{2})\s+(\d+\.\d{2})$/,  // Item + Qty @ Price = Total
+            /^(.+?)\s+(\d+\.\d{2})\s*[A-Z]?$/  // Item + Price + Tax code
+        ];
+        
+        // Food item keywords (common grocery items)
+        const foodKeywords = [
+            'milk', 'bread', 'eggs', 'cheese', 'butter', 'yogurt', 'chicken', 'beef', 'fish',
+            'apple', 'banana', 'orange', 'tomato', 'lettuce', 'carrot', 'potato', 'onion',
+            'rice', 'pasta', 'cereal', 'flour', 'sugar', 'salt', 'pepper', 'oil', 'vinegar',
+            'soup', 'sauce', 'juice', 'water', 'soda', 'coffee', 'tea', 'wine', 'beer'
+        ];
+        
+        // Skip patterns (non-food items)
+        const skipPatterns = [
+            /total/i, /subtotal/i, /tax/i, /cash/i, /change/i, /card/i, /visa/i, /mastercard/i,
+            /receipt/i, /thank you/i, /store/i, /cashier/i, /date/i, /time/i, /\d{4}-\d{2}-\d{2}/,
+            /bag fee/i, /bottle deposit/i, /coupon/i, /discount/i
+        ];
+        
+        lines.forEach((line, index) => {
+            // Skip obvious non-item lines
+            if (skipPatterns.some(pattern => pattern.test(line))) {
+                return;
+            }
+            
+            // Try to match item patterns
+            for (const pattern of itemPatterns) {
+                const match = line.match(pattern);
+                if (match) {
+                    const itemName = match[1].trim();
+                    const price = parseFloat(match[match.length - 1]);
+                    
+                    // Basic validation
+                    if (itemName.length > 2 && price > 0 && price < 100) {
+                        // Check if it looks like a food item
+                        const isLikelyFood = foodKeywords.some(keyword => 
+                            itemName.toLowerCase().includes(keyword)
+                        ) || itemName.length > 3; // Assume longer names are products
+                        
+                        if (isLikelyFood) {
+                            items.push({
+                                name: cleanItemName(itemName),
+                                price: price,
+                                rawText: line,
+                                confidence: calculateConfidence(itemName, price)
+                            });
+                        }
+                    }
+                    break;
+                }
+            }
+        });
+        
+        // Remove duplicates and sort by confidence
+        const uniqueItems = items.filter((item, index, self) => 
+            self.findIndex(i => i.name.toLowerCase() === item.name.toLowerCase()) === index
+        );
+        
+        return uniqueItems.sort((a, b) => b.confidence - a.confidence);
+    };
+
+    const cleanItemName = (name) => {
+        return name
+            .replace(/\d+\s*LB\s*@.*/i, '') // Remove weight pricing
+            .replace(/\d+\s*CT.*/i, '') // Remove count info
+            .replace(/[^\w\s&'-]/g, '') // Remove special chars except common ones
+            .replace(/\s+/g, ' ')
+            .trim()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+    };
+
+    const calculateConfidence = (name, price) => {
+        let confidence = 50;
+        
+        // Higher confidence for longer, more descriptive names
+        if (name.length > 10) confidence += 20;
+        if (name.length > 15) confidence += 10;
+        
+        // Higher confidence for reasonable prices
+        if (price > 0.5 && price < 50) confidence += 20;
+        
+        // Lower confidence for very short names
+        if (name.length < 4) confidence -= 30;
+        
+        // Higher confidence if name contains multiple words
+        if (name.split(' ').length > 1) confidence += 15;
+        
+        return Math.max(0, Math.min(100, confidence));
+    };
+
+    // Barcode API Functions (unchanged)
     const lookupBarcode = async (barcode) => {
         try {
-            // Try Open Food Facts first
             const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
             const data = await response.json();
             
@@ -77,7 +217,6 @@
                 };
             }
             
-            // Fallback to UPC database (mock for demo)
             return {
                 name: `Product ${barcode.slice(-4)}`,
                 brand: 'Unknown Brand',
@@ -99,7 +238,7 @@
         }
     };
 
-    // Helper Functions
+    // Helper Functions (unchanged)
     const formatDate = (date) => {
         return date.toISOString().split('T')[0];
     };
@@ -121,13 +260,141 @@
         return { status: 'good', color: 'green', text: `${days} days left` };
     };
 
-    // Barcode Scanner Component
-    const BarcodeScanner = ({ onScan, onClose }) => {
+    // Receipt Items Review Component
+    const ReceiptItemsReview = ({ items, onConfirm, onCancel }) => {
+        const [selectedItems, setSelectedItems] = React.useState(
+            items.map(item => ({ ...item, selected: item.confidence > 60 }))
+        );
+
+        const toggleItem = (index) => {
+            setSelectedItems(prev => prev.map((item, i) => 
+                i === index ? { ...item, selected: !item.selected } : item
+            ));
+        };
+
+        const updateItem = (index, field, value) => {
+            setSelectedItems(prev => prev.map((item, i) => 
+                i === index ? { ...item, [field]: value } : item
+            ));
+        };
+
+        const handleConfirm = () => {
+            const confirmedItems = selectedItems
+                .filter(item => item.selected)
+                .map(item => ({
+                    name: item.name,
+                    category: item.category || 'Other',
+                    quantity: 1,
+                    unit: 'pcs',
+                    price: item.price,
+                    notes: `Added from receipt - Original: ${item.rawText}`
+                }));
+            onConfirm(confirmedItems);
+        };
+
+        return React.createElement('div', { 
+            className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50' 
+        },
+            React.createElement('div', { 
+                className: 'bg-white rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col' 
+            },
+                React.createElement('div', { className: 'flex justify-between items-center mb-4' },
+                    React.createElement('h3', { className: 'text-xl font-bold text-gray-800' }, 
+                        `Review Receipt Items (${items.length} found)`
+                    ),
+                    React.createElement('button', { 
+                        onClick: onCancel,
+                        className: 'text-gray-500 hover:text-gray-700 text-xl font-bold' 
+                    }, '×')
+                ),
+
+                React.createElement('div', { className: 'mb-4 p-4 bg-blue-50 rounded-lg' },
+                    React.createElement('p', { className: 'text-blue-800 text-sm' },
+                        '✨ Review the items we found on your receipt. Check the boxes for items you want to add to your pantry. You can edit names and categories before adding.'
+                    )
+                ),
+
+                React.createElement('div', { className: 'flex-1 overflow-y-auto mb-4' },
+                    React.createElement('div', { className: 'space-y-3' },
+                        ...selectedItems.map((item, index) =>
+                            React.createElement('div', { 
+                                key: index,
+                                className: `border rounded-lg p-4 ${item.selected ? 'border-green-300 bg-green-50' : 'border-gray-200'}`
+                            },
+                                React.createElement('div', { className: 'flex items-start gap-3' },
+                                    React.createElement('input', {
+                                        type: 'checkbox',
+                                        checked: item.selected,
+                                        onChange: () => toggleItem(index),
+                                        className: 'mt-1 w-5 h-5 text-green-600'
+                                    }),
+                                    React.createElement('div', { className: 'flex-1' },
+                                        React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-3' },
+                                            React.createElement('div', null,
+                                                React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Item Name'),
+                                                React.createElement('input', {
+                                                    type: 'text',
+                                                    value: item.name,
+                                                    onChange: (e) => updateItem(index, 'name', e.target.value),
+                                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md text-sm',
+                                                    disabled: !item.selected
+                                                })
+                                            ),
+                                            React.createElement('div', null,
+                                                React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Category'),
+                                                React.createElement('select', {
+                                                    value: item.category || 'Other',
+                                                    onChange: (e) => updateItem(index, 'category', e.target.value),
+                                                    className: 'w-full px-3 py-2 border border-gray-300 rounded-md text-sm',
+                                                    disabled: !item.selected
+                                                },
+                                                    ['Produce', 'Dairy', 'Meat & Seafood', 'Pantry Staples', 'Frozen', 'Beverages', 'Snacks', 'Other'].map(cat =>
+                                                        React.createElement('option', { key: cat, value: cat }, cat)
+                                                    )
+                                                )
+                                            ),
+                                            React.createElement('div', null,
+                                                React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Price'),
+                                                React.createElement('div', { className: 'text-sm text-gray-600 py-2' }, 
+                                                    item.price ? `$${item.price.toFixed(2)}` : 'No price'
+                                                )
+                                            )
+                                        ),
+                                        React.createElement('div', { className: 'mt-2 text-xs text-gray-500' },
+                                            `Confidence: ${item.confidence}% • Original: "${item.rawText}"`
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+
+                React.createElement('div', { className: 'flex gap-3 pt-4 border-t' },
+                    React.createElement('button', {
+                        onClick: onCancel,
+                        className: 'flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50'
+                    }, 'Cancel'),
+                    React.createElement('button', {
+                        onClick: handleConfirm,
+                        disabled: selectedItems.filter(item => item.selected).length === 0,
+                        className: 'flex-1 px-4 py-3 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white rounded-lg font-semibold'
+                    }, `Add ${selectedItems.filter(item => item.selected).length} Items to Pantry`)
+                )
+            )
+        );
+    };
+
+    // Enhanced Scanner Component
+    const EnhancedScanner = ({ onScan, onReceiptItems, onClose }) => {
+        const [scanMode, setScanMode] = React.useState('barcode'); // 'barcode' or 'receipt'
         const [isScanning, setIsScanning] = React.useState(false);
         const [error, setError] = React.useState('');
         const [manualBarcode, setManualBarcode] = React.useState('');
+        const [processing, setProcessing] = React.useState(false);
         const videoRef = React.useRef(null);
         const streamRef = React.useRef(null);
+        const fileInputRef = React.useRef(null);
 
         React.useEffect(() => {
             return () => {
@@ -143,7 +410,7 @@
                 setIsScanning(true);
                 
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } // Use back camera
+                    video: { facingMode: 'environment' }
                 });
                 
                 streamRef.current = stream;
@@ -165,6 +432,69 @@
             setIsScanning(false);
         };
 
+        const capturePhoto = () => {
+            if (!videoRef.current) return;
+            
+            const canvas = document.createElement('canvas');
+            const video = videoRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            canvas.toBlob(async (blob) => {
+                if (scanMode === 'receipt') {
+                    await processReceiptPhoto(blob);
+                } else {
+                    // For barcode mode, you'd integrate with a barcode detection library
+                    simulateScan();
+                }
+            }, 'image/jpeg', 0.8);
+        };
+
+        const processReceiptPhoto = async (imageBlob) => {
+            setProcessing(true);
+            try {
+                const text = await processReceiptImage(imageBlob);
+                const items = parseReceiptText(text);
+                
+                if (items.length === 0) {
+                    setError('No grocery items found on this receipt. Please try a clearer photo.');
+                } else {
+                    stopCamera();
+                    onReceiptItems(items);
+                }
+            } catch (err) {
+                setError('Failed to process receipt. Please try again with a clearer photo.');
+            } finally {
+                setProcessing(false);
+            }
+        };
+
+        const handleFileUpload = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (scanMode === 'receipt') {
+                setProcessing(true);
+                try {
+                    const text = await processReceiptImage(file);
+                    const items = parseReceiptText(text);
+                    
+                    if (items.length === 0) {
+                        setError('No grocery items found on this receipt. Please try a different image.');
+                    } else {
+                        onReceiptItems(items);
+                    }
+                } catch (err) {
+                    setError('Failed to process receipt. Please try a different image.');
+                } finally {
+                    setProcessing(false);
+                }
+            }
+        };
+
         const handleManualEntry = () => {
             if (manualBarcode.trim()) {
                 onScan(manualBarcode.trim());
@@ -172,13 +502,12 @@
             }
         };
 
-        // Mock barcode detection (in a real app, you'd use a library like QuaggaJS)
         const simulateScan = () => {
             const mockBarcodes = [
                 '0123456789012',
-                '0737628064502', // Honey Nut Cheerios
-                '0016000275157', // Diet Coke
-                '0041196891171'  // Bananas
+                '0737628064502',
+                '0016000275157',
+                '0041196891171'
             ];
             const randomBarcode = mockBarcodes[Math.floor(Math.random() * mockBarcodes.length)];
             onScan(randomBarcode);
@@ -189,31 +518,74 @@
             className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50' 
         },
             React.createElement('div', { 
-                className: 'bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col' 
+                className: 'bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto flex flex-col' 
             },
                 React.createElement('div', { className: 'flex justify-between items-center mb-4' },
-                    React.createElement('h3', { className: 'text-xl font-bold text-gray-800' }, 'Scan Barcode'),
+                    React.createElement('h3', { className: 'text-xl font-bold text-gray-800' }, 'Smart Scanner'),
                     React.createElement('button', { 
                         onClick: onClose,
                         className: 'text-gray-500 hover:text-gray-700 text-xl font-bold' 
                     }, '×')
                 ),
 
-                // Camera Section
+                // Mode Toggle
+                React.createElement('div', { className: 'flex bg-gray-100 rounded-lg p-1 mb-4' },
+                    React.createElement('button', {
+                        onClick: () => setScanMode('barcode'),
+                        className: `flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                            scanMode === 'barcode' 
+                                ? 'bg-orange-500 text-white' 
+                                : 'text-gray-600 hover:text-gray-800'
+                        }`
+                    }, '📷 Barcode'),
+                    React.createElement('button', {
+                        onClick: () => setScanMode('receipt'),
+                        className: `flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                            scanMode === 'receipt' 
+                                ? 'bg-orange-500 text-white' 
+                                : 'text-gray-600 hover:text-gray-800'
+                        }`
+                    }, '🧾 Receipt')
+                ),
+
+                // Mode Description
+                React.createElement('div', { className: 'mb-4 p-3 bg-blue-50 rounded-lg' },
+                    React.createElement('p', { className: 'text-blue-800 text-sm' },
+                        scanMode === 'barcode' 
+                            ? '📷 Scan individual product barcodes to add items one by one'
+                            : '🧾 Capture your grocery receipt to automatically add multiple items at once'
+                    )
+                ),
+
+                // Camera/Upload Section
                 React.createElement('div', { className: 'mb-6' },
                     !isScanning ? 
-                        React.createElement('div', { className: 'text-center' },
+                        React.createElement('div', { className: 'text-center space-y-3' },
                             React.createElement('div', { className: 'w-32 h-32 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4' },
-                                React.createElement('span', { className: 'text-4xl' }, '📷')
+                                React.createElement('span', { className: 'text-4xl' }, scanMode === 'barcode' ? '📷' : '🧾')
                             ),
                             React.createElement('button', {
                                 onClick: startCamera,
-                                className: 'w-full bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold mb-3'
-                            }, 'Start Camera'),
+                                className: 'w-full bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold mb-2'
+                            }, `📷 Start Camera${scanMode === 'receipt' ? ' (Receipt)' : ' (Barcode)'}`),
+                            
                             React.createElement('button', {
+                                onClick: () => fileInputRef.current?.click(),
+                                className: 'w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold mb-2'
+                            }, `📁 Upload ${scanMode === 'receipt' ? 'Receipt' : 'Photo'}`),
+                            
+                            scanMode === 'barcode' && React.createElement('button', {
                                 onClick: simulateScan,
-                                className: 'w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold text-sm'
-                            }, '🎯 Demo: Scan Random Product')
+                                className: 'w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold text-sm'
+                            }, '🎯 Demo: Random Product'),
+
+                            React.createElement('input', {
+                                ref: fileInputRef,
+                                type: 'file',
+                                accept: 'image/*',
+                                onChange: handleFileUpload,
+                                className: 'hidden'
+                            })
                         ) :
                         React.createElement('div', { className: 'relative' },
                             React.createElement('video', {
@@ -223,24 +595,42 @@
                                 className: 'w-full h-48 bg-black rounded-lg object-cover'
                             }),
                             React.createElement('div', { className: 'absolute inset-0 flex items-center justify-center' },
-                                React.createElement('div', { className: 'w-32 h-20 border-2 border-orange-500 rounded-lg' })
+                                scanMode === 'barcode' 
+                                    ? React.createElement('div', { className: 'w-32 h-20 border-2 border-orange-500 rounded-lg' })
+                                    : React.createElement('div', { className: 'w-40 h-32 border-2 border-orange-500 rounded-lg border-dashed' })
                             ),
                             React.createElement('div', { className: 'text-center mt-3' },
-                                React.createElement('p', { className: 'text-sm text-gray-600 mb-3' }, 'Point camera at barcode'),
-                                React.createElement('button', {
-                                    onClick: stopCamera,
-                                    className: 'bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg'
-                                }, 'Stop Camera')
+                                React.createElement('p', { className: 'text-sm text-gray-600 mb-3' }, 
+                                    scanMode === 'barcode' ? 'Point camera at barcode' : 'Capture entire receipt'
+                                ),
+                                React.createElement('div', { className: 'flex gap-2 justify-center' },
+                                    React.createElement('button', {
+                                        onClick: capturePhoto,
+                                        disabled: processing,
+                                        className: 'bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg'
+                                    }, processing ? 'Processing...' : 'Capture'),
+                                    React.createElement('button', {
+                                        onClick: stopCamera,
+                                        className: 'bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg'
+                                    }, 'Stop')
+                                )
                             )
                         )
+                ),
+
+                processing && React.createElement('div', { className: 'mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg' },
+                    React.createElement('div', { className: 'flex items-center gap-3' },
+                        React.createElement('div', { className: 'animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500' }),
+                        React.createElement('span', { className: 'text-yellow-800' }, 'Processing receipt... This may take a moment.')
+                    )
                 ),
 
                 error && React.createElement('div', { className: 'bg-red-50 border border-red-200 rounded-lg p-3 mb-4' },
                     React.createElement('p', { className: 'text-red-700 text-sm' }, error)
                 ),
 
-                // Manual Entry Section
-                React.createElement('div', { className: 'border-t pt-4' },
+                // Manual Entry Section (only for barcode mode)
+                scanMode === 'barcode' && React.createElement('div', { className: 'border-t pt-4' },
                     React.createElement('h4', { className: 'font-semibold text-gray-700 mb-3' }, 'Or enter manually:'),
                     React.createElement('div', { className: 'flex gap-2' },
                         React.createElement('input', {
@@ -261,7 +651,7 @@
         );
     };
 
-    // Add Item Form Component
+    // Add Item Form Component (unchanged from original)
     const AddItemForm = ({ productData, onAdd, onCancel }) => {
         const [formData, setFormData] = React.useState({
             name: productData?.name || '',
@@ -413,7 +803,7 @@
         );
     };
 
-    // Pantry Item Component
+    // Pantry Item Component (unchanged)
     const PantryItem = ({ item, onUpdate, onDelete }) => {
         const [showDetails, setShowDetails] = React.useState(false);
         const expiryStatus = getExpiryStatus(item.expiryDate);
@@ -504,7 +894,9 @@
         const [pantryData, setPantryData] = React.useState(loadPantryData());
         const [showScanner, setShowScanner] = React.useState(false);
         const [showAddForm, setShowAddForm] = React.useState(false);
+        const [showReceiptReview, setShowReceiptReview] = React.useState(false);
         const [productData, setProductData] = React.useState(null);
+        const [receiptItems, setReceiptItems] = React.useState([]);
         const [selectedCategory, setSelectedCategory] = React.useState('All');
         const [searchQuery, setSearchQuery] = React.useState('');
         const [loading, setLoading] = React.useState(false);
@@ -528,6 +920,12 @@
             }
         };
 
+        const handleReceiptItems = (items) => {
+            setReceiptItems(items);
+            setShowReceiptReview(true);
+            setShowScanner(false);
+        };
+
         const addItem = (item) => {
             setPantryData(prev => ({
                 ...prev,
@@ -535,6 +933,26 @@
             }));
             setShowAddForm(false);
             setProductData(null);
+        };
+
+        const addReceiptItems = (items) => {
+            const newItems = items.map(item => ({
+                ...item,
+                id: Date.now() + Math.random(),
+                addedDate: new Date().toISOString(),
+                purchaseDate: formatDate(new Date())
+            }));
+
+            setPantryData(prev => ({
+                ...prev,
+                items: [...prev.items, ...newItems]
+            }));
+
+            setShowReceiptReview(false);
+            setReceiptItems([]);
+            
+            // Show success message
+            alert(`✅ Successfully added ${newItems.length} items to your pantry!`);
         };
 
         const updateItem = (id, updatedItem) => {
@@ -570,9 +988,9 @@
 
         return React.createElement('div', { className: 'max-w-6xl mx-auto p-6' },
             // Header
-            React.createElement('div', { className: 'bg-orange-500 rounded-xl p-6 mb-6 text-white' },
-                React.createElement('h1', { className: 'text-3xl font-bold mb-2' }, 'Smart Pantry'),
-                React.createElement('p', { className: 'text-lg opacity-90' }, 'Track your inventory with barcode scanning'),
+            React.createElement('div', { className: 'bg-gradient-to-r from-orange-500 to-red-600 rounded-xl p-6 mb-6 text-white' },
+                React.createElement('h1', { className: 'text-3xl font-bold mb-2' }, '🏠 Smart Pantry'),
+                React.createElement('p', { className: 'text-lg opacity-90' }, 'Track inventory with barcode scanning & receipt upload'),
                 
                 React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mt-4' },
                     React.createElement('div', { className: 'text-center' },
@@ -611,23 +1029,28 @@
             ),
 
             // Action Buttons
-            React.createElement('div', { className: 'flex gap-4 mb-6' },
+            React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-4 mb-6' },
                 React.createElement('button', {
                     onClick: () => setShowScanner(true),
-                    className: 'flex-1 bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2'
+                    className: 'bg-orange-500 hover:bg-orange-600 text-white px-6 py-4 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all'
                 }, 
-                    React.createElement('span', { className: 'text-xl' }, '📷'),
-                    'Scan Barcode'
+                    React.createElement('span', { className: 'text-xl' }, '🔍'),
+                    'Smart Scanner'
                 ),
                 React.createElement('button', {
                     onClick: () => {
                         setProductData(null);
                         setShowAddForm(true);
                     },
-                    className: 'flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2'
+                    className: 'bg-blue-500 hover:bg-blue-600 text-white px-6 py-4 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all'
                 }, 
                     React.createElement('span', { className: 'text-xl' }, '+'),
                     'Add Manually'
+                ),
+                React.createElement('div', { className: 'bg-green-100 border border-green-300 rounded-lg p-4 text-center' },
+                    React.createElement('div', { className: 'text-2xl mb-1' }, '🧾'),
+                    React.createElement('div', { className: 'text-sm font-medium text-green-800' }, 'NEW: Receipt Upload!'),
+                    React.createElement('div', { className: 'text-xs text-green-600' }, 'Scan receipts to add multiple items')
                 )
             ),
 
@@ -659,7 +1082,7 @@
                 React.createElement('div', { className: 'text-center py-12' },
                     React.createElement('div', { className: 'text-6xl mb-4' }, '🛒'),
                     React.createElement('h3', { className: 'text-xl font-semibold text-gray-600 mb-2' }, 'Your pantry is empty'),
-                    React.createElement('p', { className: 'text-gray-500' }, 'Start by scanning a barcode or adding items manually')
+                    React.createElement('p', { className: 'text-gray-500' }, 'Start by scanning a barcode, uploading a receipt, or adding items manually')
                 ) :
                 React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' },
                     ...filteredItems.map(item =>
@@ -673,8 +1096,9 @@
                 ),
 
             // Modals
-            showScanner && React.createElement(BarcodeScanner, {
+            showScanner && React.createElement(EnhancedScanner, {
                 onScan: handleBarcodeScan,
+                onReceiptItems: handleReceiptItems,
                 onClose: () => setShowScanner(false)
             }),
 
@@ -687,12 +1111,21 @@
                 }
             }),
 
+            showReceiptReview && React.createElement(ReceiptItemsReview, {
+                items: receiptItems,
+                onConfirm: addReceiptItems,
+                onCancel: () => {
+                    setShowReceiptReview(false);
+                    setReceiptItems([]);
+                }
+            }),
+
             loading && React.createElement('div', { 
                 className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50' 
             },
                 React.createElement('div', { className: 'bg-white rounded-xl p-6 text-center' },
                     React.createElement('div', { className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4' }),
-                    React.createElement('p', null, 'Looking up product...')
+                    React.createElement('p', null, 'Processing...')
                 )
             )
         );
