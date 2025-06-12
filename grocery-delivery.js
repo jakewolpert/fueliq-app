@@ -84,8 +84,8 @@
       organic: true,
       inStock: true
     },
-    'sliced turkey': {
-      name: 'Organic Roasted Turkey Breast Slices',
+    'ground turkey': {
+      name: 'Organic Ground Turkey',
       category: 'protein',
       prices: {
         instacart: { price: 9.99, unit: 'lb', store: 'Whole Foods' },
@@ -97,73 +97,34 @@
       organic: true,
       inStock: true
     },
+    'ground beef': {
+      name: 'Organic Ground Beef',
+      category: 'protein',
+      prices: {
+        instacart: { price: 12.99, unit: 'lb', store: 'Whole Foods' },
+        amazon_fresh: { price: 10.49, unit: 'lb', store: 'Amazon Fresh' },
+        walmart: { price: 8.98, unit: 'lb', store: 'Walmart' },
+        target: { price: 11.99, unit: 'lb', store: 'Target' }
+      },
+      image: '🥩',
+      organic: true,
+      inStock: true
+    },
+    'eggs': {
+      name: 'Organic Free-Range Eggs',
+      category: 'protein',
+      prices: {
+        instacart: { price: 6.99, unit: 'dozen', store: 'Whole Foods' },
+        amazon_fresh: { price: 5.49, unit: 'dozen', store: 'Amazon Fresh' },
+        walmart: { price: 3.98, unit: 'dozen', store: 'Walmart' },
+        target: { price: 5.99, unit: 'dozen', store: 'Target' }
+      },
+      image: '🥚',
+      organic: true,
+      inStock: true
+    },
 
     // Vegetables
-    'cherry tomatoes': {
-      name: 'Organic Cherry Tomatoes',
-      category: 'vegetables',
-      prices: {
-        instacart: { price: 4.99, unit: 'container', store: 'Whole Foods' },
-        amazon_fresh: { price: 3.99, unit: 'container', store: 'Amazon Fresh' },
-        walmart: { price: 2.98, unit: 'container', store: 'Walmart' },
-        target: { price: 4.49, unit: 'container', store: 'Target' }
-      },
-      image: '🍅',
-      organic: true,
-      inStock: true
-    },
-    'cucumber': {
-      name: 'Organic English Cucumber',
-      category: 'vegetables',
-      prices: {
-        instacart: { price: 1.99, unit: 'each', store: 'Whole Foods' },
-        amazon_fresh: { price: 1.49, unit: 'each', store: 'Amazon Fresh' },
-        walmart: { price: 0.98, unit: 'each', store: 'Walmart' },
-        target: { price: 1.79, unit: 'each', store: 'Target' }
-      },
-      image: '🥒',
-      organic: true,
-      inStock: true
-    },
-    'sweet potato': {
-      name: 'Organic Sweet Potatoes',
-      category: 'vegetables',
-      prices: {
-        instacart: { price: 2.99, unit: 'lb', store: 'Whole Foods' },
-        amazon_fresh: { price: 2.49, unit: 'lb', store: 'Amazon Fresh' },
-        walmart: { price: 1.68, unit: 'lb', store: 'Walmart' },
-        target: { price: 2.79, unit: 'lb', store: 'Target' }
-      },
-      image: '🍠',
-      organic: true,
-      inStock: true
-    },
-    'asparagus': {
-      name: 'Fresh Asparagus Spears',
-      category: 'vegetables',
-      prices: {
-        instacart: { price: 4.99, unit: 'bunch', store: 'Whole Foods' },
-        amazon_fresh: { price: 3.99, unit: 'bunch', store: 'Amazon Fresh' },
-        walmart: { price: 2.98, unit: 'bunch', store: 'Walmart' },
-        target: { price: 4.49, unit: 'bunch', store: 'Target' }
-      },
-      image: '🥬',
-      organic: false,
-      inStock: true
-    },
-    'mixed greens': {
-      name: 'Organic Spring Mix Salad',
-      category: 'vegetables',
-      prices: {
-        instacart: { price: 4.49, unit: 'bag', store: 'Whole Foods' },
-        amazon_fresh: { price: 3.99, unit: 'bag', store: 'Amazon Fresh' },
-        walmart: { price: 2.98, unit: 'bag', store: 'Walmart' },
-        target: { price: 3.99, unit: 'bag', store: 'Target' }
-      },
-      image: '🥗',
-      organic: true,
-      inStock: true
-    },
     'bell peppers': {
       name: 'Organic Bell Pepper Variety Pack',
       category: 'vegetables',
@@ -174,6 +135,97 @@
         target: { price: 5.49, unit: 'pack', store: 'Target' }
       },
       image: '🫑',
+      organic: true,
+      inStock: true
+    },
+    'tomatoes': {
+      name: 'Organic Roma Tomatoes',
+      category: 'vegetables',
+      prices: {
+        instacart: { price: 4.99, unit: 'lb', store: 'Whole Foods' },
+        amazon_fresh: { price: 3.99, unit: 'lb', store: 'Amazon Fresh' },
+        walmart: { price: 2.98, unit: 'lb', store: 'Walmart' },
+        target: { price: 4.49, unit: 'lb', store: 'Target' }
+      },
+      image: '🍅',
+      organic: true,
+      inStock: true
+    },
+    'onions': {
+      name: 'Organic Yellow Onions',
+      category: 'vegetables',
+      prices: {
+        instacart: { price: 2.99, unit: 'bag', store: 'Whole Foods' },
+        amazon_fresh: { price: 2.49, unit: 'bag', store: 'Amazon Fresh' },
+        walmart: { price: 1.68, unit: 'bag', store: 'Walmart' },
+        target: { price: 2.79, unit: 'bag', store: 'Target' }
+      },
+      image: '🧅',
+      organic: true,
+      inStock: true
+    },
+    'broccoli': {
+      name: 'Fresh Broccoli Crowns',
+      category: 'vegetables',
+      prices: {
+        instacart: { price: 3.99, unit: 'bunch', store: 'Whole Foods' },
+        amazon_fresh: { price: 2.99, unit: 'bunch', store: 'Amazon Fresh' },
+        walmart: { price: 1.98, unit: 'bunch', store: 'Walmart' },
+        target: { price: 3.49, unit: 'bunch', store: 'Target' }
+      },
+      image: '🥦',
+      organic: false,
+      inStock: true
+    },
+    'carrots': {
+      name: 'Organic Baby Carrots',
+      category: 'vegetables',
+      prices: {
+        instacart: { price: 3.49, unit: 'bag', store: 'Whole Foods' },
+        amazon_fresh: { price: 2.99, unit: 'bag', store: 'Amazon Fresh' },
+        walmart: { price: 1.98, unit: 'bag', store: 'Walmart' },
+        target: { price: 3.19, unit: 'bag', store: 'Target' }
+      },
+      image: '🥕',
+      organic: true,
+      inStock: true
+    },
+    'spinach': {
+      name: 'Organic Baby Spinach',
+      category: 'vegetables',
+      prices: {
+        instacart: { price: 4.49, unit: 'bag', store: 'Whole Foods' },
+        amazon_fresh: { price: 3.99, unit: 'bag', store: 'Amazon Fresh' },
+        walmart: { price: 2.98, unit: 'bag', store: 'Walmart' },
+        target: { price: 3.99, unit: 'bag', store: 'Target' }
+      },
+      image: '🥬',
+      organic: true,
+      inStock: true
+    },
+    'mushrooms': {
+      name: 'Fresh Button Mushrooms',
+      category: 'vegetables',
+      prices: {
+        instacart: { price: 3.99, unit: 'container', store: 'Whole Foods' },
+        amazon_fresh: { price: 2.99, unit: 'container', store: 'Amazon Fresh' },
+        walmart: { price: 1.98, unit: 'container', store: 'Walmart' },
+        target: { price: 3.49, unit: 'container', store: 'Target' }
+      },
+      image: '🍄',
+      organic: false,
+      inStock: true
+    },
+    'sweet potatoes': {
+      name: 'Organic Sweet Potatoes',
+      category: 'vegetables',
+      prices: {
+        instacart: { price: 2.99, unit: 'lb', store: 'Whole Foods' },
+        amazon_fresh: { price: 2.49, unit: 'lb', store: 'Amazon Fresh' },
+        walmart: { price: 1.68, unit: 'lb', store: 'Walmart' },
+        target: { price: 2.79, unit: 'lb', store: 'Target' }
+      },
+      image: '🍠',
       organic: true,
       inStock: true
     },
@@ -205,20 +257,7 @@
       organic: true,
       inStock: true
     },
-    'whole wheat tortilla': {
-      name: 'Organic Whole Wheat Tortillas',
-      category: 'grains',
-      prices: {
-        instacart: { price: 4.49, unit: 'pack', store: 'Whole Foods' },
-        amazon_fresh: { price: 3.99, unit: 'pack', store: 'Amazon Fresh' },
-        walmart: { price: 2.78, unit: 'pack', store: 'Walmart' },
-        target: { price: 3.99, unit: 'pack', store: 'Target' }
-      },
-      image: '🌯',
-      organic: true,
-      inStock: true
-    },
-    'rolled oats': {
+    'oats': {
       name: 'Organic Old-Fashioned Rolled Oats',
       category: 'grains',
       prices: {
@@ -228,6 +267,47 @@
         target: { price: 5.49, unit: 'container', store: 'Target' }
       },
       image: '🥣',
+      organic: true,
+      inStock: true
+    },
+
+    // Dairy
+    'greek yogurt': {
+      name: 'Organic Greek Yogurt',
+      category: 'dairy',
+      prices: {
+        instacart: { price: 6.99, unit: 'container', store: 'Whole Foods' },
+        amazon_fresh: { price: 5.99, unit: 'container', store: 'Amazon Fresh' },
+        walmart: { price: 4.98, unit: 'container', store: 'Walmart' },
+        target: { price: 6.49, unit: 'container', store: 'Target' }
+      },
+      image: '🥛',
+      organic: true,
+      inStock: true
+    },
+    'milk': {
+      name: 'Organic Whole Milk',
+      category: 'dairy',
+      prices: {
+        instacart: { price: 4.99, unit: 'gallon', store: 'Whole Foods' },
+        amazon_fresh: { price: 3.99, unit: 'gallon', store: 'Amazon Fresh' },
+        walmart: { price: 2.98, unit: 'gallon', store: 'Walmart' },
+        target: { price: 4.49, unit: 'gallon', store: 'Target' }
+      },
+      image: '🥛',
+      organic: true,
+      inStock: true
+    },
+    'cheese': {
+      name: 'Organic Cheddar Cheese',
+      category: 'dairy',
+      prices: {
+        instacart: { price: 6.99, unit: 'block', store: 'Whole Foods' },
+        amazon_fresh: { price: 5.99, unit: 'block', store: 'Amazon Fresh' },
+        walmart: { price: 4.98, unit: 'block', store: 'Walmart' },
+        target: { price: 6.49, unit: 'block', store: 'Target' }
+      },
+      image: '🧀',
       organic: true,
       inStock: true
     },
@@ -246,98 +326,16 @@
       organic: false,
       inStock: true
     },
-    'avocado': {
-      name: 'Organic Hass Avocados',
+    'mixed nuts': {
+      name: 'Organic Mixed Nuts',
       category: 'fats',
       prices: {
-        instacart: { price: 2.99, unit: 'each', store: 'Whole Foods' },
-        amazon_fresh: { price: 2.49, unit: 'each', store: 'Amazon Fresh' },
-        walmart: { price: 1.48, unit: 'each', store: 'Walmart' },
-        target: { price: 2.79, unit: 'each', store: 'Target' }
-      },
-      image: '🥑',
-      organic: true,
-      inStock: true
-    },
-    'almond butter': {
-      name: 'Organic Almond Butter',
-      category: 'fats',
-      prices: {
-        instacart: { price: 11.99, unit: 'jar', store: 'Whole Foods' },
-        amazon_fresh: { price: 9.99, unit: 'jar', store: 'Amazon Fresh' },
-        walmart: { price: 7.98, unit: 'jar', store: 'Walmart' },
-        target: { price: 10.99, unit: 'jar', store: 'Target' }
+        instacart: { price: 11.99, unit: 'bag', store: 'Whole Foods' },
+        amazon_fresh: { price: 9.99, unit: 'bag', store: 'Amazon Fresh' },
+        walmart: { price: 7.98, unit: 'bag', store: 'Walmart' },
+        target: { price: 10.99, unit: 'bag', store: 'Target' }
       },
       image: '🥜',
-      organic: true,
-      inStock: true
-    },
-
-    // Dairy
-    'feta cheese': {
-      name: 'Organic Feta Cheese',
-      category: 'dairy',
-      prices: {
-        instacart: { price: 6.99, unit: 'container', store: 'Whole Foods' },
-        amazon_fresh: { price: 5.99, unit: 'container', store: 'Amazon Fresh' },
-        walmart: { price: 4.98, unit: 'container', store: 'Walmart' },
-        target: { price: 6.49, unit: 'container', store: 'Target' }
-      },
-      image: '🧀',
-      organic: true,
-      inStock: true
-    },
-    'almond milk': {
-      name: 'Organic Unsweetened Almond Milk',
-      category: 'dairy',
-      prices: {
-        instacart: { price: 4.99, unit: 'carton', store: 'Whole Foods' },
-        amazon_fresh: { price: 3.99, unit: 'carton', store: 'Amazon Fresh' },
-        walmart: { price: 2.98, unit: 'carton', store: 'Walmart' },
-        target: { price: 4.49, unit: 'carton', store: 'Target' }
-      },
-      image: '🥛',
-      organic: true,
-      inStock: true
-    },
-
-    // Fruits
-    'lemon': {
-      name: 'Organic Lemons',
-      category: 'fruits',
-      prices: {
-        instacart: { price: 0.99, unit: 'each', store: 'Whole Foods' },
-        amazon_fresh: { price: 0.79, unit: 'each', store: 'Amazon Fresh' },
-        walmart: { price: 0.58, unit: 'each', store: 'Walmart' },
-        target: { price: 0.89, unit: 'each', store: 'Target' }
-      },
-      image: '🍋',
-      organic: true,
-      inStock: true
-    },
-    'banana': {
-      name: 'Organic Bananas',
-      category: 'fruits',
-      prices: {
-        instacart: { price: 1.99, unit: 'lb', store: 'Whole Foods' },
-        amazon_fresh: { price: 1.69, unit: 'lb', store: 'Amazon Fresh' },
-        walmart: { price: 1.28, unit: 'lb', store: 'Walmart' },
-        target: { price: 1.79, unit: 'lb', store: 'Target' }
-      },
-      image: '🍌',
-      organic: true,
-      inStock: true
-    },
-    'berries': {
-      name: 'Organic Mixed Berry Blend',
-      category: 'fruits',
-      prices: {
-        instacart: { price: 6.99, unit: 'container', store: 'Whole Foods' },
-        amazon_fresh: { price: 5.99, unit: 'container', store: 'Amazon Fresh' },
-        walmart: { price: 4.98, unit: 'container', store: 'Walmart' },
-        target: { price: 6.49, unit: 'container', store: 'Target' }
-      },
-      image: '🫐',
       organic: true,
       inStock: true
     }
@@ -365,23 +363,19 @@
       'chicken': 'chicken breast',
       'salmon': 'salmon fillet',
       'tofu': 'extra firm tofu',
-      'turkey': 'sliced turkey',
-      'tomatoes': 'cherry tomatoes',
-      'tomato': 'cherry tomatoes',
-      'cucumbers': 'cucumber',
-      'sweet potatoes': 'sweet potato',
-      'greens': 'mixed greens',
-      'lettuce': 'mixed greens',
+      'turkey': 'ground turkey',
+      'beef': 'ground beef',
+      'tomato': 'tomatoes',
+      'pepper': 'bell peppers',
       'peppers': 'bell peppers',
+      'onion': 'onions',
+      'carrot': 'carrots',
+      'mushroom': 'mushrooms',
+      'sweet potato': 'sweet potatoes',
       'rice': 'brown rice',
-      'tortilla': 'whole wheat tortilla',
-      'oats': 'rolled oats',
-      'oil': 'olive oil',
-      'avocados': 'avocado',
-      'cheese': 'feta cheese',
-      'milk': 'almond milk',
-      'lemons': 'lemon',
-      'bananas': 'banana'
+      'yogurt': 'greek yogurt',
+      'nuts': 'mixed nuts',
+      'oil': 'olive oil'
     };
     
     for (const [key, value] of Object.entries(fuzzyMatches)) {
@@ -569,38 +563,38 @@
     renderServiceSelector();
     renderProductGrid();
     updateCart();
-   setupGroceryEventListeners();
+    setupGroceryEventListeners();
 
-// Auto-import grocery list if available
-setTimeout(() => {
-  const pendingList = localStorage.getItem('fueliq_pending_grocery_list');
-  if (pendingList) {
-    console.log('🔄 Auto-importing grocery list from meal planning...');
-    
-    // Show loading message
-    const importButton = document.getElementById('importFromMealPlan');
-    if (importButton) {
-      importButton.textContent = '⏳ Auto-importing...';
-      importButton.disabled = true;
-    }
-    
-    // Auto-import after short delay
+    // Auto-import grocery list if available
     setTimeout(() => {
-      importFromMealPlan();
-      
-      // Reset button
-      if (importButton) {
-        importButton.textContent = '📅 From Meal Plan';
-        importButton.disabled = false;
+      const pendingList = localStorage.getItem('fueliq_pending_grocery_list');
+      if (pendingList) {
+        console.log('🔄 Auto-importing grocery list from meal planning...');
+        
+        // Show loading message
+        const importButton = document.getElementById('importFromMealPlan');
+        if (importButton) {
+          importButton.textContent = '⏳ Auto-importing...';
+          importButton.disabled = true;
+        }
+        
+        // Auto-import after short delay
+        setTimeout(() => {
+          importFromMealPlan();
+          
+          // Reset button
+          if (importButton) {
+            importButton.textContent = '📅 From Meal Plan';
+            importButton.disabled = false;
+          }
+        }, 1000);
       }
-    }, 1000);
-  }
-}, 500);
+    }, 500);
 
-// If grocery list is passed, import it
-if (groceryList) {
-  importGroceryList(groceryList);
-}
+    // If grocery list is passed, import it
+    if (groceryList) {
+      importGroceryList(groceryList);
+    }
   }
 
   function renderServiceSelector() {
@@ -813,185 +807,124 @@ if (groceryList) {
     });
   }
 
+  // ✅ FIXED IMPORT FUNCTION - No more syntax errors!
   function importFromMealPlan() {
-  // First try to get pending grocery list from meal planning integration
-  let groceryList = null;
-  try {
-    const pendingList = localStorage.getItem('fueliq_pending_grocery_list');
-    if (pendingList) {
-      groceryList = JSON.parse(pendingList);
-      console.log('📋 Found pending grocery list from meal planning:', groceryList);
-    }
-  } catch (e) {
-    console.warn('Could not load pending grocery list:', e);
-  }
-
-  // If no pending list, try the integration system
-  if (!groceryList && window.FuelIQIntegration) {
-    try {  // ✅ ADD THIS TRY BLOCK
-      const mealPlans = window.FuelIQIntegration.getSharedData('mealPlans');
-      
-      if (!mealPlans || Object.keys(mealPlans).length === 0) {
-        alert('❌ No meal plan found. Please create a meal plan first.');
-        return;
-      }
-      
-      const groceryListData = window.FuelIQIntegration.generateGroceryListFromMealPlan(mealPlans);
-      groceryList = Object.values(groceryListData.ingredients || {});
-      
-    } catch (e) {  // ✅ NOW THIS CATCH HAS A MATCHING TRY
-      console.error('Integration error:', e);
-      alert('❌ Error importing meal plan. Please try again.');
-      return;
-    }
-  }
-
-  // If still no list, try fallback method
-  if (!groceryList) {
+    // First try to get pending grocery list from meal planning integration
+    let groceryList = null;
     try {
-      const mealPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
-      
-      if (Object.keys(mealPlan).length === 0) {
-        alert('❌ No meal plan found. Please create a meal plan first.');
-        return;
+      const pendingList = localStorage.getItem('fueliq_pending_grocery_list');
+      if (pendingList) {
+        groceryList = JSON.parse(pendingList);
+        console.log('📋 Found pending grocery list from meal planning:', groceryList);
       }
-      
-      groceryList = convertMealPlanToGroceryList(mealPlan);
     } catch (e) {
-      alert('❌ No meal plan found. Please create a meal plan first.');
-      return;
+      console.warn('Could not load pending grocery list:', e);
     }
-  }
 
-  // Convert and add items to cart
-  let addedCount = 0;
-  const failedItems = [];
-
-  groceryList.forEach(item => {
-    const itemName = item.name || item.ingredient?.name || 'Unknown';
-    const product = findBestProductMatch(itemName);
-    if (product) {
-      const quantity = item.neededAmount || item.totalAmount || item.amount || 1;
-      addToCart(itemName.toLowerCase(), Math.ceil(quantity), false);
-      addedCount++;
-    } else {
-      failedItems.push(itemName);
-    }
-  });
-
-  updateCart();
-  
-  // Clear pending grocery list
-  localStorage.removeItem('fueliq_pending_grocery_list');
-  
-  // Show success message
-  if (addedCount > 0) {
-    let message = `✅ Imported ${addedCount} items from meal plan!`;
-    if (failedItems.length > 0) {
-      message += `\n\n❌ Could not find matches for: ${failedItems.slice(0, 3).join(', ')}`;
-      if (failedItems.length > 3) message += ` and ${failedItems.length - 3} more`;
-    }
-    
-    if (window.FuelIQIntegration) {
-      window.FuelIQIntegration.utils.showSuccessMessage(message);
-    } else {
-      alert(message);
-    }
-  } else {
-    alert('❌ No compatible items found in meal plan.');
-  }
-}
-
-// Helper function to convert meal plan format - ADD THIS AFTER THE FUNCTION ABOVE
-function convertMealPlanToGroceryList(mealPlan) {
-  const ingredientsList = {};
-  
-  Object.values(mealPlan).forEach(dayPlan => {
-    ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
-      const meal = dayPlan[mealType];
-      if (meal && meal.ingredients) {
-        meal.ingredients.forEach(ingredient => {
-          const key = ingredient.name.toLowerCase();
-          if (ingredientsList[key]) {
-            ingredientsList[key].totalAmount += parseFloat(ingredient.amount) || 1;
-          } else {
-            ingredientsList[key] = {
-              name: ingredient.name,
-              totalAmount: parseFloat(ingredient.amount) || 1,
-              unit: ingredient.unit || 'item',
-              category: ingredient.category || 'other'
-            };
-          }
-        });
-      }
-    });
-  });
-
-  return Object.values(ingredientsList);
-}
+    // If no pending list, try the integration system
+    if (!groceryList && window.FuelIQIntegration) {
+      try {
+        const mealPlans = window.FuelIQIntegration.getSharedData('mealPlans');
         
-        const groceryList = window.FuelIQIntegration.generateGroceryListFromMealPlan(mealPlans);
-        
-        // Add items to cart
-        let addedCount = 0;
-        Object.values(groceryList.ingredients).forEach(ingredient => {
-          const product = findBestProductMatch(ingredient.name);
-          if (product) {
-            addToCart(ingredient.name.toLowerCase(), Math.ceil(ingredient.totalAmount), false);
-            addedCount++;
-          }
-        });
-
-        updateCart();
-        
-        if (addedCount > 0) {
-          window.FuelIQIntegration.utils.showSuccessMessage(
-            `Imported ${addedCount} items from meal plan! Dietary restrictions applied.`
-          );
-        } else {
-          alert('❌ No compatible items found in meal plan.');
+        if (!mealPlans || Object.keys(mealPlans).length === 0) {
+          alert('❌ No meal plan found. Please create a meal plan first.');
+          return;
         }
+        
+        const groceryListData = window.FuelIQIntegration.generateGroceryListFromMealPlan(mealPlans);
+        groceryList = Object.values(groceryListData.ingredients || {});
+        
       } catch (e) {
         console.error('Integration error:', e);
         alert('❌ Error importing meal plan. Please try again.');
-      }
-    } else {
-      // Fallback to original method
-      try {
-        const mealPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
-        const ingredientsList = {};
-        
-        Object.values(mealPlan).forEach(dayPlan => {
-          ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
-            const meal = dayPlan[mealType];
-            if (meal && meal.ingredients) {
-              meal.ingredients.forEach(ingredient => {
-                const key = ingredient.name.toLowerCase();
-                if (ingredientsList[key]) {
-                  ingredientsList[key].amount += ` + ${ingredient.amount}`;
-                } else {
-                  ingredientsList[key] = { ...ingredient };
-                }
-              });
-            }
-          });
-        });
-
-        // Convert to products and add to cart
-        Object.values(ingredientsList).forEach(ingredient => {
-          const product = findBestProductMatch(ingredient.name);
-          if (product) {
-            addToCart(ingredient.name.toLowerCase(), 1, false);
-          }
-        });
-
-        updateCart();
-        alert('✅ Meal plan imported successfully! Review and adjust quantities as needed.');
-      } catch (e) {
-        alert('❌ No meal plan found. Please create a meal plan first.');
+        return;
       }
     }
+
+    // If still no list, try fallback method
+    if (!groceryList) {
+      try {
+        const mealPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
+        
+        if (Object.keys(mealPlan).length === 0) {
+          alert('❌ No meal plan found. Please create a meal plan first.');
+          return;
+        }
+        
+        groceryList = convertMealPlanToGroceryList(mealPlan);
+      } catch (e) {
+        alert('❌ No meal plan found. Please create a meal plan first.');
+        return;
+      }
+    }
+
+    // Convert and add items to cart
+    let addedCount = 0;
+    const failedItems = [];
+
+    groceryList.forEach(item => {
+      const itemName = item.name || item.ingredient?.name || 'Unknown';
+      const product = findBestProductMatch(itemName);
+      if (product) {
+        const quantity = item.neededAmount || item.totalAmount || item.amount || 1;
+        addToCart(itemName.toLowerCase(), Math.ceil(quantity), false);
+        addedCount++;
+      } else {
+        failedItems.push(itemName);
+      }
+    });
+
+    updateCart();
+    
+    // Clear pending grocery list
+    localStorage.removeItem('fueliq_pending_grocery_list');
+    
+    // Show success message
+    if (addedCount > 0) {
+      let message = `✅ Imported ${addedCount} items from meal plan!`;
+      if (failedItems.length > 0) {
+        message += `\n\n❌ Could not find matches for: ${failedItems.slice(0, 3).join(', ')}`;
+        if (failedItems.length > 3) message += ` and ${failedItems.length - 3} more`;
+      }
+      
+      if (window.FuelIQIntegration && window.FuelIQIntegration.utils) {
+        window.FuelIQIntegration.utils.showSuccessMessage(message);
+      } else {
+        alert(message);
+      }
+    } else {
+      alert('❌ No compatible items found in meal plan.');
+    }
   }
+
+  // Helper function to convert meal plan format
+  function convertMealPlanToGroceryList(mealPlan) {
+    const ingredientsList = {};
+    
+    Object.values(mealPlan).forEach(dayPlan => {
+      ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+        const meal = dayPlan[mealType];
+        if (meal && meal.ingredients) {
+          meal.ingredients.forEach(ingredient => {
+            const key = ingredient.name.toLowerCase();
+            if (ingredientsList[key]) {
+              ingredientsList[key].totalAmount += parseFloat(ingredient.amount) || 1;
+            } else {
+              ingredientsList[key] = {
+                name: ingredient.name,
+                totalAmount: parseFloat(ingredient.amount) || 1,
+                unit: ingredient.unit || 'item',
+                category: ingredient.category || 'other'
+              };
+            }
+          });
+        }
+      });
+    });
+
+    return Object.values(ingredientsList);
+  }
+
   function processUploadedList() {
     const textInput = document.getElementById('manualListEntry')?.value;
     const fileInput = document.getElementById('fileUpload')?.files[0];
@@ -1189,7 +1122,9 @@ function convertMealPlanToGroceryList(mealPlan) {
       );
       
       // Show success message
-      window.FuelIQIntegration.utils.showSuccessMessage('Order placed! Pantry updated automatically.');
+      if (window.FuelIQIntegration.utils) {
+        window.FuelIQIntegration.utils.showSuccessMessage('Order placed! Pantry updated automatically.');
+      }
     } else {
       // Fallback to original method
       updatePantryWithPurchase();
@@ -1214,14 +1149,15 @@ Items automatically added to your pantry!`);
     // This would integrate with the pantry system
     // For now, just save to localStorage
     try {
-      const pantryItems = JSON.parse(localStorage.getItem('fueliq_pantry') || '[]');
+      const pantryItems = JSON.parse(localStorage.getItem('fueliq_pantry') || '{"items": []}');
+      const items = pantryItems.items || [];
       
       shoppingCart.forEach(item => {
-        const existingItem = pantryItems.find(p => p.name === item.product.name);
+        const existingItem = items.find(p => p.name === item.product.name);
         if (existingItem) {
           existingItem.quantity += item.quantity;
         } else {
-          pantryItems.push({
+          items.push({
             name: item.product.name,
             category: item.product.category,
             quantity: item.quantity,
@@ -1231,7 +1167,7 @@ Items automatically added to your pantry!`);
         }
       });
       
-      localStorage.setItem('fueliq_pantry', JSON.stringify(pantryItems));
+      localStorage.setItem('fueliq_pantry', JSON.stringify({ items }));
     } catch (e) {
       console.warn('Could not update pantry:', e);
     }
@@ -1269,38 +1205,21 @@ Items automatically added to your pantry!`);
     renderGroceryDelivery: createGroceryDeliveryInterface,
     cleanup: cleanup
   };
-// Integration status monitoring
-  function showIntegrationStatus() {
-    if (window.FuelIQIntegration) {
-      const status = window.FuelIQIntegration.getIntegrationStatus();
-      console.log('🔗 Grocery Delivery Integration Status:', status);
+
+  // Integration event listeners
+  if (window.FuelIQIntegration) {
+    window.FuelIQIntegration.on('groceryListGenerated', (data) => {
+      console.log('🛒 Received grocery list from meal planning:', data);
       
-      // Create status indicator if it doesn't exist
-      if (!document.getElementById('integration-status')) {
-        const statusDiv = document.createElement('div');
-        statusDiv.id = 'integration-status';
-        document.body.appendChild(statusDiv);
-        window.FuelIQIntegration.utils.showIntegrationStatus();
+      // Auto-import if we're on the grocery delivery page
+      if (document.getElementById('serviceSelector')) {
+        setTimeout(() => {
+          importFromMealPlan();
+        }, 500);
       }
-    }
+    });
+    
+    console.log('🔗 Grocery Delivery connected to integration system');
   }
 
- // Integration event listeners
-if (window.FuelIQIntegration) {
-  window.FuelIQIntegration.events.on('groceryListGenerated', (data) => {
-    console.log('🛒 Received grocery list from meal planning:', data);
-    
-    // Auto-import if we're on the grocery delivery page
-    if (document.getElementById('serviceSelector')) {
-      setTimeout(() => {
-        importFromMealPlan();
-      }, 500);
-    }
-  });
-  
-  console.log('🔗 Grocery Delivery connected to integration system');
-}
-
-// Initialize integration when grocery delivery loads
-setTimeout(showIntegrationStatus, 1000);
 })();
