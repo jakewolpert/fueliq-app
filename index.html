@@ -291,26 +291,36 @@ useEffect(() => {
 }, [currentView]);
 
       // Enhanced meal planning tab rendering
-      useEffect(() => {
-        if (currentView === 'planning') {
-          clearContainer('planning-container');
-          
-          const timer = setTimeout(() => {
-            try {
-              if (window.FuelIQMealPlanning && window.FuelIQMealPlanning.renderMealPlanning) {
-                window.FuelIQMealPlanning.renderMealPlanning('planning-container');
-              } else {
-                console.warn('FuelIQMealPlanning module not available');
-              }
-            } catch (error) {
-              console.error('Error rendering meal planning tab:', error);
-            }
-          }, 300);
-          
-          return () => clearTimeout(timer);
+      // Enhanced meal planning tab rendering
+useEffect(() => {
+  if (currentView === 'planning') {
+    clearContainer('planning-container');
+    
+    let retryCount = 0;
+    const maxRetries = 10;
+    
+    const tryRenderPlanning = () => {
+      if (window.FuelIQMealPlanning && window.FuelIQMealPlanning.renderMealPlanning) {
+        try {
+          window.FuelIQMealPlanning.renderMealPlanning('planning-container');
+          console.log('✅ Planning tab rendered successfully');
+        } catch (error) {
+          console.error('Error rendering planning tab:', error);
         }
-      }, [currentView]);
-
+      } else {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Waiting for FuelIQMealPlanning module... (${retryCount}/${maxRetries})`);
+          setTimeout(tryRenderPlanning, 200);
+        } else {
+          console.warn('❌ FuelIQMealPlanning module failed to load');
+        }
+      }
+    };
+    
+    setTimeout(tryRenderPlanning, 100);
+  }
+}, [currentView]);
       // Enhanced grocery delivery tab rendering
       useEffect(() => {
         if (currentView === 'grocery') {
