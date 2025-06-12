@@ -685,96 +685,97 @@ const cuisineOptions = [
                 )
               ),
 
+              // Foods I Love
+              e('div', { className: "mb-8" },
+                e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
+                  e('span', { className: "mr-3 text-2xl" }, '❤️'),
+                  "Foods I Love"
+                ),
+                e('p', { className: "text-sm text-gray-600 mb-4" },
+                  "Select foods you enjoy eating - we'll prioritize these in your meal plans"
+                ),
+                e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-3" },
+                  foodsILoveOptions.map(food => 
+                    e('button', {
+                      key: food,
+                      onClick: () => {
+                        const newFoods = userProfile.foodsILove.includes(food)
+                          ? userProfile.foodsILove.filter(f => f !== food)
+                          : [...userProfile.foodsILove, food];
+                        setUserProfile({...userProfile, foodsILove: newFoods});
+                      },
+                      className: `p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
+                        userProfile.foodsILove.includes(food)
+                          ? 'border-green-500 bg-gradient-to-r from-green-50 to-emerald-50 text-green-700'
+                          : 'border-gray-200 bg-white/50 text-gray-600 hover:border-green-300'
+                      }`
+                    }, food)
+                  )
+                )
+              ),
+
+              // Foods I Avoid
+              e('div', { className: "mb-8" },
+                e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
+                  e('span', { className: "mr-3 text-2xl" }, '🚫'),
+                  "Foods I Prefer to Avoid"
+                ),
+                e('p', { className: "text-sm text-gray-600 mb-4" },
+                  "Select foods you don't enjoy - we'll avoid these in your meal suggestions"
+                ),
+                e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-3" },
+                  foodsIAvoidOptions.map(food => 
+                    e('button', {
+                      key: food,
+                      onClick: () => {
+                        const newFoods = userProfile.foodsIAvoid.includes(food)
+                          ? userProfile.foodsIAvoid.filter(f => f !== food)
+                          : [...userProfile.foodsIAvoid, food];
+                        setUserProfile({...userProfile, foodsIAvoid: newFoods});
+                      },
+                      className: `p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
+                        userProfile.foodsIAvoid.includes(food)
+                          ? 'border-red-500 bg-gradient-to-r from-red-50 to-pink-50 text-red-700'
+                          : 'border-gray-200 bg-white/50 text-gray-600 hover:border-red-300'
+                      }`
+                    }, food)
+                  )
+                )
+              ),
+
+              // Cuisine Preferences
+              e('div', { className: "mb-8" },
+                e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
+                  e('span', { className: "mr-3 text-2xl" }, '🌍'),
+                  "Favorite Cuisines"
+                ),
+                e('p', { className: "text-sm text-gray-600 mb-4" },
+                  "Select cuisine types you enjoy - we'll include more recipes from these cultures"
+                ),
+                e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-3" },
+                  cuisineOptions.map(cuisine => 
+                    e('button', {
+                      key: cuisine,
+                      onClick: () => {
+                        const newCuisines = userProfile.cuisinePreferences.includes(cuisine)
+                          ? userProfile.cuisinePreferences.filter(c => c !== cuisine)
+                          : [...userProfile.cuisinePreferences, cuisine];
+                        setUserProfile({...userProfile, cuisinePreferences: newCuisines});
+                      },
+                      className: `p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
+                        userProfile.cuisinePreferences.includes(cuisine)
+                          ? 'border-purple-500 bg-gradient-to-r from-purple-50 to-pink-50 text-purple-700'
+                          : 'border-gray-200 bg-white/50 text-gray-600 hover:border-purple-300'
+                      }`
+                    }, cuisine)
+                  )
+                )
+              ),
+
               // Special Preferences
               e('div', { className: "mb-8" },
                 e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
                   e('span', { className: "mr-3 text-2xl" }, '🧠'),
-                  // Foods I Love
-e('div', { className: "mb-8" },
-  e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
-    e('span', { className: "mr-3 text-2xl" }, '❤️'),
-    "Foods I Love"
-  ),
-  e('p', { className: "text-sm text-gray-600 mb-4" },
-    "Select foods you enjoy eating - we'll prioritize these in your meal plans"
-  ),
-  e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-3" },
-    foodsILoveOptions.map(food => 
-      e('button', {
-        key: food,
-        onClick: () => {
-          const newFoods = userProfile.foodsILove.includes(food)
-            ? userProfile.foodsILove.filter(f => f !== food)
-            : [...userProfile.foodsILove, food];
-          setUserProfile({...userProfile, foodsILove: newFoods});
-        },
-        className: `p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
-          userProfile.foodsILove.includes(food)
-            ? 'border-green-500 bg-gradient-to-r from-green-50 to-emerald-50 text-green-700'
-            : 'border-gray-200 bg-white/50 text-gray-600 hover:border-green-300'
-        }`
-      }, food)
-    )
-  )
-),
-
-// Foods I Avoid
-e('div', { className: "mb-8" },
-  e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
-    e('span', { className: "mr-3 text-2xl" }, '🚫'),
-    "Foods I Prefer to Avoid"
-  ),
-  e('p', { className: "text-sm text-gray-600 mb-4" },
-    "Select foods you don't enjoy - we'll avoid these in your meal suggestions"
-  ),
-  e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-3" },
-    foodsIAvoidOptions.map(food => 
-      e('button', {
-        key: food,
-        onClick: () => {
-          const newFoods = userProfile.foodsIAvoid.includes(food)
-            ? userProfile.foodsIAvoid.filter(f => f !== food)
-            : [...userProfile.foodsIAvoid, food];
-          setUserProfile({...userProfile, foodsIAvoid: newFoods});
-        },
-        className: `p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
-          userProfile.foodsIAvoid.includes(food)
-            ? 'border-red-500 bg-gradient-to-r from-red-50 to-pink-50 text-red-700'
-            : 'border-gray-200 bg-white/50 text-gray-600 hover:border-red-300'
-        }`
-      }, food)
-    )
-  )
-),
-
-// Cuisine Preferences
-e('div', { className: "mb-8" },
-  e('h2', { className: "text-2xl font-bold text-gray-800 mb-6 flex items-center" },
-    e('span', { className: "mr-3 text-2xl" }, '🌍'),
-    "Favorite Cuisines"
-  ),
-  e('p', { className: "text-sm text-gray-600 mb-4" },
-    "Select cuisine types you enjoy - we'll include more recipes from these cultures"
-  ),
-  e('div', { className: "grid grid-cols-2 md:grid-cols-4 gap-3" },
-    cuisineOptions.map(cuisine => 
-      e('button', {
-        key: cuisine,
-        onClick: () => {
-          const newCuisines = userProfile.cuisinePreferences.includes(cuisine)
-            ? userProfile.cuisinePreferences.filter(c => c !== cuisine)
-            : [...userProfile.cuisinePreferences, cuisine];
-          setUserProfile({...userProfile, cuisinePreferences: newCuisines});
-        },
-        className: `p-3 rounded-xl border-2 text-sm font-medium transition-all duration-200 ${
-          userProfile.cuisinePreferences.includes(cuisine)
-            ? 'border-purple-500 bg-gradient-to-r from-purple-50 to-pink-50 text-purple-700'
-            : 'border-gray-200 bg-white/50 text-gray-600 hover:border-purple-300'
-        }`
-      }, cuisine)
-    )
-  )
-),
                   "Special Preferences"
                 ),
                 e('div', { className: "space-y-4" },
@@ -789,7 +790,6 @@ e('div', { className: "mb-8" },
                   )
                 )
               ),
-
               // Smart recommendations notification
               // Enhanced smart recommendations notification
 (userProfile.allergies.length > 0 || userProfile.dietaryRestrictions.length > 0 || userProfile.foodsILove.length > 0) && 
