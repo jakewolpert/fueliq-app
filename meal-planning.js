@@ -754,44 +754,65 @@
     console.log('✅ Smart meal plan generated with pantry integration!');
   };
 
-  // Display weekly calendar
-  const displayWeekPlan = (weekPlan) => {
-    const calendar = document.getElementById('weekly-calendar');
-    
-    calendar.innerHTML = Object.entries(weekPlan).map(([day, meals]) => `
-      <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
-        <h3 class="font-bold text-purple-800 mb-3">${day}</h3>
-        <div class="space-y-3">
-          ${['breakfast', 'lunch', 'dinner'].map(mealType => {
-            const meal = meals[mealType];
-            if (!meal) return '';
-            
-            const pantryData = loadPantryData();
-            const pantryAnalysis = calculatePantryScore(meal, pantryData.items || []);
-            
-            return `
-              <div class="bg-white rounded-lg p-3 border border-purple-100">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="flex items-center gap-2">
-                    <span class="text-lg">${meal.image}</span>
-                    <div>
-                      <div class="font-semibold text-sm">${meal.name}</div>
-                      <div class="text-xs text-gray-600">${mealType} • ${meal.cookTime}</div>
-                    </div>
+  // Display weekly calendar with clickable meal cards
+const displayWeekPlan = (weekPlan) => {
+  const calendar = document.getElementById('weekly-calendar');
+  
+  calendar.innerHTML = Object.entries(weekPlan).map(([day, meals]) => `
+    <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+      <h3 class="font-bold text-purple-800 mb-3">${day}</h3>
+      <div class="space-y-3">
+        ${['breakfast', 'lunch', 'dinner'].map(mealType => {
+          const meal = meals[mealType];
+          if (!meal) return '';
+          
+          const pantryData = loadPantryData();
+          const pantryAnalysis = calculatePantryScore(meal, pantryData.items || []);
+          
+          return `
+            <div class="bg-white rounded-lg p-3 border border-purple-100 hover:border-purple-300 cursor-pointer transform hover:scale-[1.02] transition-all duration-200" 
+                 onclick="showRecipeDetails('${meal.id}', '${day}', '${mealType}')">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">${meal.image}</span>
+                  <div>
+                    <div class="font-semibold text-sm hover:text-purple-600 transition-colors">${meal.name}</div>
+                    <div class="text-xs text-gray-600">${mealType} • ${meal.cookTime}</div>
                   </div>
-                  ${pantryAnalysis.matchPercentage > 0.5 ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">🛒 Pantry Match</span>' : ''}
                 </div>
-                <div class="text-xs text-gray-600">
-                  ${pantryAnalysis.availableIngredients}/${pantryAnalysis.totalIngredients} ingredients available
-                  ${pantryAnalysis.hasExpiringIngredients ? ' • ⚠️ Uses expiring items' : ''}
+                <div class="flex flex-col gap-1">
+                  ${pantryAnalysis.matchPercentage > 0.5 ? `<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">🛒 ${Math.round(pantryAnalysis.matchPercentage * 100)}%</span>` : ''}
+                  <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">${meal.calories} cal</span>
                 </div>
               </div>
-            `;
-          }).join('')}
+              <div class="text-xs text-gray-600 mb-2">
+                ${pantryAnalysis.availableIngredients}/${pantryAnalysis.totalIngredients} ingredients available
+                ${pantryAnalysis.hasExpiringIngredients ? ' • ⚠️ Uses expiring items' : ''}
+              </div>
+              <div class="text-xs text-gray-400 text-center">
+                🍽️ Click for recipe details & instructions
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  // Add the recipe modal HTML to the page (only once)
+  if (!document.getElementById('recipe-modal')) {
+    const modalHTML = `
+      <div id="recipe-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div id="recipe-modal-content">
+            <!-- Recipe details will be inserted here -->
+          </div>
         </div>
       </div>
-    `).join('');
-  };
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+  }
+};
 
   // Cleanup function
   const cleanup = () => {
