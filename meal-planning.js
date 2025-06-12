@@ -885,5 +885,126 @@ Coming soon: Full meal prep planning feature! 🚀`);
     renderMealPlanning: createMealPlanningInterface,
     cleanup: cleanup
   };
+// Enhanced Integration Features for Meal Planning
 
+// Function to save meal plan with integration
+function saveMealPlanWithIntegration(weekPlan) {
+  // Save to localStorage (existing functionality)
+  try {
+    localStorage.setItem('fueliq_meal_plan', JSON.stringify(weekPlan));
+  } catch (e) {
+    console.warn('Could not save meal plan to localStorage:', e);
+  }
+
+  // Update integration hub
+  if (window.FuelIQIntegration) {
+    window.FuelIQIntegration.setSharedData('mealPlans', weekPlan);
+    
+    // Generate smart grocery list preview
+    const groceryList = window.FuelIQIntegration.generateGroceryListFromMealPlan(weekPlan);
+    
+    // Show success message with grocery list info
+    window.FuelIQIntegration.utils.showSuccessMessage(
+      `Meal plan saved! ${Object.keys(groceryList.ingredients).length} grocery items ready.`
+    );
+    
+    console.log('📅 Meal Plan Integration:', {
+      mealsSaved: Object.keys(weekPlan).length,
+      groceryItems: Object.keys(groceryList.ingredients).length,
+      estimatedCost: groceryList.estimatedCost
+    });
+  }
+}
+
+// Enhanced grocery list generation with navigation
+function generateAndNavigateToGrocery() {
+  if (!window.FuelIQIntegration) {
+    alert('Integration system not available. Please refresh the page.');
+    return;
+  }
+
+  try {
+    const mealPlans = window.FuelIQIntegration.getSharedData('mealPlans');
+    
+    if (!mealPlans || Object.keys(mealPlans).length === 0) {
+      alert('❌ No meal plan found. Please create a meal plan first.');
+      return;
+    }
+
+    const groceryList = window.FuelIQIntegration.generateGroceryListFromMealPlan(mealPlans);
+    
+    // Show preview
+    const itemCount = Object.keys(groceryList.ingredients).length;
+    const confirm = window.confirm(
+      `🛒 Generated grocery list with ${itemCount} items!\n\n` +
+      `Estimated cost: $${groceryList.estimatedCost.toFixed(2)}\n\n` +
+      `Would you like to go to the Grocery Delivery tab?`
+    );
+    
+    if (confirm) {
+      // Navigate to grocery tab with the list
+      window.FuelIQIntegration.utils.navigateToModule('grocery', { groceryList });
+    }
+    
+  } catch (e) {
+    console.error('Error generating grocery list:', e);
+    alert('❌ Error generating grocery list. Please try again.');
+  }
+}
+
+// Add grocery list button to meal planning interface
+function addGroceryListButton() {
+  // Find a good place to add the button (you might need to adjust the selector)
+  const container = document.querySelector('#planning-container .bg-white\\/80') || 
+                   document.querySelector('#planning-container > div');
+  
+  if (!container) return;
+
+  // Check if button already exists
+  if (document.getElementById('grocery-list-btn')) return;
+
+  const groceryButton = document.createElement('div');
+  groceryButton.innerHTML = `
+    <div class="mt-6 p-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl">
+      <button id="grocery-list-btn" onclick="generateAndNavigateToGrocery()" 
+              class="w-full p-4 bg-white/20 hover:bg-white/30 rounded-xl text-white font-bold text-lg transition-all duration-200 flex items-center justify-center space-x-3">
+        <span class="text-2xl">🛒</span>
+        <span>Generate Smart Grocery List</span>
+        <span class="text-2xl">→</span>
+      </button>
+      <p class="text-white/80 text-sm mt-2 text-center">
+        Auto-generates shopping list with dietary restrictions applied
+      </p>
+    </div>
+  `;
+  
+  container.appendChild(groceryButton);
+}
+
+// Integration status for meal planning
+function initializeMealPlanningIntegration() {
+  if (window.FuelIQIntegration) {
+    // Load existing meal plans into integration hub
+    try {
+      const existingPlans = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
+      if (Object.keys(existingPlans).length > 0) {
+        window.FuelIQIntegration.setSharedData('mealPlans', existingPlans);
+      }
+    } catch (e) {
+      console.warn('Could not load existing meal plans:', e);
+    }
+
+    // Add grocery list button
+    setTimeout(addGroceryListButton, 1000);
+    
+    console.log('🔗 Meal Planning Integration initialized');
+  }
+}
+
+// Make functions globally available
+window.saveMealPlanWithIntegration = saveMealPlanWithIntegration;
+window.generateAndNavigateToGrocery = generateAndNavigateToGrocery;
+
+// Initialize integration when meal planning loads
+setTimeout(initializeMealPlanningIntegration, 500);
 })();
