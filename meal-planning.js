@@ -1033,11 +1033,11 @@ window.showRecipeDetails = function(recipeId, day, mealType) {
           `}
 
           <!-- Modify Meal Plan -->
-          <button onclick="modifyMealPlan('${day}', '${mealType}', '${recipe.id}')" 
-                  class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors">
-            <span class="text-lg">✏️</span>
-            Change This Meal
-          </button>
+          <button onclick="showRecipeBrowser('${recipe.mealType}', '${day}', '${mealType}')" 
+        class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors">
+  <span class="text-lg">🔄</span>
+  Change This Meal
+</button>
           
         </div>
 
