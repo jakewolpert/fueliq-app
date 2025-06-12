@@ -1157,6 +1157,372 @@ window.orderMissingIngredients = function(recipeId) {
 window.modifyMealPlan = function(day, mealType, currentRecipeId) {
   alert(`Meal modification feature coming soon!\n\nDay: ${day}\nMeal: ${mealType}\nCurrent Recipe: ${currentRecipeId}\n\nThis will allow you to browse alternative recipes and swap them in your meal plan! ✏️`);
 };
+// Recipe Browser & Selection System
+// Add these functions to your meal-planning.js file
+
+// Show recipe browser modal
+window.showRecipeBrowser = function(filterMealType = null, replaceDay = null, replaceMealType = null) {
+  const pantryData = loadPantryData();
+  const pantryItems = pantryData.items || [];
+  
+  // Calculate pantry scores for all recipes
+  const recipesWithScores = RECIPE_DATABASE.map(recipe => ({
+    ...recipe,
+    pantryAnalysis: calculatePantryScore(recipe, pantryItems)
+  }));
+
+  const modalHTML = `
+    <div id="recipe-browser-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6">
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="text-2xl font-bold mb-2">🍽️ Recipe Browser</h2>
+              <p class="opacity-90">
+                ${filterMealType ? `Showing ${filterMealType} recipes` : 'Browse all recipes'} 
+                ${replaceDay ? `• Replacing ${replaceDay} ${replaceMealType}` : ''}
+              </p>
+            </div>
+            <button onclick="closeRecipeBrowser()" 
+                    class="text-white hover:text-gray-200 text-2xl font-bold transition-colors">
+              ×
+            </button>
+          </div>
+          
+          <!-- Search and Filters -->
+          <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+            <input type="text" id="recipe-search" placeholder="Search recipes..." 
+                   class="px-4 py-2 rounded-lg text-gray-800">
+            
+            <select id="meal-type-filter" class="px-4 py-2 rounded-lg text-gray-800">
+              <option value="">All Meal Types</option>
+              <option value="breakfast" ${filterMealType === 'breakfast' ? 'selected' : ''}>Breakfast</option>
+              <option value="lunch" ${filterMealType === 'lunch' ? 'selected' : ''}>Lunch</option>
+              <option value="dinner" ${filterMealType === 'dinner' ? 'selected' : ''}>Dinner</option>
+            </select>
+            
+            <select id="cuisine-filter" class="px-4 py-2 rounded-lg text-gray-800">
+              <option value="">All Cuisines</option>
+              <option value="Mediterranean">Mediterranean</option>
+              <option value="American">American</option>
+              <option value="Asian">Asian</option>
+            </select>
+            
+            <select id="pantry-filter" class="px-4 py-2 rounded-lg text-gray-800">
+              <option value="">All Recipes</option>
+              <option value="high-match">High Pantry Match (75%+)</option>
+              <option value="medium-match">Medium Match (50%+)</option>
+              <option value="can-make">Can Make Now (100%)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Recipe Grid -->
+        <div class="flex-1 overflow-y-auto p-6">
+          <div id="recipe-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Recipes will be populated here -->
+          </div>
+          
+          <!-- No Results Message -->
+          <div id="no-results" class="hidden text-center py-12">
+            <span class="text-6xl">🔍</span>
+            <p class="text-xl text-gray-600 mt-4">No recipes found</p>
+            <p class="text-gray-500">Try adjusting your filters or search terms</p>
+          </div>
+        </div>
+
+        <!-- Footer Stats -->
+        <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
+          <div class="flex justify-between items-center text-sm text-gray-600">
+            <span id="recipe-count">Showing ${recipesWithScores.length} recipes</span>
+            <span id="pantry-stats">Pantry: ${pantryItems.length} items</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Remove existing modal if any
+  const existingModal = document.getElementById('recipe-browser-modal');
+  if (existingModal) existingModal.remove();
+
+  // Add new modal
+  document.body.insertAdjacentHTML('beforeend', modalHTML);
+  document.body.style.overflow = 'hidden';
+
+  // Initialize filters and display
+  setupRecipeBrowserEvents(recipesWithScores, replaceDay, replaceMealType);
+  displayRecipes(recipesWithScores);
+};
+
+// Setup event listeners for recipe browser
+function setupRecipeBrowserEvents(allRecipes, replaceDay, replaceMealType) {
+  const searchInput = document.getElementById('recipe-search');
+  const mealTypeFilter = document.getElementById('meal-type-filter');
+  const cuisineFilter = document.getElementById('cuisine-filter');
+  const pantryFilter = document.getElementById('pantry-filter');
+
+  // Filter function
+  const filterRecipes = () => {
+    const searchTerm = searchInput.value.toLowerCase();
+    const mealType = mealTypeFilter.value;
+    const cuisine = cuisineFilter.value;
+    const pantryMatch = pantryFilter.value;
+
+    let filtered = allRecipes.filter(recipe => {
+      // Search filter
+      const matchesSearch = !searchTerm || 
+        recipe.name.toLowerCase().includes(searchTerm) ||
+        recipe.ingredients.some(ing => ing.name.toLowerCase().includes(searchTerm));
+
+      // Meal type filter
+      const matchesMealType = !mealType || recipe.mealType === mealType;
+
+      // Cuisine filter
+      const matchesCuisine = !cuisine || recipe.cuisine === cuisine;
+
+      // Pantry match filter
+      let matchesPantry = true;
+      if (pantryMatch === 'high-match') {
+        matchesPantry = recipe.pantryAnalysis.matchPercentage >= 0.75;
+      } else if (pantryMatch === 'medium-match') {
+        matchesPantry = recipe.pantryAnalysis.matchPercentage >= 0.5;
+      } else if (pantryMatch === 'can-make') {
+        matchesPantry = recipe.pantryAnalysis.matchPercentage === 1;
+      }
+
+      return matchesSearch && matchesMealType && matchesCuisine && matchesPantry;
+    });
+
+    displayRecipes(filtered);
+    
+    // Update count
+    document.getElementById('recipe-count').textContent = `Showing ${filtered.length} recipes`;
+  };
+
+  // Add event listeners
+  searchInput.addEventListener('input', filterRecipes);
+  mealTypeFilter.addEventListener('change', filterRecipes);
+  cuisineFilter.addEventListener('change', filterRecipes);
+  pantryFilter.addEventListener('change', filterRecipes);
+
+  // Store replace info for later use
+  window.recipeReplacementInfo = { replaceDay, replaceMealType };
+}
+
+// Display recipes in grid
+function displayRecipes(recipes) {
+  const grid = document.getElementById('recipe-grid');
+  const noResults = document.getElementById('no-results');
+
+  if (recipes.length === 0) {
+    grid.classList.add('hidden');
+    noResults.classList.remove('hidden');
+    return;
+  }
+
+  grid.classList.remove('hidden');
+  noResults.classList.add('hidden');
+
+  // Sort by pantry match percentage (highest first)
+  const sortedRecipes = [...recipes].sort((a, b) => 
+    b.pantryAnalysis.matchPercentage - a.pantryAnalysis.matchPercentage
+  );
+
+  grid.innerHTML = sortedRecipes.map(recipe => {
+    const pantryMatch = Math.round(recipe.pantryAnalysis.matchPercentage * 100);
+    const canMakeNow = recipe.pantryAnalysis.matchPercentage === 1;
+    const highMatch = recipe.pantryAnalysis.matchPercentage >= 0.75;
+    
+    return `
+      <div class="bg-white rounded-lg border border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all cursor-pointer" 
+           onclick="selectRecipeFromBrowser('${recipe.id}')">
+        
+        <!-- Recipe Header -->
+        <div class="p-4 border-b border-gray-100">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-2xl">${recipe.image}</span>
+            <div class="flex gap-1">
+              ${canMakeNow ? 
+                '<span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">✅ Can Make Now</span>' :
+                highMatch ? 
+                '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-bold">🔥 High Match</span>' :
+                '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-bold">🛒 Need Items</span>'
+              }
+            </div>
+          </div>
+          
+          <h3 class="font-bold text-gray-800 hover:text-purple-600 transition-colors">${recipe.name}</h3>
+          <div class="text-sm text-gray-600 mt-1">
+            ${recipe.mealType} • ${recipe.cuisine} • ${recipe.cookTime}
+          </div>
+        </div>
+
+        <!-- Pantry Analysis -->
+        <div class="p-4 bg-gray-50">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-gray-700">Pantry Match</span>
+            <span class="text-sm font-bold ${canMakeNow ? 'text-green-600' : highMatch ? 'text-blue-600' : 'text-orange-600'}">
+              ${pantryMatch}%
+            </span>
+          </div>
+          
+          <!-- Progress bar -->
+          <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div class="h-2 rounded-full ${canMakeNow ? 'bg-green-500' : highMatch ? 'bg-blue-500' : 'bg-orange-500'}" 
+                 style="width: ${pantryMatch}%"></div>
+          </div>
+          
+          <div class="text-xs text-gray-600">
+            ${recipe.pantryAnalysis.availableIngredients}/${recipe.pantryAnalysis.totalIngredients} ingredients available
+            ${recipe.pantryAnalysis.hasExpiringIngredients ? ' • ⚠️ Uses expiring items' : ''}
+          </div>
+        </div>
+
+        <!-- Recipe Stats -->
+        <div class="p-4 border-t border-gray-100">
+          <div class="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <div class="text-lg font-bold text-gray-800">${recipe.calories}</div>
+              <div class="text-xs text-gray-600">Calories</div>
+            </div>
+            <div>
+              <div class="text-lg font-bold text-green-600">${recipe.protein}g</div>
+              <div class="text-xs text-gray-600">Protein</div>
+            </div>
+            <div>
+              <div class="text-lg font-bold text-purple-600">${recipe.servings}</div>
+              <div class="text-xs text-gray-600">Servings</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Area -->
+        <div class="p-4 bg-purple-50 rounded-b-lg">
+          <div class="text-center">
+            <span class="text-sm text-purple-700 font-medium">
+              ${window.recipeReplacementInfo?.replaceDay ? 
+                `📅 Replace ${window.recipeReplacementInfo.replaceDay} ${window.recipeReplacementInfo.replaceMealType}` : 
+                '🍽️ Click to view details & add to meal plan'
+              }
+            </span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Handle recipe selection from browser
+window.selectRecipeFromBrowser = function(recipeId) {
+  const recipe = RECIPE_DATABASE.find(r => r.id === recipeId);
+  if (!recipe) return;
+
+  // Check if we're replacing a meal or just viewing
+  if (window.recipeReplacementInfo?.replaceDay && window.recipeReplacementInfo?.replaceMealType) {
+    // Replace the meal in the current plan
+    replaceMealInPlan(window.recipeReplacementInfo.replaceDay, window.recipeReplacementInfo.replaceMealType, recipe);
+    closeRecipeBrowser();
+  } else {
+    // Just show recipe details
+    closeRecipeBrowser();
+    setTimeout(() => {
+      showRecipeDetails(recipeId, 'Selected', 'Recipe');
+    }, 300);
+  }
+};
+
+// Replace meal in current plan
+function replaceMealInPlan(day, mealType, newRecipe) {
+  // Get current meal plan
+  let currentPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
+  
+  if (currentPlan[day]) {
+    // Replace the meal
+    currentPlan[day][mealType] = newRecipe;
+    
+    // Save updated plan
+    localStorage.setItem('fueliq_meal_plan', JSON.stringify(currentPlan));
+    
+    // Regenerate shopping list
+    const shoppingList = generateShoppingList(currentPlan);
+    displayShoppingList(shoppingList);
+    
+    // Update the display
+    displayWeekPlan(currentPlan);
+    
+    alert(`✅ ${day} ${mealType} updated to "${newRecipe.name}"!\n\nShopping list has been automatically updated.`);
+  }
+}
+
+// Close recipe browser
+window.closeRecipeBrowser = function() {
+  const modal = document.getElementById('recipe-browser-modal');
+  if (modal) {
+    modal.remove();
+    document.body.style.overflow = 'auto';
+  }
+  // Clean up replacement info
+  delete window.recipeReplacementInfo;
+};
+
+// Enhanced meal generation with choice options
+window.generateMealPlanWithChoices = function() {
+  const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
+  const pantryData = loadPantryData();
+  const pantryItems = pantryData.items || [];
+  
+  // Calculate scores for all recipes
+  const scoredRecipes = RECIPE_DATABASE.map(recipe => {
+    const pantryAnalysis = calculatePantryScore(recipe, pantryItems);
+    const preferenceScore = calculatePreferenceScore(recipe, userProfile);
+    
+    return {
+      ...recipe,
+      pantryAnalysis,
+      preferenceScore,
+      totalScore: (pantryAnalysis.score * 0.4) + (preferenceScore * 0.6)
+    };
+  });
+
+  // Sort by total score
+  scoredRecipes.sort((a, b) => b.totalScore - a.totalScore);
+
+  // Generate plan with top choices
+  const weekPlan = {};
+  const usedRecipes = [];
+
+  for (let day = 0; day < 7; day++) {
+    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day];
+    
+    // Get best recipes for each meal type
+    const breakfast = selectBestRecipe(scoredRecipes, 'breakfast', usedRecipes);
+    const lunch = selectBestRecipe(scoredRecipes, 'lunch', usedRecipes);
+    const dinner = selectBestRecipe(scoredRecipes, 'dinner', usedRecipes);
+
+    weekPlan[dayName] = { breakfast, lunch, dinner };
+  }
+
+  return weekPlan;
+};
+
+// Enhanced selectBestRecipe function
+const selectBestRecipe = (scoredRecipes, mealType, usedRecipes) => {
+  const availableRecipes = scoredRecipes.filter(recipe => 
+    recipe.mealType === mealType && !usedRecipes.includes(recipe.id)
+  );
+
+  if (availableRecipes.length === 0) {
+    const fallback = scoredRecipes.find(recipe => recipe.mealType === mealType);
+    return fallback || null;
+  }
+
+  const selected = availableRecipes[0];
+  usedRecipes.push(selected.id);
+  return selected;
+};
   // Cleanup function
   const cleanup = () => {
     // Remove event listeners if needed
