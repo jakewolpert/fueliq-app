@@ -828,7 +828,7 @@ if (groceryList) {
 
   // If no pending list, try the integration system
   if (!groceryList && window.FuelIQIntegration) {
-    try {
+    try {  // ✅ ADD THIS TRY BLOCK
       const mealPlans = window.FuelIQIntegration.getSharedData('mealPlans');
       
       if (!mealPlans || Object.keys(mealPlans).length === 0) {
@@ -839,7 +839,7 @@ if (groceryList) {
       const groceryListData = window.FuelIQIntegration.generateGroceryListFromMealPlan(mealPlans);
       groceryList = Object.values(groceryListData.ingredients || {});
       
-    } catch (e) {
+    } catch (e) {  // ✅ NOW THIS CATCH HAS A MATCHING TRY
       console.error('Integration error:', e);
       alert('❌ Error importing meal plan. Please try again.');
       return;
