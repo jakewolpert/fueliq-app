@@ -259,25 +259,36 @@ useEffect(() => {
   }
 }, [currentView]);
       // Enhanced pantry tab rendering
-      useEffect(() => {
-        if (currentView === 'pantry') {
-          clearContainer('pantry-container');
-          
-          const timer = setTimeout(() => {
-            try {
-              if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
-                window.FuelIQPantry.renderSmartPantry('pantry-container');
-              } else {
-                console.warn('FuelIQPantry module not available');
-              }
-            } catch (error) {
-              console.error('Error rendering pantry tab:', error);
-            }
-          }, 300);
-          
-          return () => clearTimeout(timer);
+      // Enhanced pantry tab rendering
+useEffect(() => {
+  if (currentView === 'pantry') {
+    clearContainer('pantry-container');
+    
+    let retryCount = 0;
+    const maxRetries = 10;
+    
+    const tryRenderPantry = () => {
+      if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
+        try {
+          window.FuelIQPantry.renderSmartPantry('pantry-container');
+          console.log('✅ Pantry tab rendered successfully');
+        } catch (error) {
+          console.error('Error rendering pantry tab:', error);
         }
-      }, [currentView]);
+      } else {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Waiting for FuelIQPantry module... (${retryCount}/${maxRetries})`);
+          setTimeout(tryRenderPantry, 200);
+        } else {
+          console.warn('❌ FuelIQPantry module failed to load');
+        }
+      }
+    };
+    
+    setTimeout(tryRenderPantry, 100);
+  }
+}, [currentView]);
 
       // Enhanced meal planning tab rendering
       useEffect(() => {
