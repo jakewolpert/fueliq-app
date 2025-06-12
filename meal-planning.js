@@ -661,12 +661,20 @@
         <!-- Smart Suggestions -->
         <div id="smart-suggestions" class="mb-6"></div>
 
-        <!-- Generate Plan Button -->
-        <div class="text-center mb-6">
-          <button id="generate-plan-btn" class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
-            ✨ Generate Smart Meal Plan
-          </button>
-        </div>
+        <!-- Generate Plan Buttons -->
+<div class="text-center mb-6">
+  <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+    <button id="generate-plan-btn" class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
+      ✨ Generate Smart Meal Plan
+    </button>
+    
+    <button onclick="showRecipeBrowser()" class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
+      🔍 Browse All Recipes
+    </button>
+  </div>
+  
+  <p class="text-gray-600 text-sm mt-3">Generate a plan automatically, or browse recipes to build your own!</p>
+</div>
 
         <!-- Meal Plan Display -->
         <div id="meal-plan-display" class="hidden">
