@@ -748,9 +748,9 @@
   };
 
   // Generate and display meal plan
-  const generatePlan = () => {
+    const generatePlan = () => {
     const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
-    const weekPlan = generateSmartMealPlan(userProfile, 7);
+    const weekPlan = generateMealPlanWithChoices();
     const shoppingList = generateShoppingList(weekPlan);
 
     displayWeekPlan(weekPlan);
