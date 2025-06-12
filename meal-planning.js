@@ -1,8 +1,19 @@
-// meal-planning.js - Clean FuelIQ Meal Planning Module with Food Preferences
+// Enhanced meal-planning.js with Pantry Integration
 (function() {
   'use strict';
 
-  // Enhanced Recipe Database with Food Preference Compatibility
+  // Load pantry data helper
+  const loadPantryData = () => {
+    try {
+      const pantryData = localStorage.getItem('fueliq_pantry');
+      return pantryData ? JSON.parse(pantryData) : { items: [] };
+    } catch (e) {
+      console.warn('Could not load pantry data:', e);
+      return { items: [] };
+    }
+  };
+
+  // Enhanced recipe database with ingredient matching
   const RECIPE_DATABASE = [
     {
       id: 'chicken-quinoa-bowl',
@@ -10,709 +21,615 @@
       image: '🥗',
       cookTime: '25 min',
       servings: 2,
-      difficulty: 'Easy',
-      calories: 485,
-      protein: 38,
-      carbs: 45,
-      fat: 18,
-      fiber: 8,
-      cuisine: 'Mediterranean',
-      tags: ['high-protein', 'gluten-free', 'mediterranean', 'anti-bloat'],
-      dietaryCompatible: ['gluten-free', 'dairy-free'],
-      mainIngredients: ['Chicken', 'Quinoa', 'Tomatoes'],
-      ingredients: [
-        { name: 'Chicken Breast', amount: '8 oz', category: 'protein' },
-        { name: 'Quinoa', amount: '1 cup', category: 'grains' },
-        { name: 'Cherry Tomatoes', amount: '1 cup', category: 'vegetables' },
-        { name: 'Cucumber', amount: '1 medium', category: 'vegetables' },
-        { name: 'Red Onion', amount: '1/4 cup', category: 'vegetables' },
-        { name: 'Olive Oil', amount: '2 tbsp', category: 'fats' },
-        { name: 'Lemon', amount: '1 large', category: 'fruits' },
-        { name: 'Fresh Herbs', amount: '1/4 cup', category: 'seasonings' }
-      ]
-    },
-    {
-      id: 'salmon-sweet-potato',
-      name: 'Baked Salmon with Sweet Potato',
-      image: '🐟',
-      cookTime: '30 min',
-      servings: 2,
-      difficulty: 'Easy',
-      calories: 520,
-      protein: 42,
-      carbs: 35,
-      fat: 22,
-      fiber: 6,
-      cuisine: 'American',
-      tags: ['high-protein', 'omega-3', 'gluten-free', 'paleo'],
-      dietaryCompatible: ['gluten-free', 'dairy-free', 'paleo', 'pescatarian'],
-      mainIngredients: ['Salmon', 'Sweet Potatoes', 'Asparagus'],
-      ingredients: [
-        { name: 'Salmon Fillet', amount: '8 oz', category: 'protein' },
-        { name: 'Sweet Potato', amount: '2 medium', category: 'vegetables' },
-        { name: 'Asparagus', amount: '1 lb', category: 'vegetables' },
-        { name: 'Olive Oil', amount: '2 tbsp', category: 'fats' },
-        { name: 'Garlic', amount: '3 cloves', category: 'seasonings' },
-        { name: 'Lemon', amount: '1 large', category: 'fruits' }
-      ]
-    },
-    {
-      id: 'veggie-stir-fry',
-      name: 'Asian Veggie Stir-Fry with Tofu',
-      image: '🥬',
-      cookTime: '20 min',
-      servings: 2,
-      difficulty: 'Easy',
-      calories: 350,
-      protein: 18,
-      carbs: 42,
-      fat: 15,
-      fiber: 8,
-      cuisine: 'Asian',
-      tags: ['vegetarian', 'vegan', 'low-calorie', 'anti-bloat'],
-      dietaryCompatible: ['vegetarian', 'vegan', 'gluten-free', 'dairy-free'],
-      mainIngredients: ['Tofu', 'Broccoli', 'Peppers'],
-      ingredients: [
-        { name: 'Extra Firm Tofu', amount: '6 oz', category: 'protein' },
-        { name: 'Brown Rice', amount: '1 cup cooked', category: 'grains' },
-        { name: 'Bell Peppers', amount: '2 large', category: 'vegetables' },
-        { name: 'Broccoli', amount: '2 cups', category: 'vegetables' },
-        { name: 'Snap Peas', amount: '1 cup', category: 'vegetables' },
-        { name: 'Sesame Oil', amount: '1 tbsp', category: 'fats' },
-        { name: 'Soy Sauce', amount: '2 tbsp', category: 'seasonings' },
-        { name: 'Fresh Ginger', amount: '1 tbsp', category: 'seasonings' }
-      ]
-    },
-    {
-      id: 'greek-chicken-salad',
-      name: 'Greek Chicken Power Salad',
-      image: '🥙',
-      cookTime: '15 min',
-      servings: 1,
-      difficulty: 'Easy',
       calories: 420,
       protein: 35,
-      carbs: 18,
-      fat: 25,
-      fiber: 9,
-      cuisine: 'Mediterranean',
-      tags: ['high-protein', 'low-carb', 'mediterranean', 'anti-bloat'],
-      dietaryCompatible: ['gluten-free', 'low-carb', 'mediterranean'],
-      mainIngredients: ['Chicken', 'Spinach', 'Tomatoes'],
-      ingredients: [
-        { name: 'Chicken Breast', amount: '6 oz', category: 'protein' },
-        { name: 'Mixed Greens', amount: '3 cups', category: 'vegetables' },
-        { name: 'Cherry Tomatoes', amount: '1/2 cup', category: 'vegetables' },
-        { name: 'Cucumber', amount: '1/2 cup', category: 'vegetables' },
-        { name: 'Feta Cheese', amount: '2 oz', category: 'dairy' },
-        { name: 'Kalamata Olives', amount: '10 pieces', category: 'fats' },
-        { name: 'Olive Oil', amount: '2 tbsp', category: 'fats' },
-        { name: 'Red Wine Vinegar', amount: '1 tbsp', category: 'seasonings' }
-      ]
-    },
-    {
-      id: 'turkey-avocado-wrap',
-      name: 'Turkey Avocado Power Wrap',
-      image: '🌯',
-      cookTime: '10 min',
-      servings: 1,
-      difficulty: 'Easy',
-      calories: 445,
-      protein: 32,
-      carbs: 35,
-      fat: 20,
-      fiber: 12,
-      cuisine: 'American',
-      tags: ['high-protein', 'high-fiber', 'quick'],
-      dietaryCompatible: ['dairy-free'],
-      mainIngredients: ['Turkey', 'Avocado', 'Spinach'],
-      ingredients: [
-        { name: 'Whole Wheat Tortilla', amount: '1 large', category: 'grains' },
-        { name: 'Sliced Turkey', amount: '4 oz', category: 'protein' },
-        { name: 'Avocado', amount: '1 medium', category: 'fats' },
-        { name: 'Spinach', amount: '2 cups', category: 'vegetables' },
-        { name: 'Tomato', amount: '1 medium', category: 'vegetables' },
-        { name: 'Hummus', amount: '2 tbsp', category: 'protein' }
-      ]
-    },
-    {
-      id: 'overnight-oats',
-      name: 'Protein-Packed Overnight Oats',
-      image: '🥣',
-      cookTime: '5 min prep',
-      servings: 1,
-      difficulty: 'Easy',
-      calories: 380,
-      protein: 25,
       carbs: 45,
       fat: 12,
-      fiber: 10,
-      cuisine: 'American',
-      tags: ['high-protein', 'high-fiber', 'make-ahead', 'vegetarian', 'breakfast'],
-      dietaryCompatible: ['vegetarian', 'gluten-free'],
-      mainIngredients: ['Oats', 'Berries', 'Nuts'],
+      cuisine: 'Mediterranean',
+      mealType: 'lunch',
       ingredients: [
-        { name: 'Rolled Oats', amount: '1/2 cup', category: 'grains' },
-        { name: 'Protein Powder', amount: '1 scoop', category: 'protein' },
-        { name: 'Almond Milk', amount: '3/4 cup', category: 'dairy' },
-        { name: 'Chia Seeds', amount: '1 tbsp', category: 'fats' },
-        { name: 'Banana', amount: '1/2 medium', category: 'fruits' },
-        { name: 'Berries', amount: '1/2 cup', category: 'fruits' },
-        { name: 'Almond Butter', amount: '1 tbsp', category: 'fats' }
+        { name: 'Chicken Breast', amount: '1 lb', category: 'protein' },
+        { name: 'Quinoa', amount: '1 cup', category: 'grains' },
+        { name: 'Bell Peppers', amount: '2 pieces', category: 'vegetables' },
+        { name: 'Olive Oil', amount: '2 tbsp', category: 'fats' },
+        { name: 'Tomatoes', amount: '2 pieces', category: 'vegetables' }
+      ]
+    },
+    {
+      id: 'salmon-broccoli',
+      name: 'Herb-Crusted Salmon with Broccoli',
+      image: '🐟',
+      cookTime: '20 min',
+      servings: 2,
+      calories: 380,
+      protein: 32,
+      carbs: 15,
+      fat: 22,
+      cuisine: 'American',
+      mealType: 'dinner',
+      ingredients: [
+        { name: 'Salmon Fillet', amount: '1 lb', category: 'protein' },
+        { name: 'Broccoli', amount: '2 head', category: 'vegetables' },
+        { name: 'Mixed Herbs', amount: '1 package', category: 'seasonings' },
+        { name: 'Olive Oil', amount: '1 tbsp', category: 'fats' }
       ]
     },
     {
       id: 'beef-stir-fry',
-      name: 'Asian Beef Stir-Fry',
-      image: '🥩',
-      cookTime: '20 min',
+      name: 'Asian Beef Stir Fry',
+      image: '🥢',
+      cookTime: '15 min',
       servings: 2,
-      difficulty: 'Easy',
-      calories: 480,
-      protein: 38,
-      carbs: 32,
-      fat: 20,
-      fiber: 6,
+      calories: 450,
+      protein: 28,
+      carbs: 35,
+      fat: 18,
       cuisine: 'Asian',
-      tags: ['high-protein', 'quick-cook', 'anti-bloat'],
-      dietaryCompatible: ['gluten-free', 'dairy-free'],
-      mainIngredients: ['Beef', 'Broccoli', 'Rice'],
+      mealType: 'dinner',
       ingredients: [
-        { name: 'Lean Beef', amount: '8 oz', category: 'protein' },
-        { name: 'Brown Rice', amount: '1 cup cooked', category: 'grains' },
-        { name: 'Broccoli', amount: '2 cups', category: 'vegetables' },
-        { name: 'Bell Peppers', amount: '1 large', category: 'vegetables' },
-        { name: 'Olive Oil', amount: '1 tbsp', category: 'fats' },
-        { name: 'Garlic', amount: '2 cloves', category: 'seasonings' }
+        { name: 'Ground Beef', amount: '1 lb', category: 'protein' },
+        { name: 'Bell Peppers', amount: '2 pieces', category: 'vegetables' },
+        { name: 'Onions', amount: '1 piece', category: 'vegetables' },
+        { name: 'Brown Rice', amount: '1 cup', category: 'grains' }
       ]
     },
     {
-      id: 'pasta-primavera',
-      name: 'Italian Pasta Primavera',
-      image: '🍝',
-      cookTime: '25 min',
-      servings: 2,
-      difficulty: 'Easy',
-      calories: 420,
+      id: 'veggie-scramble',
+      name: 'Garden Veggie Scramble',
+      image: '🍳',
+      cookTime: '10 min',
+      servings: 1,
+      calories: 280,
       protein: 18,
-      carbs: 68,
-      fat: 12,
-      fiber: 10,
-      cuisine: 'Italian',
-      tags: ['vegetarian', 'high-fiber'],
-      dietaryCompatible: ['vegetarian'],
-      mainIngredients: ['Pasta', 'Broccoli', 'Tomatoes'],
+      carbs: 12,
+      fat: 18,
+      cuisine: 'American',
+      mealType: 'breakfast',
       ingredients: [
-        { name: 'Whole Wheat Pasta', amount: '8 oz', category: 'grains' },
-        { name: 'Broccoli', amount: '2 cups', category: 'vegetables' },
-        { name: 'Cherry Tomatoes', amount: '1 cup', category: 'vegetables' },
-        { name: 'Bell Peppers', amount: '1 large', category: 'vegetables' },
-        { name: 'Olive Oil', amount: '2 tbsp', category: 'fats' },
-        { name: 'Garlic', amount: '3 cloves', category: 'seasonings' }
+        { name: 'Eggs', amount: '3 pieces', category: 'protein' },
+        { name: 'Spinach', amount: '1 cup', category: 'vegetables' },
+        { name: 'Mushrooms', amount: '1/2 cup', category: 'vegetables' },
+        { name: 'Cheese', amount: '1/4 cup', category: 'dairy' }
+      ]
+    },
+    {
+      id: 'greek-yogurt-bowl',
+      name: 'Protein Greek Yogurt Bowl',
+      image: '🥣',
+      cookTime: '5 min',
+      servings: 1,
+      calories: 320,
+      protein: 25,
+      carbs: 35,
+      fat: 8,
+      cuisine: 'Mediterranean',
+      mealType: 'breakfast',
+      ingredients: [
+        { name: 'Greek Yogurt', amount: '1 container', category: 'protein' },
+        { name: 'Mixed Nuts', amount: '1/4 cup', category: 'fats' },
+        { name: 'Oats', amount: '1/2 cup', category: 'grains' }
+      ]
+    },
+    {
+      id: 'turkey-sweet-potato',
+      name: 'Turkey & Sweet Potato Hash',
+      image: '🍠',
+      cookTime: '20 min',
+      servings: 2,
+      calories: 390,
+      protein: 30,
+      carbs: 40,
+      fat: 12,
+      cuisine: 'American',
+      mealType: 'lunch',
+      ingredients: [
+        { name: 'Ground Turkey', amount: '1 lb', category: 'protein' },
+        { name: 'Sweet Potatoes', amount: '2 pieces', category: 'vegetables' },
+        { name: 'Onions', amount: '1 piece', category: 'vegetables' },
+        { name: 'Olive Oil', amount: '1 tbsp', category: 'fats' }
+      ]
+    },
+    {
+      id: 'tofu-stir-fry',
+      name: 'Teriyaki Tofu Stir Fry',
+      image: '🥘',
+      cookTime: '18 min',
+      servings: 2,
+      calories: 340,
+      protein: 20,
+      carbs: 42,
+      fat: 14,
+      cuisine: 'Asian',
+      mealType: 'lunch',
+      ingredients: [
+        { name: 'Extra Firm Tofu', amount: '1 block', category: 'protein' },
+        { name: 'Broccoli', amount: '1 head', category: 'vegetables' },
+        { name: 'Carrots', amount: '2 pieces', category: 'vegetables' },
+        { name: 'Brown Rice', amount: '1 cup', category: 'grains' }
+      ]
+    },
+    {
+      id: 'overnight-oats',
+      name: 'Protein Overnight Oats',
+      image: '🌾',
+      cookTime: '5 min',
+      servings: 1,
+      calories: 350,
+      protein: 15,
+      carbs: 55,
+      fat: 8,
+      cuisine: 'American',
+      mealType: 'breakfast',
+      ingredients: [
+        { name: 'Rolled Oats', amount: '1/2 cup', category: 'grains' },
+        { name: 'Greek Yogurt', amount: '1/2 container', category: 'protein' },
+        { name: 'Mixed Nuts', amount: '2 tbsp', category: 'fats' },
+        { name: 'Milk', amount: '1/2 cup', category: 'dairy' }
       ]
     }
   ];
 
-  let currentWeekStart = new Date();
-  let mealPlan = {};
-  let userGoals = {};
-  let userProfile = {};
+  // Smart ingredient matching
+  const findPantryMatches = (recipeIngredients, pantryItems) => {
+    const matches = [];
+    const missing = [];
 
-  // Load user data and preferences
-  function loadUserData() {
-    try {
-      const goals = localStorage.getItem('fueliq_user_goals');
-      const profile = localStorage.getItem('fueliq_user_profile');
-      
-      if (goals) userGoals = JSON.parse(goals);
-      if (profile) userProfile = JSON.parse(profile);
-      
-      console.log('✅ User preferences loaded:', userProfile);
-    } catch (e) {
-      console.warn('Could not load user data:', e);
-    }
-  }
-
-  // Smart recipe filtering based on food preferences
-  function getFilteredRecipes() {
-    loadUserData();
-    
-    return RECIPE_DATABASE.filter(recipe => {
-      // Check foods to avoid
-      if (userProfile.foodsIAvoid && userProfile.foodsIAvoid.length > 0) {
-        const hasAvoidedIngredients = userProfile.foodsIAvoid.some(avoidedFood => 
-          recipe.mainIngredients.some(ingredient => 
-            ingredient.toLowerCase().includes(avoidedFood.toLowerCase()) ||
-            avoidedFood.toLowerCase().includes(ingredient.toLowerCase())
-          )
-        );
-        if (hasAvoidedIngredients) return false;
-      }
-
-      // Check dietary restrictions
-      if (userProfile.dietaryRestrictions && userProfile.dietaryRestrictions.length > 0) {
-        const hasCompatibleDiet = userProfile.dietaryRestrictions.some(diet => 
-          recipe.dietaryCompatible.includes(diet.toLowerCase()) || 
-          recipe.tags.includes(diet.toLowerCase().replace(/\s+/g, '-'))
-        );
-        if (userProfile.dietaryRestrictions.length > 0 && !hasCompatibleDiet) return false;
-      }
-
-      // Check allergies
-      if (userProfile.allergies && userProfile.allergies.length > 0) {
-        const allergenKeywords = {
-          'Dairy/Lactose': ['dairy', 'cheese', 'milk', 'yogurt', 'feta'],
-          'Gluten/Wheat': ['wheat', 'gluten', 'bread', 'pasta', 'tortilla'],
-          'Nuts (Tree Nuts)': ['nuts', 'almond', 'walnut', 'pecan'],
-          'Peanuts': ['peanut'],
-          'Shellfish': ['shrimp', 'crab', 'lobster'],
-          'Fish': ['fish', 'salmon', 'tuna'],
-          'Eggs': ['egg'],
-          'Soy': ['soy', 'tofu']
-        };
+    recipeIngredients.forEach(ingredient => {
+      const pantryMatch = pantryItems.find(pantryItem => {
+        const recipeName = ingredient.name.toLowerCase();
+        const pantryName = pantryItem.name.toLowerCase();
         
-        const hasAllergen = userProfile.allergies.some(allergy => {
-          const keywords = allergenKeywords[allergy] || [];
-          return keywords.some(keyword => 
-            recipe.ingredients.some(ing => 
-              ing.name.toLowerCase().includes(keyword.toLowerCase())
-            )
-          );
-        });
-        if (hasAllergen) return false;
-      }
-
-      // Check anti-bloat preference
-      if (userProfile.antiBloutPreference && !recipe.tags.includes('anti-bloat')) {
-        return false;
-      }
-
-      return true;
-    });
-  }
-
-  // Score recipes based on user preferences
-  function scoreMealByPreferences(recipe) {
-    let score = 0;
-
-    // Boost for loved foods
-    if (userProfile.foodsILove && userProfile.foodsILove.length > 0) {
-      const lovedIngredientsCount = userProfile.foodsILove.filter(lovedFood => 
-        recipe.mainIngredients.some(ingredient => 
-          ingredient.toLowerCase().includes(lovedFood.toLowerCase()) ||
-          lovedFood.toLowerCase().includes(ingredient.toLowerCase())
-        )
-      ).length;
-      score += lovedIngredientsCount * 10;
-    }
-
-    // Boost for preferred cuisines
-    if (userProfile.cuisinePreferences && userProfile.cuisinePreferences.includes(recipe.cuisine)) {
-      score += 5;
-    }
-
-    // Boost for anti-bloat if preferred
-    if (userProfile.antiBloutPreference && recipe.tags.includes('anti-bloat')) {
-      score += 3;
-    }
-
-    return score;
-  }
-
-  // Generate personalized meal plan for a day
-  function generateDayMealPlan(targetCalories) {
-    const filteredRecipes = getFilteredRecipes();
-    const dayPlan = { breakfast: null, lunch: null, dinner: null };
-    
-    console.log(`🍽️ Generating plan from ${filteredRecipes.length} filtered recipes`);
-    
-    const calorieTargets = {
-      breakfast: Math.round(targetCalories * 0.25),
-      lunch: Math.round(targetCalories * 0.35),
-      dinner: Math.round(targetCalories * 0.35)
-    };
-
-    for (const mealType of ['breakfast', 'lunch', 'dinner']) {
-      const target = calorieTargets[mealType];
-      let suitableRecipes = filteredRecipes.filter(recipe => {
-        const calorieMatch = Math.abs(recipe.calories - target) < target * 0.4;
-        
-        if (mealType === 'breakfast') {
-          return calorieMatch && recipe.tags.includes('breakfast');
-        }
-        return calorieMatch;
+        // Exact match or contains match
+        return pantryName.includes(recipeName) || 
+               recipeName.includes(pantryName) ||
+               // Handle common variations
+               (recipeName.includes('chicken') && pantryName.includes('chicken')) ||
+               (recipeName.includes('beef') && pantryName.includes('beef')) ||
+               (recipeName.includes('salmon') && pantryName.includes('salmon')) ||
+               (recipeName.includes('tofu') && pantryName.includes('tofu')) ||
+               (recipeName.includes('yogurt') && pantryName.includes('yogurt'));
       });
 
-      // If no breakfast-specific recipes, use any suitable recipes
-      if (mealType === 'breakfast' && suitableRecipes.length === 0) {
-        suitableRecipes = filteredRecipes.filter(recipe => 
-          Math.abs(recipe.calories - target) < target * 0.4
-        );
-      }
-
-      if (suitableRecipes.length > 0) {
-        // Score and sort by preferences
-        const scoredRecipes = suitableRecipes.map(recipe => ({
-          ...recipe,
-          preferenceScore: scoreMealByPreferences(recipe)
-        })).sort((a, b) => b.preferenceScore - a.preferenceScore);
-        
-        // Select from top-scored recipes with some randomization
-        const topRecipes = scoredRecipes.slice(0, Math.min(3, scoredRecipes.length));
-        const selectedRecipe = topRecipes[Math.floor(Math.random() * topRecipes.length)];
-        
-        dayPlan[mealType] = selectedRecipe;
-        
-        console.log(`✅ ${mealType}: ${selectedRecipe.name} (score: ${selectedRecipe.preferenceScore})`);
+      if (pantryMatch) {
+        matches.push({
+          ingredient,
+          pantryItem: pantryMatch,
+          available: true
+        });
       } else {
-        console.warn(`⚠️ No suitable recipes for ${mealType}`);
+        missing.push({
+          ingredient,
+          available: false
+        });
+      }
+    });
+
+    return { matches, missing };
+  };
+
+  // Calculate pantry score for recipe
+  const calculatePantryScore = (recipe, pantryItems) => {
+    const { matches, missing } = findPantryMatches(recipe.ingredients, pantryItems);
+    const matchPercentage = matches.length / recipe.ingredients.length;
+    
+    // Bonus for using expiring ingredients
+    const expiringBonus = matches.some(match => {
+      const daysUntilExpiry = getDaysUntilExpiry(match.pantryItem.expiryDate);
+      return daysUntilExpiry !== null && daysUntilExpiry <= 3;
+    }) ? 0.2 : 0;
+
+    return {
+      score: matchPercentage + expiringBonus,
+      matchPercentage,
+      availableIngredients: matches.length,
+      totalIngredients: recipe.ingredients.length,
+      missingIngredients: missing.length,
+      matches,
+      missing,
+      hasExpiringIngredients: expiringBonus > 0
+    };
+  };
+
+  // Helper function for expiry calculation
+  const getDaysUntilExpiry = (expiryDate) => {
+    if (!expiryDate) return null;
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry - today;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  // Enhanced meal planning with pantry integration
+  const generateSmartMealPlan = (preferences = {}, days = 7) => {
+    const pantryData = loadPantryData();
+    const pantryItems = pantryData.items || [];
+    
+    console.log('🛒 Pantry items loaded:', pantryItems.length);
+
+    // Score all recipes based on preferences and pantry
+    const scoredRecipes = RECIPE_DATABASE.map(recipe => {
+      const pantryAnalysis = calculatePantryScore(recipe, pantryItems);
+      const preferenceScore = calculatePreferenceScore(recipe, preferences);
+      
+      return {
+        ...recipe,
+        pantryAnalysis,
+        preferenceScore,
+        totalScore: (pantryAnalysis.score * 0.4) + (preferenceScore * 0.6) // Weight pantry 40%, preferences 60%
+      };
+    });
+
+    // Sort by total score
+    scoredRecipes.sort((a, b) => b.totalScore - a.totalScore);
+
+    console.log('📊 Top scored recipes:', scoredRecipes.slice(0, 3).map(r => ({
+      name: r.name,
+      pantryScore: r.pantryAnalysis.score.toFixed(2),
+      preferenceScore: r.preferenceScore.toFixed(2),
+      totalScore: r.totalScore.toFixed(2)
+    })));
+
+    // Generate weekly plan
+    const weekPlan = {};
+    const usedRecipes = [];
+
+    for (let day = 0; day < days; day++) {
+      const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day];
+      
+      // Select best available recipes for each meal type
+      const breakfast = selectBestRecipe(scoredRecipes, 'breakfast', usedRecipes);
+      const lunch = selectBestRecipe(scoredRecipes, 'lunch', usedRecipes);
+      const dinner = selectBestRecipe(scoredRecipes, 'dinner', usedRecipes);
+
+      weekPlan[dayName] = { breakfast, lunch, dinner };
+    }
+
+    return weekPlan;
+  };
+
+  // Enhanced preference scoring
+  const calculatePreferenceScore = (recipe, preferences) => {
+    let score = 0.5; // Base score
+
+    // Foods I Love bonus
+    if (preferences.foodsILove) {
+      const lovedIngredients = recipe.ingredients.filter(ingredient =>
+        preferences.foodsILove.some(loved => 
+          ingredient.name.toLowerCase().includes(loved.toLowerCase()) ||
+          loved.toLowerCase().includes(ingredient.name.toLowerCase())
+        )
+      );
+      score += lovedIngredients.length * 0.15;
+    }
+
+    // Foods I Avoid penalty
+    if (preferences.foodsIAvoid) {
+      const avoidedIngredients = recipe.ingredients.filter(ingredient =>
+        preferences.foodsIAvoid.some(avoided => 
+          ingredient.name.toLowerCase().includes(avoided.toLowerCase()) ||
+          avoided.toLowerCase().includes(ingredient.name.toLowerCase())
+        )
+      );
+      if (avoidedIngredients.length > 0) {
+        score = 0; // Completely avoid recipes with disliked ingredients
       }
     }
 
-    return dayPlan;
-  }
+    // Cuisine preference bonus
+    if (preferences.cuisinePreferences && preferences.cuisinePreferences.includes(recipe.cuisine)) {
+      score += 0.1;
+    }
 
-  // Get Monday of the week
-  function getMondayOfWeek(date) {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(d.setDate(diff));
-  }
+    return Math.min(score, 1); // Cap at 1.0
+  };
 
-  // Create meal planning interface
-  function createMealPlanningInterface(containerId) {
+  // Select best recipe for meal type
+  const selectBestRecipe = (scoredRecipes, mealType, usedRecipes) => {
+    const availableRecipes = scoredRecipes.filter(recipe => 
+      recipe.mealType === mealType && !usedRecipes.includes(recipe.id)
+    );
+
+    if (availableRecipes.length === 0) {
+      // Fallback to any recipe of this type
+      const fallback = scoredRecipes.find(recipe => recipe.mealType === mealType);
+      return fallback || null;
+    }
+
+    const selected = availableRecipes[0];
+    usedRecipes.push(selected.id);
+    return selected;
+  };
+
+  // Generate shopping list from meal plan
+  const generateShoppingList = (weekPlan) => {
+    const pantryData = loadPantryData();
+    const pantryItems = pantryData.items || [];
+    const requiredIngredients = {};
+
+    // Collect all ingredients from meal plan
+    Object.values(weekPlan).forEach(dayPlan => {
+      ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+        const meal = dayPlan[mealType];
+        if (meal && meal.ingredients) {
+          meal.ingredients.forEach(ingredient => {
+            const key = ingredient.name.toLowerCase();
+            if (requiredIngredients[key]) {
+              requiredIngredients[key].amount += parseFloat(ingredient.amount) || 1;
+              requiredIngredients[key].recipes.push(meal.name);
+            } else {
+              requiredIngredients[key] = {
+                ...ingredient,
+                amount: parseFloat(ingredient.amount) || 1,
+                recipes: [meal.name]
+              };
+            }
+          });
+        }
+      });
+    });
+
+    // Filter out items available in pantry
+    const shoppingList = [];
+    Object.values(requiredIngredients).forEach(ingredient => {
+      const pantryMatch = pantryItems.find(pantryItem => {
+        const ingredientName = ingredient.name.toLowerCase();
+        const pantryName = pantryItem.name.toLowerCase();
+        return pantryName.includes(ingredientName) || ingredientName.includes(pantryName);
+      });
+
+      if (!pantryMatch) {
+        shoppingList.push(ingredient);
+      }
+    });
+
+    return shoppingList;
+  };
+
+  // Main render function
+  const renderMealPlanning = (containerId) => {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    loadUserData();
-    currentWeekStart = getMondayOfWeek(new Date());
+    // Load user profile for preferences
+    const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
+    const pantryData = loadPantryData();
 
     container.innerHTML = `
-      <div class="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
-        <div class="bg-gradient-to-r from-orange-500 to-red-600 shadow-2xl">
-          <div class="max-w-7xl mx-auto px-6 py-8">
-            <div class="text-center text-white">
-              <h1 class="text-4xl font-bold mb-2">🍽️ Smart Meal Planning</h1>
-              <p class="text-xl opacity-90">Personalized meal plans based on your preferences</p>
+      <div class="max-w-6xl mx-auto p-6">
+        <!-- Header with Pantry Integration -->
+        <div class="bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl p-6 mb-6 text-white">
+          <h1 class="text-3xl font-bold mb-2">🍽️ Smart Meal Planning</h1>
+          <p class="text-lg opacity-90 mb-4">AI-powered meal suggestions using your pantry</p>
+          
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="text-center">
+              <div class="text-2xl font-bold">${pantryData.items?.length || 0}</div>
+              <div class="text-sm opacity-90">Pantry Items</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold">${userProfile.foodsILove?.length || 0}</div>
+              <div class="text-sm opacity-90">Loved Foods</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold">${userProfile.cuisinePreferences?.length || 0}</div>
+              <div class="text-sm opacity-90">Cuisines</div>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold">${RECIPE_DATABASE.length}</div>
+              <div class="text-sm opacity-90">Recipes</div>
             </div>
           </div>
         </div>
 
-        <div class="max-w-7xl mx-auto p-6">
-          ${renderPreferencesDisplay()}
+        <!-- Smart Suggestions -->
+        <div id="smart-suggestions" class="mb-6"></div>
+
+        <!-- Generate Plan Button -->
+        <div class="text-center mb-6">
+          <button id="generate-plan-btn" class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
+            ✨ Generate Smart Meal Plan
+          </button>
+        </div>
+
+        <!-- Meal Plan Display -->
+        <div id="meal-plan-display" class="hidden">
+          <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">📅 Your Weekly Meal Plan</h2>
+            <div id="weekly-calendar" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+          </div>
           
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <button id="generateWeekPlan" class="p-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl shadow-xl hover:scale-105 transition-all duration-200 font-bold text-lg">
-              ✨ Generate Personalized Plan
-            </button>
-            <button id="viewRecipeBank" class="p-6 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-2xl shadow-xl hover:scale-105 transition-all duration-200 font-bold text-lg">
-              📚 Browse Recipes
-            </button>
-            <button id="generateGroceryList" class="p-6 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-2xl shadow-xl hover:scale-105 transition-all duration-200 font-bold text-lg">
-              🛒 Create Grocery List
-            </button>
-          </div>
-
-          <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">📅 Weekly Meal Plan</h2>
-            <div id="weeklyCalendar" class="grid grid-cols-1 lg:grid-cols-7 gap-4">
-              <!-- Days will be populated here -->
-            </div>
-          </div>
-
-          <div class="mt-8 bg-gradient-to-r from-orange-500 via-red-600 to-pink-600 rounded-3xl shadow-2xl p-8 text-white">
-            <h3 class="text-2xl font-bold mb-6">📊 Weekly Nutrition Overview</h3>
-            <div id="nutritionSummary" class="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <!-- Nutrition data will be populated here -->
-            </div>
+          <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">🛒 Smart Shopping List</h2>
+            <div id="shopping-list" class="space-y-2"></div>
           </div>
         </div>
       </div>
     `;
 
-    setupEventListeners();
-    renderWeeklyCalendar();
-    updateNutritionSummary();
-  }
+    // Show smart suggestions
+    showSmartSuggestions();
 
-  // Render user preferences display
-  function renderPreferencesDisplay() {
-    const hasPreferences = (userProfile.foodsILove && userProfile.foodsILove.length > 0) ||
-                          (userProfile.foodsIAvoid && userProfile.foodsIAvoid.length > 0) ||
-                          (userProfile.cuisinePreferences && userProfile.cuisinePreferences.length > 0) ||
-                          (userProfile.dietaryRestrictions && userProfile.dietaryRestrictions.length > 0);
-
-    if (!hasPreferences) {
-      return `
-        <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8">
-          <h3 class="text-blue-800 font-bold mb-2">💡 Enhance Your Experience</h3>
-          <p class="text-blue-700">Complete your food preferences in Setup to get personalized meal recommendations!</p>
-        </div>
-      `;
-    }
-
-    return `
-      <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 mb-8 border border-white/20">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-          <span class="mr-3 text-2xl">🎯</span>
-          Your Personalized Preferences
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          ${userProfile.foodsILove && userProfile.foodsILove.length > 0 ? `
-            <div class="bg-green-50 p-4 rounded-xl">
-              <h3 class="font-bold text-green-800 mb-2">❤️ Foods You Love</h3>
-              <p class="text-sm text-green-700">${userProfile.foodsILove.slice(0, 3).join(', ')}${userProfile.foodsILove.length > 3 ? ` +${userProfile.foodsILove.length - 3} more` : ''}</p>
-            </div>
-          ` : ''}
-          ${userProfile.foodsIAvoid && userProfile.foodsIAvoid.length > 0 ? `
-            <div class="bg-red-50 p-4 rounded-xl">
-              <h3 class="font-bold text-red-800 mb-2">🚫 Foods You Avoid</h3>
-              <p class="text-sm text-red-700">${userProfile.foodsIAvoid.slice(0, 3).join(', ')}${userProfile.foodsIAvoid.length > 3 ? ` +${userProfile.foodsIAvoid.length - 3} more` : ''}</p>
-            </div>
-          ` : ''}
-          ${userProfile.cuisinePreferences && userProfile.cuisinePreferences.length > 0 ? `
-            <div class="bg-purple-50 p-4 rounded-xl">
-              <h3 class="font-bold text-purple-800 mb-2">🌍 Favorite Cuisines</h3>
-              <p class="text-sm text-purple-700">${userProfile.cuisinePreferences.slice(0, 2).join(', ')}${userProfile.cuisinePreferences.length > 2 ? ` +${userProfile.cuisinePreferences.length - 2} more` : ''}</p>
-            </div>
-          ` : ''}
-          ${userProfile.dietaryRestrictions && userProfile.dietaryRestrictions.length > 0 ? `
-            <div class="bg-orange-50 p-4 rounded-xl">
-              <h3 class="font-bold text-orange-800 mb-2">🥗 Diet Style</h3>
-              <p class="text-sm text-orange-700">${userProfile.dietaryRestrictions.join(', ')}</p>
-            </div>
-          ` : ''}
-        </div>
-      </div>
-    `;
-  }
-
-  // Render weekly calendar
-  function renderWeeklyCalendar() {
-    const calendar = document.getElementById('weeklyCalendar');
-    if (!calendar) return;
-
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const dayEmojis = ['📅', '🗓️', '📋', '📝', '📄', '🎯', '✨'];
-
-    calendar.innerHTML = days.map((day, index) => {
-      const date = new Date(currentWeekStart);
-      date.setDate(currentWeekStart.getDate() + index);
-      const dateKey = date.toISOString().split('T')[0];
-      const dayPlan = mealPlan[dateKey] || {};
-
-      return `
-        <div class="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 p-4 min-h-[400px]">
-          <div class="text-center mb-4">
-            <div class="text-2xl mb-1">${dayEmojis[index]}</div>
-            <h3 class="font-bold text-gray-800">${day}</h3>
-            <p class="text-sm text-gray-600">${date.getMonth() + 1}/${date.getDate()}</p>
-          </div>
-          
-          <div class="space-y-3">
-            ${renderMealSlot('breakfast', '🌅', dayPlan.breakfast, 'orange')}
-            ${renderMealSlot('lunch', '☀️', dayPlan.lunch, 'green')}
-            ${renderMealSlot('dinner', '🌙', dayPlan.dinner, 'purple')}
-          </div>
-
-          <div class="mt-4 pt-3 border-t border-gray-200">
-            <div class="text-xs text-gray-600 text-center">
-              ${calculateDayCalories(dayPlan)} / ${userGoals.dailyCalories || 2000} cal
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  // Render meal slot with preference indicators
-  function renderMealSlot(mealType, emoji, meal, color) {
-    const colorClasses = {
-      orange: {
-        text: 'text-orange-600',
-        bg: 'bg-gradient-to-r from-orange-100 to-orange-200'
-      },
-      green: {
-        text: 'text-green-600', 
-        bg: 'bg-gradient-to-r from-green-100 to-green-200'
-      },
-      purple: {
-        text: 'text-purple-600',
-        bg: 'bg-gradient-to-r from-purple-100 to-purple-200'
-      }
-    };
-
-    const colorClass = colorClasses[color] || colorClasses.orange;
-
-    if (meal) {
-      // Check if meal contains loved ingredients
-      const hasLovedIngredients = userProfile.foodsILove && userProfile.foodsILove.some(loved => 
-        meal.mainIngredients.some(ingredient => 
-          ingredient.toLowerCase().includes(loved.toLowerCase())
-        )
-      );
-
-      return `
-        <div class="meal-slot">
-          <div class="text-xs font-semibold ${colorClass.text} mb-1">${emoji} ${mealType.toUpperCase()}</div>
-          <div class="p-3 ${colorClass.bg} rounded-xl">
-            <div class="font-medium text-sm flex items-center justify-between">
-              <span>${meal.name}</span>
-              ${hasLovedIngredients ? '<span class="text-lg">❤️</span>' : ''}
-            </div>
-            <div class="text-xs text-gray-600">${meal.calories} cal • ${meal.cuisine}</div>
-            ${meal.preferenceScore > 0 ? '<div class="text-xs text-green-600">✨ Personalized for you</div>' : ''}
-          </div>
-        </div>
-      `;
-    } else {
-      return `
-        <div class="meal-slot">
-          <div class="text-xs font-semibold ${colorClass.text} mb-1">${emoji} ${mealType.toUpperCase()}</div>
-          <div class="p-3 border-2 border-dashed border-gray-300 rounded-xl text-center text-gray-500">
-            <div class="text-xs">+ Add Meal</div>
-          </div>
-        </div>
-      `;
-    }
-  }
-
-  // Calculate daily calories
-  function calculateDayCalories(dayPlan) {
-    let total = 0;
-    if (dayPlan.breakfast) total += dayPlan.breakfast.calories;
-    if (dayPlan.lunch) total += dayPlan.lunch.calories;
-    if (dayPlan.dinner) total += dayPlan.dinner.calories;
-    return total;
-  }
-
-  // Update nutrition summary
-  function updateNutritionSummary() {
-    const summaryContainer = document.getElementById('nutritionSummary');
-    if (!summaryContainer) return;
-
-    let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0;
-    let plannedDays = 0;
-
-    Object.values(mealPlan).forEach(dayPlan => {
-      if (dayPlan.breakfast || dayPlan.lunch || dayPlan.dinner) {
-        plannedDays++;
-        totalCalories += calculateDayCalories(dayPlan);
-        
-        [dayPlan.breakfast, dayPlan.lunch, dayPlan.dinner].forEach(meal => {
-          if (meal) {
-            totalProtein += meal.protein || 0;
-            totalCarbs += meal.carbs || 0;
-            totalFat += meal.fat || 0;
-          }
-        });
-      }
+    // Bind generate plan button
+    document.getElementById('generate-plan-btn').addEventListener('click', () => {
+      generatePlan();
     });
+  };
 
-    const avgCalories = plannedDays > 0 ? Math.round(totalCalories / plannedDays) : 0;
-    const avgProtein = plannedDays > 0 ? Math.round(totalProtein / plannedDays) : 0;
-    const avgCarbs = plannedDays > 0 ? Math.round(totalCarbs / plannedDays) : 0;
-    const avgFat = plannedDays > 0 ? Math.round(totalFat / plannedDays) : 0;
+  // Show smart suggestions based on pantry
+  const showSmartSuggestions = () => {
+    const pantryData = loadPantryData();
+    const pantryItems = pantryData.items || [];
+    const suggestionsContainer = document.getElementById('smart-suggestions');
 
-    summaryContainer.innerHTML = `
-      <div class="bg-white/20 rounded-2xl p-6 backdrop-blur-sm text-center">
-        <div class="text-3xl font-bold mb-2">${avgCalories}</div>
-        <div class="text-sm opacity-90">Avg Daily Calories</div>
-      </div>
-      <div class="bg-white/20 rounded-2xl p-6 backdrop-blur-sm text-center">
-        <div class="text-3xl font-bold mb-2">${avgProtein}g</div>
-        <div class="text-sm opacity-90">Avg Protein</div>
-      </div>
-      <div class="bg-white/20 rounded-2xl p-6 backdrop-blur-sm text-center">
-        <div class="text-3xl font-bold mb-2">${avgCarbs}g</div>
-        <div class="text-sm opacity-90">Avg Carbs</div>
-      </div>
-      <div class="bg-white/20 rounded-2xl p-6 backdrop-blur-sm text-center">
-        <div class="text-3xl font-bold mb-2">${avgFat}g</div>
-        <div class="text-sm opacity-90">Avg Fat</div>
-      </div>
-    `;
-  }
-
-  // Setup event listeners
-  function setupEventListeners() {
-    document.getElementById('generateWeekPlan')?.addEventListener('click', generateWeeklyPlan);
-    document.getElementById('viewRecipeBank')?.addEventListener('click', showRecipeBank);
-    document.getElementById('generateGroceryList')?.addEventListener('click', generateGroceryList);
-  }
-
-  // Generate weekly meal plan
-  function generateWeeklyPlan() {
-    const targetCalories = userGoals.dailyCalories || 2000;
-    
-    console.log('🚀 Generating personalized weekly meal plan...');
-    
-    // Generate plan for each day of the week
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(currentWeekStart);
-      date.setDate(currentWeekStart.getDate() + i);
-      const dateKey = date.toISOString().split('T')[0];
-      
-      mealPlan[dateKey] = generateDayMealPlan(targetCalories);
-    }
-
-    // Save meal plan
-    try {
-      localStorage.setItem('fueliq_meal_plan', JSON.stringify(mealPlan));
-    } catch (e) {
-      console.warn('Could not save meal plan:', e);
-    }
-    
-    // Re-render calendar and update nutrition
-    renderWeeklyCalendar();
-    updateNutritionSummary();
-
-    // Show personalized success message
-    const filteredCount = getFilteredRecipes().length;
-    const totalCount = RECIPE_DATABASE.length;
-    
-    alert(`✨ Personalized meal plan generated!\n\n🎯 Used ${filteredCount}/${totalCount} recipes that match your preferences\n💚 Meals prioritize your favorite ingredients\n🚫 Avoided foods you don't like\n🍽️ Optimized for your nutrition goals`);
-  }
-
-  // Show recipe bank
-  function showRecipeBank() {
-    const filteredRecipes = getFilteredRecipes();
-    
-    alert(`📚 Recipe Bank\n\nShowing ${filteredRecipes.length} recipes that match your dietary preferences and restrictions.\n\nFull recipe browsing interface coming soon! 🚀`);
-  }
-
-  // Generate grocery list
-  function generateGroceryList() {
-    if (Object.keys(mealPlan).length === 0) {
-      alert('❌ Please generate a meal plan first!');
+    if (pantryItems.length === 0) {
+      suggestionsContainer.innerHTML = `
+        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <p class="text-yellow-800">💡 <strong>Tip:</strong> Add items to your pantry to get personalized meal suggestions!</p>
+        </div>
+      `;
       return;
     }
+
+    // Find recipes that use expiring ingredients
+    const expiringItems = pantryItems.filter(item => {
+      const days = getDaysUntilExpiry(item.expiryDate);
+      return days !== null && days <= 3 && days >= 0;
+    });
+
+    // Find recipes with high pantry match
+    const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
+    const scoredRecipes = RECIPE_DATABASE.map(recipe => ({
+      ...recipe,
+      pantryAnalysis: calculatePantryScore(recipe, pantryItems)
+    })).filter(recipe => recipe.pantryAnalysis.matchPercentage >= 0.5)
+      .sort((a, b) => b.pantryAnalysis.score - a.pantryAnalysis.score)
+      .slice(0, 3);
+
+    let suggestionsHTML = '';
+
+    if (expiringItems.length > 0) {
+      suggestionsHTML += `
+        <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4">
+          <h3 class="font-bold text-orange-800 mb-2">⚠️ Use Expiring Ingredients</h3>
+          <p class="text-orange-700 text-sm">${expiringItems.length} item(s) expiring soon: ${expiringItems.map(item => item.name).join(', ')}</p>
+        </div>
+      `;
+    }
+
+    if (scoredRecipes.length > 0) {
+      suggestionsHTML += `
+        <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+          <h3 class="font-bold text-green-800 mb-3">🎯 Recommended Recipes (Using Your Pantry)</h3>
+          <div class="space-y-2">
+            ${scoredRecipes.map(recipe => `
+              <div class="flex items-center justify-between bg-white rounded-lg p-3">
+                <div class="flex items-center gap-3">
+                  <span class="text-2xl">${recipe.image}</span>
+                  <div>
+                    <div class="font-semibold">${recipe.name}</div>
+                    <div class="text-sm text-gray-600">${recipe.pantryAnalysis.availableIngredients}/${recipe.pantryAnalysis.totalIngredients} ingredients available</div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-sm font-bold text-green-600">${Math.round(recipe.pantryAnalysis.matchPercentage * 100)}% match</div>
+                  ${recipe.pantryAnalysis.hasExpiringIngredients ? '<div class="text-xs text-orange-600">⚠️ Uses expiring items</div>' : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    suggestionsContainer.innerHTML = suggestionsHTML;
+  };
+
+  // Generate and display meal plan
+  const generatePlan = () => {
+    const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
+    const weekPlan = generateSmartMealPlan(userProfile, 7);
+    const shoppingList = generateShoppingList(weekPlan);
+
+    // Show meal plan
+    displayWeekPlan(weekPlan);
+    displayShoppingList(shoppingList);
+
+    // Show the meal plan section
+    document.getElementById('meal-plan-display').classList.remove('hidden');
+
+    // Save meal plan
+    localStorage.setItem('fueliq_meal_plan', JSON.stringify(weekPlan));
+
+    console.log('✅ Smart meal plan generated with pantry integration!');
+  };
+
+  // Display weekly calendar
+  const displayWeekPlan = (weekPlan) => {
+    const calendar = document.getElementById('weekly-calendar');
     
-    alert('🛒 Smart grocery list generation coming soon!\n\nYour list will automatically exclude foods you avoid and include all ingredients from your personalized meal plan.');
-  }
+    calendar.innerHTML = Object.entries(weekPlan).map(([day, meals]) => `
+      <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+        <h3 class="font-bold text-purple-800 mb-3">${day}</h3>
+        <div class="space-y-3">
+          ${['breakfast', 'lunch', 'dinner'].map(mealType => {
+            const meal = meals[mealType];
+            if (!meal) return '';
+            
+            const pantryData = loadPantryData();
+            const pantryAnalysis = calculatePantryScore(meal, pantryData.items || []);
+            
+            return `
+              <div class="bg-white rounded-lg p-3 border border-purple-100">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">${meal.image}</span>
+                    <div>
+                      <div class="font-semibold text-sm">${meal.name}</div>
+                      <div class="text-xs text-gray-600">${mealType} • ${meal.cookTime}</div>
+                    </div>
+                  </div>
+                  ${pantryAnalysis.matchPercentage > 0.5 ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">🛒 Pantry Match</span>' : ''}
+                </div>
+                <div class="text-xs text-gray-600">
+                  ${pantryAnalysis.availableIngredients}/${pantryAnalysis.totalIngredients} ingredients available
+                  ${pantryAnalysis.hasExpiringIngredients ? ' • ⚠️ Uses expiring items' : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `).join('');
+  };
 
-  // Load existing meal plan
-  function loadMealPlan() {
-    try {
-      const saved = localStorage.getItem('fueliq_meal_plan');
-      if (saved) {
-        mealPlan = JSON.parse(saved);
-      }
-    } catch (e) {
-      console.warn('Could not load meal plan:', e);
+  // Display shopping list
+  const displayShoppingList = (shoppingList) => {
+    const container = document.getElementById('shopping-list');
+    
+    if (shoppingList.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-6">
+          <span class="text-4xl">🎉</span>
+          <p class="text-lg font-semibold text-green-600 mt-2">You have everything you need!</p>
+          <p class="text-gray-600">All ingredients are available in your pantry.</p>
+        </div>
+      `;
+      return;
     }
-  }
 
-  // Initialize
-  loadMealPlan();
+    // Group by category
+    const grouped = {};
+    shoppingList.forEach(item => {
+      if (!grouped[item.category]) grouped[item.category] = [];
+      grouped[item.category].push(item);
+    });
 
-  // Public API
+    container.innerHTML = Object.entries(grouped).map(([category, items]) => `
+      <div class="border border-gray-200 rounded-lg p-4">
+        <h4 class="font-semibold text-gray-800 mb-2 capitalize">${category}</h4>
+        <div class="space-y-1">
+          ${items.map(item => `
+            <div class="flex items-center justify-between text-sm">
+              <span>${item.name}</span>
+              <span class="text-gray-500">${item.amount} ${item.unit || ''}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  };
+
+  // Cleanup function
+  const cleanup = () => {
+    // Remove event listeners if needed
+  };
+
+  // Export
   window.FuelIQMealPlanning = {
-    renderMealPlanning: createMealPlanningInterface,
-    cleanup: function() {
-      console.log('🧹 Cleaning up meal planning module');
-    }
+    renderMealPlanning,
+    cleanup,
+    generateSmartMealPlan,
+    generateShoppingList
   };
 
 })();
