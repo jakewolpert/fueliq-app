@@ -10,6 +10,7 @@
   <link rel="preload" href="grocery-delivery.js" as="script">
   <link rel="preload" href="pantry-tab.js" as="script">
   <link rel="preload" href="weight-journey.js" as="script">
+  <link rel="preload" href="wearables-tab.js" as="script">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -36,6 +37,7 @@
   <script src="weight-journey.js"></script>
   <script src="meal-planning.js"></script>
   <script src="grocery-delivery.js"></script>
+  <script src="wearables-tab.js"></script>
   <script>
     const { useState, useEffect, useMemo } = React;
     const { createElement: e } = React;
@@ -81,7 +83,7 @@
       // Enhanced cleanup function
       const forceCleanup = () => {
         // Clean all possible containers
-        ['meals-container', 'journey-container', 'pantry-container', 'planning-container', 'grocery-container'].forEach(id => {
+        ['meals-container', 'journey-container', 'pantry-container', 'planning-container', 'grocery-container', 'wearables-container'].forEach(id => {
           clearContainer(id);
         });
         
@@ -100,6 +102,9 @@
         }
         if (window.FuelIQGroceryDelivery && window.FuelIQGroceryDelivery.cleanup) {
           window.FuelIQGroceryDelivery.cleanup();
+        }
+        if (window.FuelIQWearables && window.FuelIQWearables.cleanup) {
+          window.FuelIQWearables.cleanup();
         }
       };
 
@@ -238,130 +243,159 @@
 }, [currentView]);
 
       // Enhanced journey tab rendering
-      // Enhanced journey tab rendering
-useEffect(() => {
-  if (currentView === 'journey') {
-    clearContainer('journey-container');
-    
-    let retryCount = 0;
-    const maxRetries = 10;
-    
-    const tryRenderJourney = () => {
-      if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.renderWeightJourney) {
-        try {
-          window.FuelIQWeightJourney.renderWeightJourney('journey-container');
-          console.log('✅ Journey tab rendered successfully');
-        } catch (error) {
-          console.error('Error rendering journey tab:', error);
+      useEffect(() => {
+        if (currentView === 'journey') {
+          clearContainer('journey-container');
+          
+          let retryCount = 0;
+          const maxRetries = 10;
+          
+          const tryRenderJourney = () => {
+            if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.renderWeightJourney) {
+              try {
+                window.FuelIQWeightJourney.renderWeightJourney('journey-container');
+                console.log('✅ Journey tab rendered successfully');
+              } catch (error) {
+                console.error('Error rendering journey tab:', error);
+              }
+            } else {
+              retryCount++;
+              if (retryCount < maxRetries) {
+                console.log(`⏳ Waiting for FuelIQWeightJourney module... (${retryCount}/${maxRetries})`);
+                setTimeout(tryRenderJourney, 200);
+              } else {
+                console.warn('❌ FuelIQWeightJourney module failed to load');
+              }
+            }
+          };
+          
+          setTimeout(tryRenderJourney, 100);
         }
-      } else {
-        retryCount++;
-        if (retryCount < maxRetries) {
-          console.log(`⏳ Waiting for FuelIQWeightJourney module... (${retryCount}/${maxRetries})`);
-          setTimeout(tryRenderJourney, 200);
-        } else {
-          console.warn('❌ FuelIQWeightJourney module failed to load');
-        }
-      }
-    };
-    
-    setTimeout(tryRenderJourney, 100);
-  }
-}, [currentView]);
+      }, [currentView]);
+
       // Enhanced pantry tab rendering
-      // Enhanced pantry tab rendering
-useEffect(() => {
-  if (currentView === 'pantry') {
-    clearContainer('pantry-container');
-    
-    let retryCount = 0;
-    const maxRetries = 10;
-    
-    const tryRenderPantry = () => {
-      if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
-        try {
-          window.FuelIQPantry.renderSmartPantry('pantry-container');
-          console.log('✅ Pantry tab rendered successfully');
-        } catch (error) {
-          console.error('Error rendering pantry tab:', error);
+      useEffect(() => {
+        if (currentView === 'pantry') {
+          clearContainer('pantry-container');
+          
+          let retryCount = 0;
+          const maxRetries = 10;
+          
+          const tryRenderPantry = () => {
+            if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
+              try {
+                window.FuelIQPantry.renderSmartPantry('pantry-container');
+                console.log('✅ Pantry tab rendered successfully');
+              } catch (error) {
+                console.error('Error rendering pantry tab:', error);
+              }
+            } else {
+              retryCount++;
+              if (retryCount < maxRetries) {
+                console.log(`⏳ Waiting for FuelIQPantry module... (${retryCount}/${maxRetries})`);
+                setTimeout(tryRenderPantry, 200);
+              } else {
+                console.warn('❌ FuelIQPantry module failed to load');
+              }
+            }
+          };
+          
+          setTimeout(tryRenderPantry, 100);
         }
-      } else {
-        retryCount++;
-        if (retryCount < maxRetries) {
-          console.log(`⏳ Waiting for FuelIQPantry module... (${retryCount}/${maxRetries})`);
-          setTimeout(tryRenderPantry, 200);
-        } else {
-          console.warn('❌ FuelIQPantry module failed to load');
-        }
-      }
-    };
-    
-    setTimeout(tryRenderPantry, 100);
-  }
-}, [currentView]);
+      }, [currentView]);
 
       // Enhanced meal planning tab rendering
-      // Enhanced meal planning tab rendering
-useEffect(() => {
-  if (currentView === 'planning') {
-    clearContainer('planning-container');
-    
-    let retryCount = 0;
-    const maxRetries = 10;
-    
-    const tryRenderPlanning = () => {
-      if (window.FuelIQMealPlanning && window.FuelIQMealPlanning.renderMealPlanning) {
-        try {
-          window.FuelIQMealPlanning.renderMealPlanning('planning-container');
-          console.log('✅ Planning tab rendered successfully');
-        } catch (error) {
-          console.error('Error rendering planning tab:', error);
+      useEffect(() => {
+        if (currentView === 'planning') {
+          clearContainer('planning-container');
+          
+          let retryCount = 0;
+          const maxRetries = 10;
+          
+          const tryRenderPlanning = () => {
+            if (window.FuelIQMealPlanning && window.FuelIQMealPlanning.renderMealPlanning) {
+              try {
+                window.FuelIQMealPlanning.renderMealPlanning('planning-container');
+                console.log('✅ Planning tab rendered successfully');
+              } catch (error) {
+                console.error('Error rendering planning tab:', error);
+              }
+            } else {
+              retryCount++;
+              if (retryCount < maxRetries) {
+                console.log(`⏳ Waiting for FuelIQMealPlanning module... (${retryCount}/${maxRetries})`);
+                setTimeout(tryRenderPlanning, 200);
+              } else {
+                console.warn('❌ FuelIQMealPlanning module failed to load');
+              }
+            }
+          };
+          
+          setTimeout(tryRenderPlanning, 100);
         }
-      } else {
-        retryCount++;
-        if (retryCount < maxRetries) {
-          console.log(`⏳ Waiting for FuelIQMealPlanning module... (${retryCount}/${maxRetries})`);
-          setTimeout(tryRenderPlanning, 200);
-        } else {
-          console.warn('❌ FuelIQMealPlanning module failed to load');
-        }
-      }
-    };
-    
-    setTimeout(tryRenderPlanning, 100);
-  }
-}, [currentView]);
+      }, [currentView]);
+
       // Enhanced grocery delivery tab rendering
-      // Enhanced grocery delivery tab rendering
-useEffect(() => {
-  if (currentView === 'grocery') {
-    clearContainer('grocery-container');
-    
-    let retryCount = 0;
-    const maxRetries = 10;
-    
-    const tryRenderGrocery = () => {
-      if (window.FuelIQGroceryDelivery && window.FuelIQGroceryDelivery.renderGroceryDelivery) {
-        try {
-          window.FuelIQGroceryDelivery.renderGroceryDelivery('grocery-container');
-          console.log('✅ Grocery tab rendered successfully');
-        } catch (error) {
-          console.error('Error rendering grocery tab:', error);
+      useEffect(() => {
+        if (currentView === 'grocery') {
+          clearContainer('grocery-container');
+          
+          let retryCount = 0;
+          const maxRetries = 10;
+          
+          const tryRenderGrocery = () => {
+            if (window.FuelIQGroceryDelivery && window.FuelIQGroceryDelivery.renderGroceryDelivery) {
+              try {
+                window.FuelIQGroceryDelivery.renderGroceryDelivery('grocery-container');
+                console.log('✅ Grocery tab rendered successfully');
+              } catch (error) {
+                console.error('Error rendering grocery tab:', error);
+              }
+            } else {
+              retryCount++;
+              if (retryCount < maxRetries) {
+                console.log(`⏳ Waiting for FuelIQGroceryDelivery module... (${retryCount}/${maxRetries})`);
+                setTimeout(tryRenderGrocery, 200);
+              } else {
+                console.warn('❌ FuelIQGroceryDelivery module failed to load');
+              }
+            }
+          };
+          
+          setTimeout(tryRenderGrocery, 100);
         }
-      } else {
-        retryCount++;
-        if (retryCount < maxRetries) {
-          console.log(`⏳ Waiting for FuelIQGroceryDelivery module... (${retryCount}/${maxRetries})`);
-          setTimeout(tryRenderGrocery, 200);
-        } else {
-          console.warn('❌ FuelIQGroceryDelivery module failed to load');
+      }, [currentView]);
+
+      // Enhanced wearables tab rendering
+      useEffect(() => {
+        if (currentView === 'wearables') {
+          clearContainer('wearables-container');
+          
+          let retryCount = 0;
+          const maxRetries = 10;
+          
+          const tryRenderWearables = () => {
+            if (window.FuelIQWearables && window.FuelIQWearables.renderWearablesHub) {
+              try {
+                window.FuelIQWearables.renderWearablesHub('wearables-container');
+                console.log('✅ Wearables tab rendered successfully');
+              } catch (error) {
+                console.error('Error rendering wearables tab:', error);
+              }
+            } else {
+              retryCount++;
+              if (retryCount < maxRetries) {
+                console.log(`⏳ Waiting for FuelIQWearables module... (${retryCount}/${maxRetries})`);
+                setTimeout(tryRenderWearables, 200);
+              } else {
+                console.warn('❌ FuelIQWearables module failed to load');
+              }
+            }
+          };
+          
+          setTimeout(tryRenderWearables, 100);
         }
-      }
-    };
-    
-    setTimeout(tryRenderGrocery, 100);
-  }
-}, [currentView]);
+      }, [currentView]);
 
       // Add navigation event listener with enhanced cleanup
       useEffect(() => {
@@ -791,21 +825,20 @@ const cuisineOptions = [
                 )
               ),
               // Smart recommendations notification
-              // Enhanced smart recommendations notification
-(userProfile.allergies.length > 0 || userProfile.dietaryRestrictions.length > 0 || userProfile.foodsILove.length > 0) && 
-  e('div', { className: "mb-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200" },
-    e('h3', { className: "font-bold text-green-800 mb-3 flex items-center" },
-      e('span', { className: "mr-2 text-xl" }, '🎯'),
-      "Smart Personalization Active!"
-    ),
-    e('div', { className: "text-sm text-green-700 space-y-2" },
-      userProfile.allergies.length > 0 && e('div', null, `• Avoiding allergens: ${userProfile.allergies.join(', ')}`),
-      userProfile.dietaryRestrictions.length > 0 && e('div', null, `• Following diet: ${userProfile.dietaryRestrictions.join(', ')}`),
-      userProfile.foodsILove.length > 0 && e('div', null, `• Prioritizing your favorites: ${userProfile.foodsILove.slice(0, 3).join(', ')}${userProfile.foodsILove.length > 3 ? ` +${userProfile.foodsILove.length - 3} more` : ''}`),
-      userProfile.foodsIAvoid.length > 0 && e('div', null, `• Avoiding dislikes: ${userProfile.foodsIAvoid.slice(0, 3).join(', ')}${userProfile.foodsIAvoid.length > 3 ? ` +${userProfile.foodsIAvoid.length - 3} more` : ''}`),
-      userProfile.cuisinePreferences.length > 0 && e('div', null, `• Featuring cuisines: ${userProfile.cuisinePreferences.join(', ')}`)
-    )
-  ),
+              (userProfile.allergies.length > 0 || userProfile.dietaryRestrictions.length > 0 || userProfile.foodsILove.length > 0) && 
+                e('div', { className: "mb-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200" },
+                  e('h3', { className: "font-bold text-green-800 mb-3 flex items-center" },
+                    e('span', { className: "mr-2 text-xl" }, '🎯'),
+                    "Smart Personalization Active!"
+                  ),
+                  e('div', { className: "text-sm text-green-700 space-y-2" },
+                    userProfile.allergies.length > 0 && e('div', null, `• Avoiding allergens: ${userProfile.allergies.join(', ')}`),
+                    userProfile.dietaryRestrictions.length > 0 && e('div', null, `• Following diet: ${userProfile.dietaryRestrictions.join(', ')}`),
+                    userProfile.foodsILove.length > 0 && e('div', null, `• Prioritizing your favorites: ${userProfile.foodsILove.slice(0, 3).join(', ')}${userProfile.foodsILove.length > 3 ? ` +${userProfile.foodsILove.length - 3} more` : ''}`),
+                    userProfile.foodsIAvoid.length > 0 && e('div', null, `• Avoiding dislikes: ${userProfile.foodsIAvoid.slice(0, 3).join(', ')}${userProfile.foodsIAvoid.length > 3 ? ` +${userProfile.foodsIAvoid.length - 3} more` : ''}`),
+                    userProfile.cuisinePreferences.length > 0 && e('div', null, `• Featuring cuisines: ${userProfile.cuisinePreferences.join(', ')}`)
+                  )
+                ),
               // Goals display
               goals.calories && 
                 e('div', { className: "mb-8 p-6 bg-gradient-to-r from-orange-50 via-red-50 to-pink-50 rounded-2xl border border-orange-200" },
@@ -1126,10 +1159,10 @@ const cuisineOptions = [
                   ),
                   e('button', {
                     className: "p-6 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl text-white shadow-xl transform hover:scale-105 transition-all duration-200 group text-center",
-                    onClick: () => setCurrentView('pantry')
+                    onClick: () => setCurrentView('wearables')
                   },
-                    e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '📱'),
-                    e('span', { className: 'font-bold text-lg' }, 'Scan Item')
+                    e('span', { className: 'text-3xl block mb-2 group-hover:scale-110 transition-transform duration-200' }, '⌚'),
+                    e('span', { className: 'font-bold text-lg' }, 'Connect Device')
                   )
                 )
               )
@@ -1203,6 +1236,14 @@ const cuisineOptions = [
         return e('div', { className: "min-h-screen bg-gradient-card" },
           e(Navigation),
           e('div', { id: "grocery-container", className: "grocery-tab-content" })
+        );
+      }
+
+      // Special handling for wearables tab
+      if (currentView === 'wearables') {
+        return e('div', { className: "min-h-screen bg-gradient-card" },
+          e(Navigation),
+          e('div', { id: "wearables-container", className: "wearables-tab-content" })
         );
       }
 
