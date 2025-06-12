@@ -1285,6 +1285,22 @@ Items automatically added to your pantry!`);
     }
   }
 
-  // Initialize integration when grocery delivery loads
-  setTimeout(showIntegrationStatus, 1000);
+ // Integration event listeners
+if (window.FuelIQIntegration) {
+  window.FuelIQIntegration.events.on('groceryListGenerated', (data) => {
+    console.log('🛒 Received grocery list from meal planning:', data);
+    
+    // Auto-import if we're on the grocery delivery page
+    if (document.getElementById('serviceSelector')) {
+      setTimeout(() => {
+        importFromMealPlan();
+      }, 500);
+    }
+  });
+  
+  console.log('🔗 Grocery Delivery connected to integration system');
+}
+
+// Initialize integration when grocery delivery loads
+setTimeout(showIntegrationStatus, 1000);
 })();
