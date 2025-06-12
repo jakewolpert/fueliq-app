@@ -569,12 +569,38 @@
     renderServiceSelector();
     renderProductGrid();
     updateCart();
-    setupGroceryEventListeners();
+   setupGroceryEventListeners();
 
-    // If grocery list is passed, import it
-    if (groceryList) {
-      importGroceryList(groceryList);
+// Auto-import grocery list if available
+setTimeout(() => {
+  const pendingList = localStorage.getItem('fueliq_pending_grocery_list');
+  if (pendingList) {
+    console.log('🔄 Auto-importing grocery list from meal planning...');
+    
+    // Show loading message
+    const importButton = document.getElementById('importFromMealPlan');
+    if (importButton) {
+      importButton.textContent = '⏳ Auto-importing...';
+      importButton.disabled = true;
     }
+    
+    // Auto-import after short delay
+    setTimeout(() => {
+      importFromMealPlan();
+      
+      // Reset button
+      if (importButton) {
+        importButton.textContent = '📅 From Meal Plan';
+        importButton.disabled = false;
+      }
+    }, 1000);
+  }
+}, 500);
+
+// If grocery list is passed, import it
+if (groceryList) {
+  importGroceryList(groceryList);
+}
   }
 
   function renderServiceSelector() {
