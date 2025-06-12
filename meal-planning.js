@@ -1541,68 +1541,121 @@ window.generateMealPlanWithChoices = function() {
 
 // Integration hooks for grocery delivery
 const initializeIntegration = () => {
-  if (window.FuelIQIntegration) {
+  if (window.FuelIQIntegration && typeof window.FuelIQIntegration.registerModule === 'function') {
     console.log('🔗 Meal Planning connected to integration system');
     
     // Register this module
-    window.FuelIQIntegration.registerModule('mealPlanning', {
-      generatePlan: generateMealPlanWithChoices,
-      getShoppingList: generateShoppingList,
-      getCurrentPlan: () => JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}')
-    });
+    try {
+      window.FuelIQIntegration.registerModule('mealPlanning', {
+        generatePlan: generateMealPlanWithChoices,
+        getShoppingList: generateShoppingList,
+        getCurrentPlan: () => JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}')
+      });
+    } catch (e) {
+      console.error('Failed to register meal planning module:', e);
+    }
     
-    // Listen for pantry updates
-    window.FuelIQIntegration.events.on('pantryUpdated', (data) => {
-      console.log('📦 Pantry updated, refreshing meal suggestions');
-      showSmartSuggestions(); // Refresh your existing suggestions
-    });
+    // Listen for pantry updates - FIXED: removed .events
+    try {
+      window.FuelIQIntegration.on('pantryUpdated', (data) => {
+        console.log('📦 Pantry updated, refreshing meal suggestions');
+        if (typeof showSmartSuggestions === 'function') {
+          showSmartSuggestions();
+        }
+      });
+    } catch (e) {
+      console.error('Failed to setup pantry listener:', e);
+    }
+  } else {
+    console.warn('FuelIQIntegration not ready, retrying...');
+    setTimeout(initializeIntegration, 1000);
   }
 };
 
-// Enhanced navigation to grocery delivery
-const navigateToGroceryWithList = () => {
+// Enhanced navigation to grocery delivery - FIXED: made it a window function
+window.navigateToGroceryWithList = function() {
   const currentPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
-  const shoppingList = generateShoppingList(currentPlan);
   
-  if (Object.keys(shoppingList).length === 0) {
+  if (Object.keys(currentPlan).length === 0) {
     alert('❌ No meal plan found. Please generate a meal plan first.');
     return;
   }
   
+  const shoppingList = generateShoppingList(currentPlan);
+  
+  if (shoppingList.length === 0) {
+    alert('✅ All ingredients are already in your pantry!');
+    return;
+  }
+  
+  console.log('🛒 Generating shopping list with', shoppingList.length, 'items');
+  
   // Store shopping list for grocery delivery
   localStorage.setItem('fueliq_pending_grocery_list', JSON.stringify(shoppingList));
   
-  // Emit integration event
+  // Emit integration event - FIXED: removed .events
   if (window.FuelIQIntegration) {
-    window.FuelIQIntegration.events.emit('groceryListGenerated', {
-      ingredients: shoppingList,
-      source: 'meal_planning',
-      totalItems: shoppingList.length
-    });
-    
-    window.FuelIQIntegration.utils.showSuccessMessage(
-      `Generated grocery list with ${shoppingList.length} ingredients!`
-    );
+    try {
+      window.FuelIQIntegration.emit('groceryListGenerated', {
+        ingredients: shoppingList,
+        source: 'meal_planning',
+        totalItems: shoppingList.length
+      });
+      
+      if (window.FuelIQIntegration.utils && window.FuelIQIntegration.utils.showSuccessMessage) {
+        window.FuelIQIntegration.utils.showSuccessMessage(
+          `Generated grocery list with ${shoppingList.length} ingredients!`
+        );
+      }
+    } catch (e) {
+      console.error('Integration event failed:', e);
+    }
   }
   
   // Navigate to grocery delivery
-  const navigationEvent = new CustomEvent('navigateToTab', { detail: 'grocery' });
-  window.dispatchEvent(navigationEvent);
-};
-
-// Initialize integration when module loads
-setTimeout(initializeIntegration, 500);
-
-// Update your existing generate plan button to emit events
-const originalGeneratePlan = generatePlan;
-generatePlan = () => {
-  originalGeneratePlan(); // Call your existing function
-  
-  // Add integration event
-  if (window.FuelIQIntegration) {
-    const weekPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
-    window.FuelIQIntegration.events.emit('mealPlanCreated', weekPlan);
-    window.FuelIQIntegration.updateSharedData('mealPlans', weekPlan);
+  try {
+    if (window.setCurrentView) {
+      window.setCurrentView('delivery');
+    } else {
+      const navigationEvent = new CustomEvent('navigateToTab', { detail: 'delivery' });
+      window.dispatchEvent(navigationEvent);
+    }
+  } catch (e) {
+    console.error('Navigation failed:', e);
+    alert('Please manually switch to the Delivery tab to see your grocery list!');
   }
 };
+
+// Enhanced generate plan function - FIXED: no const reassignment
+const enhancedGeneratePlan = function() {
+  // Call the original generate plan logic
+  const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
+  const weekPlan = generateMealPlanWithChoices();
+  const shoppingList = generateShoppingList(weekPlan);
+
+  displayWeekPlan(weekPlan);
+  displayShoppingList(shoppingList);
+
+  document.getElementById('meal-plan-display').classList.remove('hidden');
+  localStorage.setItem('fueliq_meal_plan', JSON.stringify(weekPlan));
+
+  console.log('✅ Smart meal plan generated with pantry integration!');
+  
+  // Add integration event - FIXED: removed .events
+  if (window.FuelIQIntegration) {
+    try {
+      window.FuelIQIntegration.emit('mealPlanCreated', weekPlan);
+      window.FuelIQIntegration.setSharedData('mealPlans', weekPlan);
+    } catch (e) {
+      console.error('Integration event failed:', e);
+    }
+  }
+};
+
+// FIXED: Replace the function reference instead of reassigning const
+const originalGeneratePlan = generatePlan;
+generatePlan = enhancedGeneratePlan;
+
+// Initialize integration when module loads
+setTimeout(initializeIntegration, 1000);
 })();
