@@ -704,29 +704,59 @@ saveMealPlanWithIntegration(mealPlan);
     modal.classList.add('flex');
   }
 
-  function showMealPrepTips() {
-    alert(`🥘 Meal Prep Master Tips:
-
-📅 SUNDAY PREP SESSION:
-• Batch cook proteins (chicken, salmon, tofu)
-• Wash and chop all vegetables
-• Cook grains in bulk (quinoa, rice, pasta)
-• Prepare overnight oats for the week
+ function showMealPrepTips() {
+  // Get user profile for personalization
+  const profile = userProfile || {};
+  const hasRestrictions = (profile.dietaryRestrictions && profile.dietaryRestrictions.length > 0);
+  const hasAllergies = (profile.allergies && profile.allergies.length > 0);
+  const hasAntiBloat = profile.antiBloutPreference;
+  
+  // Build personalized intro message
+  let personalizedIntro = "🎯 **Your Personalized Meal Prep Guide**\n\n";
+  
+  if (hasRestrictions || hasAllergies || hasAntiBloat) {
+    personalizedIntro += "✨ **Tailored Just For You:**\n";
+    
+    if (hasRestrictions) {
+      personalizedIntro += `• Recipes selected to match your ${profile.dietaryRestrictions.join(', ')} preferences\n`;
+    }
+    
+    if (hasAllergies) {
+      personalizedIntro += `• All ingredients carefully filtered to avoid ${profile.allergies.join(', ')}\n`;
+    }
+    
+    if (hasAntiBloat) {
+      personalizedIntro += `• Prioritized anti-bloat foods to support your digestive comfort\n`;
+    }
+    
+    personalizedIntro += "\n💡 **Important:** While we've customized these suggestions based on your profile, always verify ingredients and consult with healthcare providers for serious health concerns.\n\n";
+  } else {
+    personalizedIntro += "💡 **Tip:** Complete your profile in Settings to get personalized meal recommendations that respect your dietary needs and health goals!\n\n";
+  }
+  
+  alert(`${personalizedIntro}📅 SUNDAY PREP SESSION:
+- Batch cook proteins (chicken, salmon, tofu)
+- Wash and chop all vegetables
+- Cook grains in bulk (quinoa, rice, pasta)
+- Prepare overnight oats for the week
 
 🔥 TIME-SAVING HACKS:
-• Use a slow cooker or instant pot
-• Pre-portion snacks in containers
-• Freeze smoothie ingredients in bags
-• Keep emergency proteins on hand
+- Use a slow cooker or instant pot
+- Pre-portion snacks in containers
+- Freeze smoothie ingredients in bags
+- Keep emergency proteins on hand
 
 📦 STORAGE SECRETS:
-• Glass containers prevent odors
-• Label everything with dates
-• Store dressings separately
-• Freeze extra portions for later
+- Glass containers prevent odors
+- Label everything with dates
+- Store dressings separately
+- Freeze extra portions for later
+
+🍽️ **Your Weekly Plan:**
+We've selected recipes that align with your goals and dietary preferences. Feel free to swap any meals that don't appeal to you!
 
 Coming soon: Full meal prep planning feature! 🚀`);
-  }
+}
 
   function saveMealPlan() {
     try {
