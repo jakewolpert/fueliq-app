@@ -813,7 +813,350 @@ const displayWeekPlan = (weekPlan) => {
     document.body.insertAdjacentHTML('beforeend', modalHTML);
   }
 };
+// Show detailed recipe information in modal
+window.showRecipeDetails = function(recipeId, day, mealType) {
+  const recipe = RECIPE_DATABASE.find(r => r.id === recipeId);
+  if (!recipe) return;
 
+  const pantryData = loadPantryData();
+  const pantryItems = pantryData.items || [];
+  const pantryAnalysis = calculatePantryScore(recipe, pantryItems);
+  
+  const modalContent = document.getElementById('recipe-modal-content');
+  modalContent.innerHTML = `
+    <!-- Modal Header -->
+    <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 rounded-t-lg">
+      <div class="flex justify-between items-start">
+        <div>
+          <h2 class="text-2xl font-bold mb-2">${recipe.image} ${recipe.name}</h2>
+          <div class="flex gap-4 text-sm opacity-90">
+            <span>🕒 ${recipe.cookTime}</span>
+            <span>👥 ${recipe.servings} servings</span>
+            <span>🏷️ ${recipe.mealType}</span>
+            <span>📅 ${day} ${mealType}</span>
+          </div>
+        </div>
+        <button onclick="closeRecipeModal()" 
+                class="text-white hover:text-gray-200 text-2xl font-bold transition-colors">
+          ×
+        </button>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <!-- Quick Stats Row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-green-50 rounded-lg p-3 text-center">
+          <div class="text-2xl font-bold text-green-600">${recipe.calories}</div>
+          <div class="text-sm text-gray-600">Calories</div>
+        </div>
+        <div class="bg-blue-50 rounded-lg p-3 text-center">
+          <div class="text-2xl font-bold text-blue-600">${pantryAnalysis.availableIngredients}/${pantryAnalysis.totalIngredients}</div>
+          <div class="text-sm text-gray-600">In Pantry</div>
+        </div>
+        <div class="bg-orange-50 rounded-lg p-3 text-center">
+          <div class="text-2xl font-bold text-orange-600">${recipe.protein}g</div>
+          <div class="text-sm text-gray-600">Protein</div>
+        </div>
+        <div class="bg-purple-50 rounded-lg p-3 text-center">
+          <div class="text-2xl font-bold text-purple-600">${Math.round(pantryAnalysis.matchPercentage * 100)}%</div>
+          <div class="text-sm text-gray-600">Pantry Match</div>
+        </div>
+      </div>
+
+      <!-- Main Content Grid -->
+      <div class="grid md:grid-cols-2 gap-6">
+        
+        <!-- Left Column: Ingredients & Nutrition -->
+        <div class="space-y-6">
+          
+          <!-- Ingredients List -->
+          <div class="bg-gray-50 rounded-lg p-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <span class="text-xl">🛒</span> Ingredients
+            </h3>
+            <div class="space-y-2">
+              ${recipe.ingredients.map(ingredient => {
+                const pantryMatch = findPantryMatch(ingredient, pantryItems);
+                const hasInPantry = !!pantryMatch;
+                
+                return `
+                  <div class="flex items-center justify-between p-2 bg-white rounded border ${hasInPantry ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}">
+                    <div class="flex items-center gap-2">
+                      <span class="text-lg">${hasInPantry ? '✅' : '🛒'}</span>
+                      <span class="font-medium">${ingredient.name}</span>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-sm font-medium">${ingredient.amount} ${ingredient.unit}</div>
+                      <div class="text-xs ${hasInPantry ? 'text-green-600' : 'text-red-600'}">
+                        ${hasInPantry ? 'Have in pantry' : 'Need to buy'}
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Detailed Nutrition -->
+          <div class="bg-gray-50 rounded-lg p-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <span class="text-xl">📊</span> Nutrition Facts
+            </h3>
+            <div class="space-y-3">
+              <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                <span class="font-medium">Calories</span>
+                <span class="font-bold text-lg">${recipe.calories}</span>
+              </div>
+              
+              <!-- Macronutrients -->
+              <div class="space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-green-600 font-medium">Protein</span>
+                  <div class="text-right">
+                    <span class="font-bold">${recipe.protein}g</span>
+                    <span class="text-sm text-gray-500 ml-1">(${Math.round((recipe.protein * 4 / recipe.calories) * 100)}%)</span>
+                  </div>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-blue-600 font-medium">Carbohydrates</span>
+                  <div class="text-right">
+                    <span class="font-bold">${recipe.carbs}g</span>
+                    <span class="text-sm text-gray-500 ml-1">(${Math.round((recipe.carbs * 4 / recipe.calories) * 100)}%)</span>
+                  </div>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-orange-600 font-medium">Fat</span>
+                  <div class="text-right">
+                    <span class="font-bold">${recipe.fat}g</span>
+                    <span class="text-sm text-gray-500 ml-1">(${Math.round((recipe.fat * 9 / recipe.calories) * 100)}%)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Visual Macro Breakdown -->
+              <div class="mt-4">
+                <div class="text-sm text-gray-600 mb-2">Macronutrient Distribution</div>
+                <div class="flex h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <div class="bg-green-500" style="width: ${Math.round((recipe.protein * 4 / recipe.calories) * 100)}%"></div>
+                  <div class="bg-blue-500" style="width: ${Math.round((recipe.carbs * 4 / recipe.calories) * 100)}%"></div>
+                  <div class="bg-orange-500" style="width: ${Math.round((recipe.fat * 9 / recipe.calories) * 100)}%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>🟢 Protein</span>
+                  <span>🔵 Carbs</span>
+                  <span>🟠 Fat</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Instructions & Actions -->
+        <div class="space-y-6">
+          
+          <!-- Cooking Instructions -->
+          <div class="bg-gray-50 rounded-lg p-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <span class="text-xl">👨‍🍳</span> Quick Cooking Guide
+            </h3>
+            <div class="space-y-3">
+              ${getBasicInstructions(recipe).map((instruction, index) => `
+                <div class="flex gap-3">
+                  <div class="flex-shrink-0 w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                    ${index + 1}
+                  </div>
+                  <p class="text-gray-700 leading-relaxed pt-1">${instruction}</p>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Chef's Tips -->
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h4 class="font-semibold text-yellow-800 mb-2 flex items-center gap-2">
+              <span class="text-lg">💡</span> Chef's Tips
+            </h4>
+            <div class="text-sm text-yellow-700 space-y-1">
+              ${getChefsTips(recipe).map(tip => `<p>• ${tip}</p>`).join('')}
+            </div>
+          </div>
+
+          <!-- Recipe Info -->
+          <div class="flex flex-wrap gap-2">
+            <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+              ${recipe.cuisine}
+            </span>
+            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+              ${recipe.mealType}
+            </span>
+            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+              ${recipe.servings} servings
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="mt-8 border-t border-gray-200 pt-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          
+          <!-- Save Recipe -->
+          <button onclick="saveRecipeToFavorites('${recipe.id}')" 
+                  class="bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors">
+            <span class="text-lg">💾</span>
+            Save Recipe
+          </button>
+
+          <!-- Order Missing Ingredients -->
+          ${pantryAnalysis.missingIngredients > 0 ? `
+            <button onclick="orderMissingIngredients('${recipe.id}')" 
+                    class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors">
+              <span class="text-lg">🛒</span>
+              Order Missing (${pantryAnalysis.missingIngredients})
+            </button>
+          ` : `
+            <div class="bg-green-100 text-green-700 px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2">
+              <span class="text-lg">✅</span>
+              All Ingredients Available
+            </div>
+          `}
+
+          <!-- Modify Meal Plan -->
+          <button onclick="modifyMealPlan('${day}', '${mealType}', '${recipe.id}')" 
+                  class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors">
+            <span class="text-lg">✏️</span>
+            Change This Meal
+          </button>
+          
+        </div>
+
+        <!-- Missing Ingredients List -->
+        ${pantryAnalysis.missing.length > 0 ? `
+          <div class="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-3">
+            <h4 class="font-semibold text-orange-800 mb-2">Missing Ingredients:</h4>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              ${pantryAnalysis.missing.map(item => `
+                <span class="text-orange-700">• ${item.ingredient.name} (${item.ingredient.amount} ${item.ingredient.unit})</span>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+      </div>
+    </div>
+  `;
+
+  // Show the modal
+  document.getElementById('recipe-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden'; // Prevent background scrolling
+};
+
+// Close recipe modal
+window.closeRecipeModal = function() {
+  document.getElementById('recipe-modal').classList.add('hidden');
+  document.body.style.overflow = 'auto'; // Restore scrolling
+};
+
+// Generate basic cooking instructions based on recipe
+function getBasicInstructions(recipe) {
+  const instructions = [];
+  
+  // Category-based instructions
+  if (recipe.mealType === 'breakfast') {
+    instructions.push('Gather all ingredients and prep workspace');
+    instructions.push('Heat pan/griddle to medium heat if needed');
+    instructions.push('Combine ingredients according to recipe type');
+    instructions.push('Cook for recommended time, stirring as needed');
+    instructions.push('Season to taste and serve immediately');
+  } else if (recipe.mealType === 'lunch') {
+    instructions.push('Prep all vegetables and proteins first');
+    instructions.push('Heat cooking oil in large pan or skillet');
+    instructions.push('Cook proteins until almost done');
+    instructions.push('Add vegetables and seasonings');
+    instructions.push('Combine everything and serve hot');
+  } else if (recipe.mealType === 'dinner') {
+    instructions.push('Preheat oven to 400°F if baking');
+    instructions.push('Season proteins and let come to room temperature');
+    instructions.push('Cook proteins using preferred method');
+    instructions.push('Prepare sides and vegetables');
+    instructions.push('Let proteins rest, then plate and serve');
+  }
+
+  return instructions;
+}
+
+// Generate chef's tips based on recipe
+function getChefsTips(recipe) {
+  const tips = [];
+  
+  // Ingredient-specific tips
+  if (recipe.ingredients.some(ing => ing.name.toLowerCase().includes('chicken'))) {
+    tips.push('Use a meat thermometer - chicken should reach 165°F internal temperature');
+  }
+  
+  if (recipe.ingredients.some(ing => ing.name.toLowerCase().includes('salmon'))) {
+    tips.push('Cook salmon skin-side down first for crispy skin');
+  }
+
+  if (recipe.ingredients.some(ing => ing.name.toLowerCase().includes('quinoa'))) {
+    tips.push('Rinse quinoa before cooking to remove bitter coating');
+  }
+
+  // Meal type tips
+  if (recipe.mealType === 'breakfast') {
+    tips.push('Prep ingredients the night before for quicker morning assembly');
+  } else if (recipe.mealType === 'lunch') {
+    tips.push('This recipe is perfect for meal prep - make extra portions');
+  } else if (recipe.mealType === 'dinner') {
+    tips.push('Let meat rest for 5 minutes after cooking for better texture');
+  }
+
+  // Default tips if none match
+  if (tips.length === 0) {
+    tips.push('Read through all steps before starting');
+    tips.push('Prep all ingredients first (mise en place)');
+    tips.push('Adjust seasoning to taste at the end');
+  }
+
+  return tips.slice(0, 3); // Limit to 3 tips
+}
+
+// Recipe action functions
+window.saveRecipeToFavorites = function(recipeId) {
+  const favorites = JSON.parse(localStorage.getItem('fueliq_favorite_recipes') || '[]');
+  if (!favorites.includes(recipeId)) {
+    favorites.push(recipeId);
+    localStorage.setItem('fueliq_favorite_recipes', JSON.stringify(favorites));
+    alert('Recipe saved to your favorites! 💾');
+  } else {
+    alert('Recipe is already in your favorites! ⭐');
+  }
+};
+
+window.orderMissingIngredients = function(recipeId) {
+  const recipe = RECIPE_DATABASE.find(r => r.id === recipeId);
+  if (!recipe) return;
+  
+  const pantryData = loadPantryData();
+  const pantryItems = pantryData.items || [];
+  const pantryAnalysis = calculatePantryScore(recipe, pantryItems);
+  
+  localStorage.setItem('fueliq_recipe_shopping_list', JSON.stringify(pantryAnalysis.missing));
+  
+  alert(`${pantryAnalysis.missing.length} missing ingredients added to your shopping list! Redirecting to delivery options... 🛒`);
+  
+  // Redirect to delivery tab with shopping list
+  if (window.setCurrentView) {
+    window.setCurrentView('delivery');
+  }
+};
+
+window.modifyMealPlan = function(day, mealType, currentRecipeId) {
+  alert(`Meal modification feature coming soon!\n\nDay: ${day}\nMeal: ${mealType}\nCurrent Recipe: ${currentRecipeId}\n\nThis will allow you to browse alternative recipes and swap them in your meal plan! ✏️`);
+};
   // Cleanup function
   const cleanup = () => {
     // Remove event listeners if needed
