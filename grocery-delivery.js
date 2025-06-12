@@ -1008,8 +1008,24 @@
     // Simulate order placement
     const orderNumber = 'FIQ' + Math.random().toString(36).substr(2, 9).toUpperCase();
     
-    // Update pantry with purchased items (integration point)
-    updatePantryWithPurchase();
+    // Enhanced pantry integration using the integration hub
+    if (window.FuelIQIntegration) {
+      window.FuelIQIntegration.updatePantryFromGrocery(
+        shoppingCart.map(item => ({
+          name: item.product.name,
+          category: item.product.category,
+          quantity: item.quantity,
+          organic: item.product.organic
+        })),
+        'grocery_delivery'
+      );
+      
+      // Show success message
+      window.FuelIQIntegration.utils.showSuccessMessage('Order placed! Pantry updated automatically.');
+    } else {
+      // Fallback to original method
+      updatePantryWithPurchase();
+    }
 
     alert(`🎉 Order placed successfully!
     
@@ -1018,7 +1034,7 @@ Service: ${DELIVERY_SERVICES[selectedService].name}
 Delivery: ${timeSlot === 'asap' ? 'ASAP' : timeSlot}
 Address: ${address}
 
-You'll receive updates on your order status. Items will be automatically added to your pantry when delivered!`);
+Items automatically added to your pantry!`);
 
     // Clear cart and close modal
     shoppingCart = [];
