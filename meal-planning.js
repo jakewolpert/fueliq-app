@@ -528,6 +528,23 @@
 
   // Render meal slot with preference indicators
   function renderMealSlot(mealType, emoji, meal, color) {
+    const colorClasses = {
+      orange: {
+        text: 'text-orange-600',
+        bg: 'bg-gradient-to-r from-orange-100 to-orange-200'
+      },
+      green: {
+        text: 'text-green-600', 
+        bg: 'bg-gradient-to-r from-green-100 to-green-200'
+      },
+      purple: {
+        text: 'text-purple-600',
+        bg: 'bg-gradient-to-r from-purple-100 to-purple-200'
+      }
+    };
+
+    const colorClass = colorClasses[color] || colorClasses.orange;
+
     if (meal) {
       // Check if meal contains loved ingredients
       const hasLovedIngredients = userProfile.foodsILove && userProfile.foodsILove.some(loved => 
@@ -538,21 +555,21 @@
 
       return `
         <div class="meal-slot">
-          <div class="text-xs font-semibold text-${color}-600 mb-1">${emoji} ${mealType.toUpperCase()}</div>
-          <div class="p-3 bg-gradient-to-r from-${color}-100 to-${color}-200 rounded-xl">
+          <div class="text-xs font-semibold ${colorClass.text} mb-1">${emoji} ${mealType.toUpperCase()}</div>
+          <div class="p-3 ${colorClass.bg} rounded-xl">
             <div class="font-medium text-sm flex items-center justify-between">
               <span>${meal.name}</span>
               ${hasLovedIngredients ? '<span class="text-lg">❤️</span>' : ''}
             </div>
             <div class="text-xs text-gray-600">${meal.calories} cal • ${meal.cuisine}</div>
-            ${meal.preferenceScore > 0 ? `<div class="text-xs text-green-600">✨ Personalized for you</div>` : ''}
+            ${meal.preferenceScore > 0 ? '<div class="text-xs text-green-600">✨ Personalized for you</div>' : ''}
           </div>
         </div>
       `;
     } else {
       return `
         <div class="meal-slot">
-          <div class="text-xs font-semibold text-${color}-600 mb-1">${emoji} ${mealType.toUpperCase()}</div>
+          <div class="text-xs font-semibold ${colorClass.text} mb-1">${emoji} ${mealType.toUpperCase()}</div>
           <div class="p-3 border-2 border-dashed border-gray-300 rounded-xl text-center text-gray-500">
             <div class="text-xs">+ Add Meal</div>
           </div>
