@@ -575,7 +575,7 @@
     }
 
     // Save meal plan
-    saveMealPlan();
+saveMealPlanWithIntegration(mealPlan);
     
     // Re-render calendar and update nutrition
     renderWeeklyCalendar();
@@ -856,7 +856,7 @@ Coming soon: Full meal prep planning feature! 🚀`);
     }
     
     mealPlan[date][mealType] = recipe;
-    saveMealPlan();
+saveMealPlanWithIntegration(mealPlan);
     
     // Close modals and refresh display
     document.getElementById('recipeModal').classList.add('hidden');
