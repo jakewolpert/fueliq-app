@@ -55,12 +55,6 @@
       this.setSharedData(key, data);
     }
 
-// Replace the original generatePlan function
-const originalGeneratePlan = generatePlan;
-generatePlan = enhancedGeneratePlan;
-
-// Initialize integration when module loads
-setTimeout(initializeIntegration, 1000);
     // Initialize shared data from localStorage
     initializeSharedData() {
       try {
