@@ -788,42 +788,77 @@
   }
 
   function importFromMealPlan() {
-    // Get meal plan from localStorage
-    try {
-      const mealPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
-      const ingredientsList = {};
-      
-      Object.values(mealPlan).forEach(dayPlan => {
-        ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
-          const meal = dayPlan[mealType];
-          if (meal && meal.ingredients) {
-            meal.ingredients.forEach(ingredient => {
-              const key = ingredient.name.toLowerCase();
-              if (ingredientsList[key]) {
-                ingredientsList[key].amount += ` + ${ingredient.amount}`;
-              } else {
-                ingredientsList[key] = { ...ingredient };
-              }
-            });
+    if (window.FuelIQIntegration) {
+      try {
+        const mealPlans = window.FuelIQIntegration.getSharedData('mealPlans');
+        
+        if (!mealPlans || Object.keys(mealPlans).length === 0) {
+          alert('❌ No meal plan found. Please create a meal plan first.');
+          return;
+        }
+        
+        const groceryList = window.FuelIQIntegration.generateGroceryListFromMealPlan(mealPlans);
+        
+        // Add items to cart
+        let addedCount = 0;
+        Object.values(groceryList.ingredients).forEach(ingredient => {
+          const product = findBestProductMatch(ingredient.name);
+          if (product) {
+            addToCart(ingredient.name.toLowerCase(), Math.ceil(ingredient.totalAmount), false);
+            addedCount++;
           }
         });
-      });
 
-      // Convert to products and add to cart
-      Object.values(ingredientsList).forEach(ingredient => {
-        const product = findBestProductMatch(ingredient.name);
-        if (product) {
-          addToCart(ingredient.name.toLowerCase(), 1, false);
+        updateCart();
+        
+        if (addedCount > 0) {
+          window.FuelIQIntegration.utils.showSuccessMessage(
+            `Imported ${addedCount} items from meal plan! Dietary restrictions applied.`
+          );
+        } else {
+          alert('❌ No compatible items found in meal plan.');
         }
-      });
+      } catch (e) {
+        console.error('Integration error:', e);
+        alert('❌ Error importing meal plan. Please try again.');
+      }
+    } else {
+      // Fallback to original method
+      try {
+        const mealPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
+        const ingredientsList = {};
+        
+        Object.values(mealPlan).forEach(dayPlan => {
+          ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+            const meal = dayPlan[mealType];
+            if (meal && meal.ingredients) {
+              meal.ingredients.forEach(ingredient => {
+                const key = ingredient.name.toLowerCase();
+                if (ingredientsList[key]) {
+                  ingredientsList[key].amount += ` + ${ingredient.amount}`;
+                } else {
+                  ingredientsList[key] = { ...ingredient };
+                }
+              });
+            }
+          });
+        });
 
-      updateCart();
-      alert('✅ Meal plan imported successfully! Review and adjust quantities as needed.');
-    } catch (e) {
-      alert('❌ No meal plan found. Please create a meal plan first.');
+        // Convert to products and add to cart
+        Object.values(ingredientsList).forEach(ingredient => {
+          const product = findBestProductMatch(ingredient.name);
+          if (product) {
+            addToCart(ingredient.name.toLowerCase(), 1, false);
+          }
+        });
+
+        updateCart();
+        alert('✅ Meal plan imported successfully! Review and adjust quantities as needed.');
+      } catch (e) {
+        alert('❌ No meal plan found. Please create a meal plan first.');
+      }
     }
   }
-
   function processUploadedList() {
     const textInput = document.getElementById('manualListEntry')?.value;
     const fileInput = document.getElementById('fileUpload')?.files[0];
