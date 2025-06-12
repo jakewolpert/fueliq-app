@@ -791,9 +791,21 @@ e('div', { className: "mb-8" },
               ),
 
               // Smart recommendations notification
-              (userProfile.allergies.includes('Dairy/Lactose') || userProfile.dietaryRestrictions.includes('Gluten-Free')) && 
-                e('div', { className: "mb-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200" },
-                  e('h3', { className: "font-bold text-green-800 mb-3 flex items-center" },
+              // Enhanced smart recommendations notification
+(userProfile.allergies.length > 0 || userProfile.dietaryRestrictions.length > 0 || userProfile.foodsILove.length > 0) && 
+  e('div', { className: "mb-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200" },
+    e('h3', { className: "font-bold text-green-800 mb-3 flex items-center" },
+      e('span', { className: "mr-2 text-xl" }, '🎯'),
+      "Smart Personalization Active!"
+    ),
+    e('div', { className: "text-sm text-green-700 space-y-2" },
+      userProfile.allergies.length > 0 && e('div', null, `• Avoiding allergens: ${userProfile.allergies.join(', ')}`),
+      userProfile.dietaryRestrictions.length > 0 && e('div', null, `• Following diet: ${userProfile.dietaryRestrictions.join(', ')}`),
+      userProfile.foodsILove.length > 0 && e('div', null, `• Prioritizing your favorites: ${userProfile.foodsILove.slice(0, 3).join(', ')}${userProfile.foodsILove.length > 3 ? ` +${userProfile.foodsILove.length - 3} more` : ''}`),
+      userProfile.foodsIAvoid.length > 0 && e('div', null, `• Avoiding dislikes: ${userProfile.foodsIAvoid.slice(0, 3).join(', ')}${userProfile.foodsIAvoid.length > 3 ? ` +${userProfile.foodsIAvoid.length - 3} more` : ''}`),
+      userProfile.cuisinePreferences.length > 0 && e('div', null, `• Featuring cuisines: ${userProfile.cuisinePreferences.join(', ')}`)
+    )
+  ),
                     e('span', { className: "mr-2 text-xl" }, '💡'),
                     "Smart Recommendations Activated!"
                   ),
