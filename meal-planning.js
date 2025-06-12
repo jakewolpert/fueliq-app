@@ -891,7 +891,7 @@ Coming soon: Full meal prep planning feature! 🚀`);
 function saveMealPlanWithIntegration(weekPlan) {
   // Save to localStorage (existing functionality)
   try {
-    localStorage.setItem('fueliq_meal_plan', JSON.stringify(weekPlan));
+saveMealPlanWithIntegration(weekPlan);
   } catch (e) {
     console.warn('Could not save meal plan to localStorage:', e);
   }
