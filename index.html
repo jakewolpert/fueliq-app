@@ -43,17 +43,21 @@
     function FuelIQ() {
       const [currentView, setCurrentView] = useState('setup');
       const [userProfile, setUserProfile] = useState({
-        age: '',
-        weight: '',
-        height: '',
-        gender: 'male',
-        activityLevel: 'moderate',
-        goal: 'fat_loss',
-        dietaryRestrictions: [],
-        allergies: [],
-        healthConcerns: [],
-        antiBloutPreference: false
-      });
+  age: '',
+  weight: '',
+  height: '',
+  gender: 'male',
+  activityLevel: 'moderate',
+  goal: 'fat_loss',
+  dietaryRestrictions: [],
+  allergies: [],
+  healthConcerns: [],
+  antiBloutPreference: false,
+  // New food preferences
+  foodsILove: [],
+  foodsIAvoid: [],
+  cuisinePreferences: []
+});
       const [goals, setGoals] = useState({});
       const [meals, setMeals] = useState([]);
 
