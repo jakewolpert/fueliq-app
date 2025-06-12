@@ -1528,5 +1528,73 @@ window.generateMealPlanWithChoices = function() {
     generateSmartMealPlan,
     generateShoppingList
   };
+// ADD THIS SECTION TO THE END OF YOUR meal-planning.js FILE
+// (Right before the final })(); line)
 
+// Integration hooks for grocery delivery
+const initializeIntegration = () => {
+  if (window.FuelIQIntegration) {
+    console.log('🔗 Meal Planning connected to integration system');
+    
+    // Register this module
+    window.FuelIQIntegration.registerModule('mealPlanning', {
+      generatePlan: generateMealPlanWithChoices,
+      getShoppingList: generateShoppingList,
+      getCurrentPlan: () => JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}')
+    });
+    
+    // Listen for pantry updates
+    window.FuelIQIntegration.events.on('pantryUpdated', (data) => {
+      console.log('📦 Pantry updated, refreshing meal suggestions');
+      showSmartSuggestions(); // Refresh your existing suggestions
+    });
+  }
+};
+
+// Enhanced navigation to grocery delivery
+const navigateToGroceryWithList = () => {
+  const currentPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
+  const shoppingList = generateShoppingList(currentPlan);
+  
+  if (Object.keys(shoppingList).length === 0) {
+    alert('❌ No meal plan found. Please generate a meal plan first.');
+    return;
+  }
+  
+  // Store shopping list for grocery delivery
+  localStorage.setItem('fueliq_pending_grocery_list', JSON.stringify(shoppingList));
+  
+  // Emit integration event
+  if (window.FuelIQIntegration) {
+    window.FuelIQIntegration.events.emit('groceryListGenerated', {
+      ingredients: shoppingList,
+      source: 'meal_planning',
+      totalItems: shoppingList.length
+    });
+    
+    window.FuelIQIntegration.utils.showSuccessMessage(
+      `Generated grocery list with ${shoppingList.length} ingredients!`
+    );
+  }
+  
+  // Navigate to grocery delivery
+  const navigationEvent = new CustomEvent('navigateToTab', { detail: 'grocery' });
+  window.dispatchEvent(navigationEvent);
+};
+
+// Initialize integration when module loads
+setTimeout(initializeIntegration, 500);
+
+// Update your existing generate plan button to emit events
+const originalGeneratePlan = generatePlan;
+generatePlan = () => {
+  originalGeneratePlan(); // Call your existing function
+  
+  // Add integration event
+  if (window.FuelIQIntegration) {
+    const weekPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
+    window.FuelIQIntegration.events.emit('mealPlanCreated', weekPlan);
+    window.FuelIQIntegration.updateSharedData('mealPlans', weekPlan);
+  }
+};
 })();
