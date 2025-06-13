@@ -1214,7 +1214,19 @@ function importFromMealPlan() {
     
     updateCart();
   };
+};
 
+  // 🆕 GLOBAL: Remove from cart function
+  window.removeFromCart = function(index) {
+    if (index >= 0 && index < shoppingCart.length) {
+      const removedItem = shoppingCart[index];
+      shoppingCart.splice(index, 1);
+      updateCart();
+      console.log(`✅ Removed ${removedItem.product.name} from cart`);
+    }
+  };
+
+  window.placeOrder = function() {
   window.placeOrder = function() {
     const address = document.getElementById('deliveryAddress')?.value;
     const timeSlot = document.getElementById('timeSlot')?.value;
