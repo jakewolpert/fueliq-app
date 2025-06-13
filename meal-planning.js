@@ -1237,7 +1237,7 @@
     
     // Redirect to delivery tab with shopping list
     if (window.setCurrentView) {
-      window.setCurrentView('delivery');
+window.setCurrentView('grocery');
     }
   };
 
@@ -1647,7 +1647,7 @@
       
       try {
         if (window.setCurrentView) {
-          window.setCurrentView('delivery');
+window.setCurrentView('grocery');
         } else {
           const navigationEvent = new CustomEvent('navigateToTab', { detail: 'delivery' });
           window.dispatchEvent(navigationEvent);
