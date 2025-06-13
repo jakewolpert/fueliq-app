@@ -882,26 +882,29 @@ function importFromMealPlan() {
     let addedCount = 0;
     const failedItems = [];
 
-    groceryList.forEach(item => {
-      const itemName = item.name || item.ingredient?.name || 'Unknown';
-      const product = findBestProductMatch(itemName);
-      if (product) {
-        const quantity = item.neededAmount || item.totalAmount || item.amount || 1;
-// Add item directly to shopping cart
-const existingItem = shoppingCart.find(item => item.productKey === itemName.toLowerCase());
-if (existingItem) {
-  existingItem.quantity += Math.ceil(quantity);
-} else {
-  shoppingCart.push({
-    productKey: itemName.toLowerCase(),
-    product: product,
-    quantity: Math.ceil(quantity)
-  });
-}        addedCount++;
-      } else {
-        failedItems.push(itemName);
-      }
-    });
+   groceryList.forEach(item => {
+  const itemName = item.name || item.ingredient?.name || 'Unknown';
+  const product = findBestProductMatch(itemName);
+  if (product) {
+    const quantity = item.neededAmount || item.totalAmount || item.amount || 1;
+    
+    // Add item directly to shopping cart
+    const existingItem = shoppingCart.find(item => item.productKey === itemName.toLowerCase());
+    if (existingItem) {
+      existingItem.quantity += Math.ceil(quantity);
+    } else {
+      shoppingCart.push({
+        productKey: itemName.toLowerCase(),
+        product: product,
+        quantity: Math.ceil(quantity)
+      });
+    }
+    
+    addedCount++;
+  } else {
+    failedItems.push(itemName);
+  }
+});
 
     updateCart();
     
