@@ -565,31 +565,36 @@
     updateCart();
     setupGroceryEventListeners();
 
-    // Auto-import grocery list if available
+    // 🔥 IMPROVED Auto-import with better checks
+setTimeout(() => {
+  const pendingList = localStorage.getItem('fueliq_pending_grocery_list');
+  if (pendingList && !window.importInProgress && !window.autoImportCompleted) {
+    console.log('🔄 Auto-importing grocery list from meal planning...');
+    
+    // Set flag to prevent duplicate auto-imports
+    window.autoImportCompleted = true;
+    
+    // Show loading message
+    const importButton = document.getElementById('importFromMealPlan');
+    if (importButton) {
+      importButton.textContent = '⏳ Auto-importing...';
+      importButton.disabled = true;
+    }
+    
+    // Auto-import after short delay
     setTimeout(() => {
-      const pendingList = localStorage.getItem('fueliq_pending_grocery_list');
-      if (pendingList) {
-        console.log('🔄 Auto-importing grocery list from meal planning...');
-        
-        // Show loading message
-        const importButton = document.getElementById('importFromMealPlan');
+      importFromMealPlan();
+      
+      // Reset button
+      setTimeout(() => {
         if (importButton) {
-          importButton.textContent = '⏳ Auto-importing...';
-          importButton.disabled = true;
+          importButton.textContent = '📅 From Meal Plan';
+          importButton.disabled = false;
         }
-        
-        // Auto-import after short delay
-        setTimeout(() => {
-          importFromMealPlan();
-          
-          // Reset button
-          if (importButton) {
-            importButton.textContent = '📅 From Meal Plan';
-            importButton.disabled = false;
-          }
-        }, 1000);
-      }
-    }, 500);
+      }, 2000);
+    }, 1000);
+  }
+}, 500);
 
     // If grocery list is passed, import it
     if (groceryList) {
