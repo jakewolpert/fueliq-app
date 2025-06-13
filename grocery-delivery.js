@@ -1283,10 +1283,34 @@ Items automatically added to your pantry!`);
     cleanup: cleanup
   };
 
-  // Integration event listeners
-  if (window.FuelIQIntegration) {
-    window.FuelIQIntegration.on('groceryListGenerated', (data) => {
-      console.log('🛒 Received grocery list from meal planning:', data);
+  // ✅ IMPROVED Integration event listener with safeguards
+if (window.FuelIQIntegration) {
+  // Remove existing listener first
+  try {
+    window.FuelIQIntegration.off('groceryListGenerated');
+  } catch (e) {
+    // Ignore if off method doesn't exist
+  }
+  
+  // Add single listener with safeguards
+  window.FuelIQIntegration.on('groceryListGenerated', (data) => {
+    console.log('🛒 Integration event: Received grocery list from meal planning:', data);
+    
+    // Only auto-import if we're on the grocery delivery page AND not already importing
+    if (document.getElementById('serviceSelector') && !window.importInProgress && !window.integrationImportCompleted) {
+      console.log('🔄 Integration auto-import triggered');
+      window.integrationImportCompleted = true;
+      
+      setTimeout(() => {
+        importFromMealPlan();
+      }, 500);
+    } else {
+      console.log('⚠️ Skipping integration auto-import (conditions not met)');
+    }
+  });
+  
+  console.log('🔗 Grocery Delivery connected to integration system');
+}
       
       // Auto-import if we're on the grocery delivery page
       if (document.getElementById('serviceSelector')) {
