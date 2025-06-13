@@ -1322,5 +1322,22 @@ if (window.FuelIQIntegration) {
     
     console.log('🔗 Grocery Delivery connected to integration system');
   }
+// 🧹 CLEANUP function to reset flags
+function resetImportFlags() {
+  window.importInProgress = false;
+  window.autoImportCompleted = false;
+  window.integrationImportCompleted = false;
+  console.log('🧹 Import flags reset');
+}
 
+// Reset flags when navigating away
+window.addEventListener('beforeunload', resetImportFlags);
+
+// Optional: Reset flags every 30 seconds as failsafe
+setInterval(() => {
+  if (window.importInProgress) {
+    console.log('⚠️ Import seems stuck, resetting flags...');
+    resetImportFlags();
+  }
+}, 30000);
 })();
