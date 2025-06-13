@@ -824,105 +824,138 @@ function addToCart(productKey, quantity = 1, updateUI = true) {
 
   if (updateUI) updateCart();
 }
-// ✅ Import function for meal planning integration
+// ✅ FIXED Import function with proper safeguards
 function importFromMealPlan() {
-  // First try to get pending grocery list from meal planning integration
-  let groceryList = null;
+  // 🚫 PREVENT MULTIPLE EXECUTIONS
+  if (window.importInProgress) {
+    console.log('⚠️ Import already in progress, skipping...');
+    return;
+  }
+  
+  // Set flag to prevent multiple calls
+  window.importInProgress = true;
+  
+  console.log('🔄 Starting import from meal plan...');
+  
   try {
-    const pendingList = localStorage.getItem('fueliq_pending_grocery_list');
-    if (pendingList) {
-      groceryList = JSON.parse(pendingList);
-      console.log('📋 Found pending grocery list from meal planning:', groceryList);
-    }
-  } catch (e) {
-    console.warn('Could not load pending grocery list:', e);
-  }
-
-  // If no pending list, try the integration system
-  if (!groceryList && window.FuelIQIntegration) {
-    try {
-      const mealPlans = window.FuelIQIntegration.getSharedData('mealPlans');
-      
-      if (!mealPlans || Object.keys(mealPlans).length === 0) {
-        alert('❌ No meal plan found. Please create a meal plan first.');
-        return;
-      }
-      
-      const groceryListData = window.FuelIQIntegration.generateGroceryListFromMealPlan(mealPlans);
-      groceryList = Object.values(groceryListData.ingredients || {});
-      
-    } catch (e) {
-      console.error('Integration error:', e);
-      alert('❌ Error importing meal plan. Please try again.');
-      return;
-    }
-  }
-
-  // If still no list, try fallback method
-  if (!groceryList) {
-    try {
-      const mealPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
-      
-      if (Object.keys(mealPlan).length === 0) {
-        alert('❌ No meal plan found. Please create a meal plan first.');
-        return;
-      }
-      
-      groceryList = convertMealPlanToGroceryList(mealPlan);
-    } catch (e) {
-      alert('❌ No meal plan found. Please create a meal plan first.');
-      return;
-    }
-  }
-
-  // Convert and add items to cart
-  let addedCount = 0;
-  const failedItems = [];
-
-  groceryList.forEach(item => {
-    const itemName = item.name || item.ingredient?.name || 'Unknown';
-    const product = findBestProductMatch(itemName);
-    if (product) {
-      const quantity = item.neededAmount || item.totalAmount || item.amount || 1;
-      
-      // Add item directly to shopping cart
-      const existingItem = shoppingCart.find(cartItem => cartItem.productKey === itemName.toLowerCase());
-      if (existingItem) {
-        existingItem.quantity += Math.ceil(quantity);
-      } else {
-        shoppingCart.push({
-          productKey: itemName.toLowerCase(),
-          product: product,
-          quantity: Math.ceil(quantity)
-        });
-      }
-      
-      addedCount++;
-    } else {
-      failedItems.push(itemName);
-    }
-  });
-
-  updateCart();
-  
-  // Clear pending grocery list
-  localStorage.removeItem('fueliq_pending_grocery_list');
-  
-  // Show success message
-  if (addedCount > 0) {
-    let message = `✅ Imported ${addedCount} items from meal plan!`;
-    if (failedItems.length > 0) {
-      message += `\n\n❌ Could not find matches for: ${failedItems.slice(0, 3).join(', ')}`;
-      if (failedItems.length > 3) message += ` and ${failedItems.length - 3} more`;
-    }
+    // First try to get pending grocery list from meal planning integration
+    let groceryList = null;
     
-    if (window.FuelIQIntegration && window.FuelIQIntegration.utils) {
-      window.FuelIQIntegration.utils.showSuccessMessage(message);
-    } else {
-      alert(message);
+    try {
+      const pendingList = localStorage.getItem('fueliq_pending_grocery_list');
+      if (pendingList) {
+        groceryList = JSON.parse(pendingList);
+        console.log('📋 Found pending grocery list from meal planning:', groceryList);
+        
+        // 🔥 CLEAR IMMEDIATELY to prevent re-processing
+        localStorage.removeItem('fueliq_pending_grocery_list');
+      }
+    } catch (e) {
+      console.warn('Could not load pending grocery list:', e);
     }
-  } else {
-    alert('❌ No compatible items found in meal plan.');
+
+    // If no pending list, try the integration system
+    if (!groceryList && window.FuelIQIntegration) {
+      try {
+        const mealPlans = window.FuelIQIntegration.getSharedData('mealPlans');
+        
+        if (!mealPlans || Object.keys(mealPlans).length === 0) {
+          alert('❌ No meal plan found. Please create a meal plan first.');
+          return;
+        }
+        
+        const groceryListData = window.FuelIQIntegration.generateGroceryListFromMealPlan(mealPlans);
+        groceryList = Object.values(groceryListData.ingredients || {});
+        
+      } catch (e) {
+        console.error('Integration error:', e);
+        alert('❌ Error importing meal plan. Please try again.');
+        return;
+      }
+    }
+
+    // If still no list, try fallback method
+    if (!groceryList) {
+      try {
+        const mealPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
+        
+        if (Object.keys(mealPlan).length === 0) {
+          alert('❌ No meal plan found. Please create a meal plan first.');
+          return;
+        }
+        
+        groceryList = convertMealPlanToGroceryList(mealPlan);
+      } catch (e) {
+        alert('❌ No meal plan found. Please create a meal plan first.');
+        return;
+      }
+    }
+
+    // 🛒 PROCESS GROCERY LIST
+    if (!groceryList || groceryList.length === 0) {
+      alert('❌ No items found in meal plan to import.');
+      return;
+    }
+
+    // Convert and add items to cart
+    let addedCount = 0;
+    const failedItems = [];
+
+    groceryList.forEach(item => {
+      const itemName = item.name || item.ingredient?.name || 'Unknown';
+      const product = findBestProductMatch(itemName);
+      if (product) {
+        const quantity = item.neededAmount || item.totalAmount || item.amount || 1;
+        
+        // Add item directly to shopping cart
+        const existingItem = shoppingCart.find(cartItem => cartItem.productKey === itemName.toLowerCase());
+        if (existingItem) {
+          existingItem.quantity += Math.ceil(quantity);
+        } else {
+          shoppingCart.push({
+            productKey: itemName.toLowerCase(),
+            product: product,
+            quantity: Math.ceil(quantity)
+          });
+        }
+        
+        addedCount++;
+      } else {
+        failedItems.push(itemName);
+      }
+    });
+
+    // 🔄 UPDATE UI
+    updateCart();
+    
+    // ✅ SHOW SUCCESS MESSAGE - ONLY ONCE
+    if (addedCount > 0) {
+      let message = `✅ Imported ${addedCount} items from meal plan!`;
+      if (failedItems.length > 0) {
+        message += `\n\n❌ Could not find matches for: ${failedItems.slice(0, 3).join(', ')}`;
+        if (failedItems.length > 3) message += ` and ${failedItems.length - 3} more`;
+      }
+      
+      if (window.FuelIQIntegration && window.FuelIQIntegration.utils) {
+        window.FuelIQIntegration.utils.showSuccessMessage(message);
+      } else {
+        alert(message);
+      }
+      
+      console.log(`✅ Successfully imported ${addedCount} items`);
+    } else {
+      alert('❌ No compatible items found in meal plan.');
+    }
+
+  } catch (error) {
+    console.error('❌ Error during import:', error);
+    alert('❌ Error importing meal plan. Please try again.');
+  } finally {
+    // 🔓 ALWAYS CLEAR THE FLAG
+    setTimeout(() => {
+      window.importInProgress = false;
+      console.log('🔓 Import process complete, flag cleared');
+    }, 1000); // Wait 1 second before allowing next import
   }
 }
 // Helper function to convert meal plan format
