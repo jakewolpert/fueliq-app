@@ -916,28 +916,33 @@
       let addedCount = 0;
       const failedItems = [];
 
-      groceryList.forEach(item => {
-        const itemName = item.name || item.ingredient?.name || 'Unknown';
-        const product = findBestProductMatch(itemName);
-        if (product) {
-          const quantity = item.neededAmount || item.totalAmount || item.amount || 1;
-          
-          const existingItem = shoppingCart.find(cartItem => cartItem.productKey === itemName.toLowerCase());
-          if (existingItem) {
-            existingItem.quantity += Math.ceil(quantity);
-          } else {
-            shoppingCart.push({
-              productKey: itemName.toLowerCase(),
-              product: product,
-              quantity: Math.ceil(quantity)
-            });
-          }
-          
-          addedCount++;
-        } else {
-          failedItems.push(itemName);
-        }
+     groceryList.forEach(item => {
+  const itemName = item.name || item.ingredient?.name || 'Unknown';
+  const product = findBestProductMatch(itemName);
+  if (product) {
+    const rawQuantity = item.neededAmount || item.totalAmount || item.amount || 1;
+    
+    // FIXED: Smart quantity calculation to prevent inflated prices
+    let smartQuantity = calculateSmartQuantity(rawQuantity, product, itemName);
+    
+    const existingItem = shoppingCart.find(cartItem => cartItem.productKey === itemName.toLowerCase());
+    if (existingItem) {
+      // FIXED: Don't just add - use smart merging
+      const combinedQuantity = existingItem.quantity + smartQuantity;
+      existingItem.quantity = Math.min(combinedQuantity, getMaxQuantityForProduct(product));
+    } else {
+      shoppingCart.push({
+        productKey: itemName.toLowerCase(),
+        product: product,
+        quantity: smartQuantity
       });
+    }
+    
+    addedCount++;
+  } else {
+    failedItems.push(itemName);
+  }
+});
 
       updateCart();
       
