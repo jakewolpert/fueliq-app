@@ -463,7 +463,26 @@
 
     return shoppingList;
   };
+};
 
+  // 🔧 HELPER: Normalize ingredient names for better matching
+  function normalizeIngredientName(name) {
+    return name
+      .toLowerCase()
+      .replace(/\s+/g, ' ') // normalize whitespace
+      .replace(/[^\w\s]/g, '') // remove special characters
+      .trim()
+      // Common variations
+      .replace(/^organic\s+/, '')
+      .replace(/^fresh\s+/, '')
+      .replace(/^baby\s+/, '')
+      .replace(/\s+breast$/, ' breast') // chicken breast variations
+      .replace(/\s+fillet$/, ' fillet') // salmon fillet variations
+      ;
+  }
+
+  // Get appropriate unit for ingredient
+  function getDefaultUnit(ingredientName, category) {
   // Get appropriate unit for ingredient
   function getDefaultUnit(ingredientName, category) {
     const unitMap = {
