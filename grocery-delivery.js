@@ -858,13 +858,8 @@
       }
     }
 
-    // Convert and add items to cart
-    let addedCount = 0;
-    const failedItems = [];
+       // Convert and add items to cart
 
-    groceryList.forEach(item => {
-
-    updateCart();
     
     // Clear pending grocery list
     localStorage.removeItem('fueliq_pending_grocery_list');
