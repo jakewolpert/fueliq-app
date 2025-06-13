@@ -1574,55 +1574,84 @@ const initializeIntegration = () => {
 
 // Enhanced navigation to grocery delivery - FIXED: made it a window function
 window.navigateToGroceryWithList = function() {
-  const currentPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
-  
-  if (Object.keys(currentPlan).length === 0) {
-    alert('❌ No meal plan found. Please generate a meal plan first.');
+  // Prevent multiple executions
+  if (window.navigationInProgress) {
+    console.log('⚠️ Navigation already in progress, skipping...');
     return;
   }
   
-  const shoppingList = generateShoppingList(currentPlan);
+  window.navigationInProgress = true;
   
-  if (shoppingList.length === 0) {
-    alert('✅ All ingredients are already in your pantry!');
-    return;
-  }
-  
-  console.log('🛒 Generating shopping list with', shoppingList.length, 'items');
-  
-  // Store shopping list for grocery delivery
-  localStorage.setItem('fueliq_pending_grocery_list', JSON.stringify(shoppingList));
-  
-  // Emit integration event - FIXED: removed .events
-  if (window.FuelIQIntegration) {
+  try {
+    const currentPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
+    
+    if (Object.keys(currentPlan).length === 0) {
+      alert('❌ No meal plan found. Please generate a meal plan first.');
+      return;
+    }
+    
+    const shoppingList = generateShoppingList(currentPlan);
+    
+    if (shoppingList.length === 0) {
+      alert('✅ All ingredients are already in your pantry!');
+      return;
+    }
+    
+    console.log('🛒 Generating shopping list with', shoppingList.length, 'items');
+    
+    // 🔥 CLEAR ANY EXISTING PENDING LIST FIRST
+    localStorage.removeItem('fueliq_pending_grocery_list');
+    
+    // Store NEW shopping list for grocery delivery
+    localStorage.setItem('fueliq_pending_grocery_list', JSON.stringify(shoppingList));
+    
+    // 🎯 EMIT INTEGRATION EVENT ONLY ONCE
+    if (window.FuelIQIntegration && !window.integrationEventSent) {
+      try {
+        window.integrationEventSent = true;
+        
+        window.FuelIQIntegration.emit('groceryListGenerated', {
+          ingredients: shoppingList,
+          source: 'meal_planning',
+          totalItems: shoppingList.length,
+          timestamp: Date.now() // Add timestamp to prevent duplicates
+        });
+        
+        if (window.FuelIQIntegration.utils && window.FuelIQIntegration.utils.showSuccessMessage) {
+          window.FuelIQIntegration.utils.showSuccessMessage(
+            `Generated grocery list with ${shoppingList.length} ingredients!`
+          );
+        }
+        
+        // Reset flag after delay
+        setTimeout(() => {
+          window.integrationEventSent = false;
+        }, 5000);
+        
+      } catch (e) {
+        console.error('Integration event failed:', e);
+        window.integrationEventSent = false;
+      }
+    }
+    
+    // 🧭 NAVIGATE TO GROCERY DELIVERY
     try {
-      window.FuelIQIntegration.emit('groceryListGenerated', {
-        ingredients: shoppingList,
-        source: 'meal_planning',
-        totalItems: shoppingList.length
-      });
-      
-      if (window.FuelIQIntegration.utils && window.FuelIQIntegration.utils.showSuccessMessage) {
-        window.FuelIQIntegration.utils.showSuccessMessage(
-          `Generated grocery list with ${shoppingList.length} ingredients!`
-        );
+      if (window.setCurrentView) {
+        window.setCurrentView('delivery');
+      } else {
+        const navigationEvent = new CustomEvent('navigateToTab', { detail: 'delivery' });
+        window.dispatchEvent(navigationEvent);
       }
     } catch (e) {
-      console.error('Integration event failed:', e);
+      console.error('Navigation failed:', e);
+      alert('Please manually switch to the Delivery tab to see your grocery list!');
     }
-  }
-  
-  // Navigate to grocery delivery
-  try {
-    if (window.setCurrentView) {
-      window.setCurrentView('delivery');
-    } else {
-      const navigationEvent = new CustomEvent('navigateToTab', { detail: 'delivery' });
-      window.dispatchEvent(navigationEvent);
-    }
-  } catch (e) {
-    console.error('Navigation failed:', e);
-    alert('Please manually switch to the Delivery tab to see your grocery list!');
+    
+  } finally {
+    // Always reset the navigation flag
+    setTimeout(() => {
+      window.navigationInProgress = false;
+    }, 2000);
   }
 };
 
