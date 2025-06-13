@@ -781,8 +781,19 @@ setTimeout(() => {
     });
 
     // Import buttons
-    document.getElementById('importFromMealPlan')?.addEventListener('click', importFromMealPlan);
-    document.getElementById('uploadGroceryList')?.addEventListener('click', () => {
+// Import button with duplicate prevention
+const importBtn = document.getElementById('importFromMealPlan');
+if (importBtn) {
+  // Remove any existing event listeners by cloning the element
+  const newImportBtn = importBtn.cloneNode(true);
+  importBtn.parentNode.replaceChild(newImportBtn, importBtn);
+  
+  // Add single event listener
+  newImportBtn.addEventListener('click', () => {
+    console.log('🖱️ Manual import button clicked');
+    importFromMealPlan();
+  });
+}    document.getElementById('uploadGroceryList')?.addEventListener('click', () => {
       document.getElementById('uploadModal').classList.remove('hidden');
       document.getElementById('uploadModal').classList.add('flex');
     });
