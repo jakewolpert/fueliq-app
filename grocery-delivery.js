@@ -1,4 +1,4 @@
-// grocery-delivery.js - FuelIQ Grocery Delivery Integration (FIXED VERSION)
+// grocery-delivery.js - FuelIQ Grocery Delivery Integration (WORKING VERSION)
 (function() {
     'use strict';
     
@@ -19,13 +19,13 @@
                 'salmon': { name: 'Atlantic Salmon Fillet', price: 12.99, unit: 'lb', category: 'seafood' },
                 'cod': { name: 'Wild Cod Fillet', price: 9.99, unit: 'lb', category: 'seafood' },
                 'quinoa': { name: 'Organic Quinoa', price: 5.49, unit: 'lb', category: 'grains' },
-                'spinach': { name: 'Baby Spinach (5oz)', price: 3.99, unit: 'container', category: 'vegetables' },
+                'spinach': { name: 'Baby Spinach 5oz', price: 3.99, unit: 'container', category: 'vegetables' },
                 'avocado': { name: 'Hass Avocados', price: 1.49, unit: 'each', category: 'fruits' },
                 'sweet potato': { name: 'Sweet Potatoes', price: 2.49, unit: 'lb', category: 'vegetables' },
-                'eggs': { name: 'Organic Eggs (12ct)', price: 4.99, unit: 'dozen', category: 'dairy' },
-                'greek yogurt': { name: 'Greek Yogurt (32oz)', price: 5.99, unit: 'container', category: 'dairy' },
+                'eggs': { name: 'Organic Eggs 12ct', price: 4.99, unit: 'dozen', category: 'dairy' },
+                'greek yogurt': { name: 'Greek Yogurt 32oz', price: 5.99, unit: 'container', category: 'dairy' },
                 'olive oil': { name: 'Extra Virgin Olive Oil', price: 8.99, unit: 'bottle', category: 'pantry' },
-                'brown rice': { name: 'Brown Rice (2lb)', price: 3.99, unit: 'bag', category: 'grains' },
+                'brown rice': { name: 'Brown Rice 2lb', price: 3.99, unit: 'bag', category: 'grains' },
                 'broccoli': { name: 'Fresh Broccoli', price: 2.99, unit: 'lb', category: 'vegetables' },
                 'blueberries': { name: 'Fresh Blueberries', price: 4.99, unit: 'pint', category: 'fruits' },
                 'almonds': { name: 'Raw Almonds', price: 8.99, unit: 'lb', category: 'nuts' },
@@ -42,7 +42,7 @@
             products: {
                 'salmon': { name: 'Fresh Atlantic Salmon', price: 14.99, unit: 'lb', category: 'seafood' },
                 'cod': { name: 'Premium Cod Fillet', price: 11.99, unit: 'lb', category: 'seafood' },
-                'quinoa': { name: 'Quinoa (Organic)', price: 6.99, unit: 'lb', category: 'grains' },
+                'quinoa': { name: 'Quinoa Organic', price: 6.99, unit: 'lb', category: 'grains' },
                 'spinach': { name: 'Organic Baby Spinach', price: 4.49, unit: 'bag', category: 'vegetables' },
                 'avocado': { name: 'Premium Avocados', price: 1.99, unit: 'each', category: 'fruits' },
                 'sweet potato': { name: 'Organic Sweet Potatoes', price: 3.49, unit: 'lb', category: 'vegetables' },
@@ -61,7 +61,7 @@
                 'salmon': { name: 'Wild Salmon Fillet', price: 13.99, unit: 'lb', category: 'seafood' },
                 'quinoa': { name: 'Tri-Color Quinoa', price: 5.99, unit: 'lb', category: 'grains' },
                 'spinach': { name: 'Fresh Spinach Bundle', price: 3.49, unit: 'bunch', category: 'vegetables' },
-                'avocado': { name: 'Ripe Avocados (4pk)', price: 4.99, unit: 'pack', category: 'fruits' },
+                'avocado': { name: 'Ripe Avocados 4pk', price: 4.99, unit: 'pack', category: 'fruits' },
                 'eggs': { name: 'Farm Fresh Eggs', price: 5.49, unit: 'dozen', category: 'dairy' }
             }
         }
@@ -263,7 +263,7 @@
         }
     };
 
-    // FIXED: Update cart display with working quantity controls
+    // FIXED: Update cart display with working quantity controls (SYNTAX ERROR FIXED)
     const updateCartDisplay = () => {
         const cartContainer = document.getElementById('cart-items');
         const cartSummary = document.getElementById('cart-summary');
@@ -278,35 +278,44 @@
 
         const totals = calculateCartTotal();
 
-        cartContainer.innerHTML = cart.map(item => `
-            <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg mb-3">
-                <div class="flex-1">
-                    <h4 class="font-medium text-gray-900">${item.product.name}</h4>
-                    <p class="text-sm text-gray-500">$${item.product.price}/${item.product.unit}</p>
-                    ${item.mealCount > 1 ? `<span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mt-1">🔄 ${item.mealCount} meals</span>` : ''}
-                </div>
-                <div class="flex items-center space-x-3">
-                    <div class="flex items-center space-x-2">
-                        <button onclick="window.FuelIQGroceryDelivery.updateQuantity('${item.product.name}', ${item.quantity - 1})" 
-                                class="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition-colors">
-                            −
-                        </button>
-                        <span class="w-8 text-center font-medium">${item.quantity}</span>
-                        <button onclick="window.FuelIQGroceryDelivery.updateQuantity('${item.product.name}', ${item.quantity + 1})" 
-                                class="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition-colors">
-                            +
-                        </button>
+        // FIXED: Escape product names and use data attributes instead of onclick with quotes
+        cartContainer.innerHTML = cart.map((item, index) => {
+            const escapedName = item.product.name.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+            const mealBadge = item.mealCount > 1 ? 
+                '<span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mt-1">🔄 ' + item.mealCount + ' meals</span>' : '';
+            
+            return `
+                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg mb-3">
+                    <div class="flex-1">
+                        <h4 class="font-medium text-gray-900">${escapedName}</h4>
+                        <p class="text-sm text-gray-500">$${item.product.price}/${item.product.unit}</p>
+                        ${mealBadge}
                     </div>
-                    <div class="text-right">
-                        <p class="font-medium">$${(item.product.price * item.quantity).toFixed(2)}</p>
-                        <button onclick="window.FuelIQGroceryDelivery.removeFromCart('${item.product.name}')" 
-                                class="text-red-500 hover:text-red-700 text-sm transition-colors">
-                            Remove
-                        </button>
+                    <div class="flex items-center space-x-3">
+                        <div class="flex items-center space-x-2">
+                            <button data-product="${escapedName}" data-action="decrease" class="cart-btn w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition-colors">
+                                −
+                            </button>
+                            <span class="w-8 text-center font-medium">${item.quantity}</span>
+                            <button data-product="${escapedName}" data-action="increase" class="cart-btn w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition-colors">
+                                +
+                            </button>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-medium">$${(item.product.price * item.quantity).toFixed(2)}</p>
+                            <button data-product="${escapedName}" data-action="remove" class="cart-btn text-red-500 hover:text-red-700 text-sm transition-colors">
+                                Remove
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
+
+        // Add event listeners to cart buttons
+        document.querySelectorAll('.cart-btn').forEach(button => {
+            button.addEventListener('click', handleCartButtonClick);
+        });
 
         if (cartSummary) {
             cartSummary.innerHTML = `
@@ -328,11 +337,33 @@
                         <span>$${totals.total.toFixed(2)}</span>
                     </div>
                     ${totals.subtotal < DELIVERY_SERVICES[selectedService].minOrder ? 
-                        `<p class="text-sm text-orange-600 mt-2">Add $${(DELIVERY_SERVICES[selectedService].minOrder - totals.subtotal).toFixed(2)} more for free delivery</p>` : 
+                        '<p class="text-sm text-orange-600 mt-2">Add $' + (DELIVERY_SERVICES[selectedService].minOrder - totals.subtotal).toFixed(2) + ' more for free delivery</p>' : 
                         '<p class="text-sm text-green-600 mt-2">✓ Eligible for standard delivery</p>'
                     }
                 </div>
             `;
+        }
+    };
+
+    // FIXED: Handle cart button clicks with proper event handling
+    const handleCartButtonClick = (event) => {
+        const button = event.target;
+        const productName = button.getAttribute('data-product').replace(/&apos;/g, "'").replace(/&quot;/g, '"');
+        const action = button.getAttribute('data-action');
+        
+        const item = cart.find(item => item.product.name === productName);
+        if (!item) return;
+        
+        switch (action) {
+            case 'increase':
+                updateCartQuantity(productName, item.quantity + 1);
+                break;
+            case 'decrease':
+                updateCartQuantity(productName, item.quantity - 1);
+                break;
+            case 'remove':
+                removeFromCart(productName);
+                break;
         }
     };
 
@@ -375,7 +406,7 @@
                 }
             });
 
-            alert(`Successfully imported ${addedCount} items from your meal plan!`);
+            alert('Successfully imported ' + addedCount + ' items from your meal plan!');
             
         } catch(e) {
             console.error('Error importing meal plan:', e);
@@ -394,7 +425,7 @@
                 const service = DELIVERY_SERVICES[key];
                 return `
                     <div class="delivery-service-option ${key === selectedService ? 'selected' : ''}" 
-                         onclick="window.FuelIQGroceryDelivery.selectService('${key}')">
+                         data-service="${key}">
                         <div class="text-2xl mb-2">${service.logo}</div>
                         <h3 class="font-bold">${service.name}</h3>
                         <p class="text-sm text-gray-600">$${service.deliveryFee} delivery</p>
@@ -402,6 +433,13 @@
                     </div>
                 `;
             }).join('');
+            
+            // Add event listeners to service options
+            document.querySelectorAll('.delivery-service-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    selectService(this.getAttribute('data-service'));
+                });
+            });
         }
 
         updateCartDisplay();
@@ -416,7 +454,7 @@
             option.classList.remove('selected');
         });
         
-        const selectedOption = document.querySelector(`[onclick*="${serviceKey}"]`);
+        const selectedOption = document.querySelector('[data-service="' + serviceKey + '"]');
         if (selectedOption) {
             selectedOption.classList.add('selected');
         }
@@ -436,21 +474,15 @@
         const service = DELIVERY_SERVICES[selectedService];
         
         // Simulate checkout process
-        const confirmMessage = `
-Order Summary:
-${cart.map(item => `• ${item.product.name} (${item.quantity})`).join('\n')}
-
-Total: $${totals.total.toFixed(2)}
-Delivery via: ${service.name}
-Estimated delivery: ${service.estimatedDelivery}
-
-Proceed with checkout?
-        `;
+        const orderSummary = cart.map(item => '• ' + item.product.name + ' (' + item.quantity + ')').join('\n');
+        const confirmMessage = 'Order Summary:\n' + orderSummary + '\n\nTotal: $' + totals.total.toFixed(2) + 
+                              '\nDelivery via: ' + service.name + '\nEstimated delivery: ' + service.estimatedDelivery + 
+                              '\n\nProceed with checkout?';
 
         if (confirm(confirmMessage)) {
             // Simulate order placement
             setTimeout(() => {
-                alert(`Order placed successfully! Your groceries will be delivered via ${service.name} in ${service.estimatedDelivery}.`);
+                alert('Order placed successfully! Your groceries will be delivered via ' + service.name + ' in ' + service.estimatedDelivery + '.');
                 cart = [];
                 updateCartDisplay();
                 saveCart();
