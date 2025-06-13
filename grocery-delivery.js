@@ -1312,16 +1312,6 @@ if (window.FuelIQIntegration) {
   console.log('🔗 Grocery Delivery connected to integration system');
 }
       
-      // Auto-import if we're on the grocery delivery page
-      if (document.getElementById('serviceSelector')) {
-        setTimeout(() => {
-          importFromMealPlan();
-        }, 500);
-      }
-    });
-    
-    console.log('🔗 Grocery Delivery connected to integration system');
-  }
 // 🧹 CLEANUP function to reset flags
 function resetImportFlags() {
   window.importInProgress = false;
