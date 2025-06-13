@@ -806,7 +806,27 @@
       });
     });
   }
+// Local addToCart function for import process
+function addToCart(productKey, quantity = 1, updateUI = true) {
+  const product = PRODUCT_DATABASE[productKey];
+  if (!product || !product.prices[selectedService]) return;
 
+  const existingItem = shoppingCart.find(item => item.productKey === productKey);
+  if (existingItem) {
+    existingItem.quantity += quantity;
+  } else {
+    shoppingCart.push({
+      productKey,
+      product,
+      quantity
+    });
+  }
+
+  if (updateUI) updateCart();
+}
+
+// ✅ FIXED IMPORT FUNCTION - No more syntax errors!
+function importFromMealPlan() {
   // ✅ FIXED IMPORT FUNCTION - No more syntax errors!
   function importFromMealPlan() {
     // First try to get pending grocery list from meal planning integration
