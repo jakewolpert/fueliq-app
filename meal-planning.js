@@ -416,55 +416,6 @@
     return shoppingList;
   };
 
-    Object.entries(weekPlan).forEach(([day, dayPlan]) => {
-      ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
-        const meal = dayPlan[mealType];
-        if (meal && meal.ingredients) {
-          meal.ingredients.forEach(ingredient => {
-            const key = ingredient.name.toLowerCase();
-            if (requiredIngredients[key]) {
-              requiredIngredients[key].totalAmount += parseFloat(ingredient.amount) || 1;
-              requiredIngredients[key].recipes.push(`${meal.name} (${day} ${mealType})`);
-              requiredIngredients[key].occasions.push({ day, mealType, meal: meal.name });
-            } else {
-              requiredIngredients[key] = {
-                name: ingredient.name,
-                category: ingredient.category,
-                unit: ingredient.unit || getDefaultUnit(ingredient.name, ingredient.category),
-                totalAmount: parseFloat(ingredient.amount) || 1,
-                recipes: [`${meal.name} (${day} ${mealType})`],
-                occasions: [{ day, mealType, meal: meal.name }],
-                estimatedCost: estimateIngredientCost(ingredient.name)
-              };
-            }
-          });
-        }
-      });
-    });
-
-    const shoppingList = [];
-    Object.values(requiredIngredients).forEach(ingredient => {
-      const pantryMatch = findPantryMatch(ingredient, pantryItems);
-      
-      if (!pantryMatch || pantryMatch.quantity < ingredient.totalAmount) {
-        const neededAmount = pantryMatch ? 
-          Math.max(0, ingredient.totalAmount - pantryMatch.quantity) : 
-          ingredient.totalAmount;
-          
-        shoppingList.push({
-          ...ingredient,
-          neededAmount: neededAmount,
-          originalAmount: ingredient.totalAmount,
-          pantryAvailable: pantryMatch ? pantryMatch.quantity : 0,
-          hasPantryItem: !!pantryMatch
-        });
-      }
-    });
-
-    return shoppingList;
-  };
-};
-
   // 🔧 HELPER: Normalize ingredient names for better matching
   function normalizeIngredientName(name) {
     return name
@@ -481,8 +432,6 @@
       ;
   }
 
-  // Get appropriate unit for ingredient
-  function getDefaultUnit(ingredientName, category) {
   // Get appropriate unit for ingredient
   function getDefaultUnit(ingredientName, category) {
     const unitMap = {
@@ -667,111 +616,6 @@
       </div>
     `;
   };
-    
-    if (shoppingList.length === 0) {
-      container.innerHTML = `
-        <div class="text-center py-6">
-          <span class="text-4xl">🎉</span>
-          <p class="text-lg font-semibold text-green-600 mt-2">You have everything you need!</p>
-          <p class="text-gray-600">All ingredients are available in your pantry.</p>
-        </div>
-      `;
-      return;
-    }
-
-    const totalCost = shoppingList.reduce((sum, item) => sum + (item.estimatedCost * item.neededAmount), 0);
-
-    const grouped = {};
-    shoppingList.forEach(item => {
-      if (!grouped[item.category]) grouped[item.category] = [];
-      grouped[item.category].push(item);
-    });
-
-    container.innerHTML = `
-      <div class="space-y-4">
-        <!-- Shopping Summary -->
-        <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4">
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <h4 class="font-bold text-blue-800">📋 Shopping Summary</h4>
-              <p class="text-sm text-blue-600">
-                ${shoppingList.length} items needed • Estimated total: $${totalCost.toFixed(2)}
-              </p>
-            </div>
-            <div class="text-xs text-blue-600 text-right">
-              <div>${shoppingList.filter(item => item.hasPantryItem).length} items partially in pantry</div>
-              <div>${shoppingList.filter(item => !item.hasPantryItem).length} items needed completely</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Shopping List by Category -->
-        ${Object.entries(grouped).map(([category, items]) => `
-          <div class="border border-gray-200 rounded-lg p-4">
-            <div class="flex items-center justify-between mb-3">
-              <h4 class="font-semibold text-gray-800 capitalize flex items-center">
-                ${getCategoryIcon(category)} ${category}
-                <span class="ml-2 text-sm text-gray-500">(${items.length} items)</span>
-              </h4>
-              <div class="text-sm text-gray-600">
-                Est. $${items.reduce((sum, item) => sum + (item.estimatedCost * item.neededAmount), 0).toFixed(2)}
-              </div>
-            </div>
-            <div class="space-y-3">
-              ${items.map(item => `
-                <div class="bg-gray-50 rounded-lg p-3">
-                  <div class="flex items-start justify-between">
-                    <div class="flex-1">
-                      <div class="flex items-center space-x-3">
-                        <input type="checkbox" class="delivery-item" data-item='${JSON.stringify(item)}' checked>
-                        <div>
-                          <div class="font-medium text-gray-800">${item.name}</div>
-                          <div class="text-sm text-gray-600">
-                            Need: <strong>${formatQuantity(item.neededAmount, item.unit)}</strong>
-                            ${item.hasPantryItem ? 
-                              `• Have: ${formatQuantity(item.pantryAvailable, item.unit)} in pantry` : 
-                              '• Not in pantry'
-                            }
-                          </div>
-                          <div class="text-xs text-gray-500 mt-1">
-                            For: ${item.recipes.slice(0, 2).join(', ')}
-                            ${item.recipes.length > 2 ? ` +${item.recipes.length - 2} more` : ''}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="text-right ml-4">
-                      <div class="text-sm font-bold text-orange-600">
-                        $${(item.estimatedCost * item.neededAmount).toFixed(2)}
-                      </div>
-                      <div class="text-xs text-gray-500">
-                        $${item.estimatedCost.toFixed(2)} per ${item.unit}
-                      </div>
-                      <button onclick="showIngredientDetails('${item.name}')" 
-                              class="text-xs text-blue-500 hover:text-blue-600 mt-1">
-                        View details
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `).join('')}
-
-        ${shoppingList.some(item => item.hasPantryItem) ? `
-          <div class="bg-green-50 border border-green-200 rounded-xl p-4">
-            <h4 class="font-bold text-green-800 mb-2">💡 Pantry Optimization</h4>
-            <div class="text-sm text-green-700 space-y-1">
-              ${shoppingList.filter(item => item.hasPantryItem).slice(0, 3).map(item => 
-                `<div>• You have ${formatQuantity(item.pantryAvailable, item.unit)} ${item.name}, need ${formatQuantity(item.neededAmount, item.unit)} more</div>`
-              ).join('')}
-            </div>
-          </div>
-        ` : ''}
-      </div>
-    `;
-  };
 
   // Helper functions
   function formatQuantity(amount, unit) {
@@ -853,7 +697,7 @@
     return Array.from(checkboxes).map(cb => JSON.parse(cb.dataset.item));
   }
 
-  // Main render function - THIS WAS MISSING!
+  // Main render function
   const renderMealPlanning = (containerId) => {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -891,26 +735,24 @@
         <!-- Smart Suggestions -->
         <div id="smart-suggestions" class="mb-6"></div>
 
-       <!-- Generate Plan Buttons -->
-<div class="text-center mb-6">
-  <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-    <button id="generate-plan-btn" class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
-      ✨ Generate Smart Meal Plan
-    </button>
-    
-    <button onclick="showRecipeBrowser()" class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
-      🔍 Browse All Recipes
-    </button>
-    
-    <!-- NEW BUTTON: Add this third button -->
-    <button onclick="navigateToGroceryWithList()" class="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
-      🛒 Order Groceries
-    </button>
-  </div>
-  
-  <p class="text-gray-600 text-sm mt-3">Generate a plan automatically, browse recipes, or order groceries from your meal plan!</p>
-</div>
-  
+        <!-- Generate Plan Buttons -->
+        <div class="text-center mb-6">
+          <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <button id="generate-plan-btn" class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
+              ✨ Generate Smart Meal Plan
+            </button>
+            
+            <button onclick="showRecipeBrowser()" class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
+              🔍 Browse All Recipes
+            </button>
+            
+            <button onclick="navigateToGroceryWithList()" class="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
+              🛒 Order Groceries
+            </button>
+          </div>
+          
+          <p class="text-gray-600 text-sm mt-3">Generate a plan automatically, browse recipes, or order groceries from your meal plan!</p>
+        </div>
 
         <!-- Meal Plan Display -->
         <div id="meal-plan-display" class="hidden">
@@ -984,7 +826,7 @@
   };
 
   // Generate and display meal plan
-    let generatePlan = () => {
+  let generatePlan = () => {
     const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
     const weekPlan = generateMealPlanWithChoices();
     const shoppingList = generateShoppingList(weekPlan);
@@ -999,758 +841,191 @@
   };
 
   // Display weekly calendar with clickable meal cards
-const displayWeekPlan = (weekPlan) => {
-  const calendar = document.getElementById('weekly-calendar');
-  
-  calendar.innerHTML = Object.entries(weekPlan).map(([day, meals]) => `
-    <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
-      <h3 class="font-bold text-purple-800 mb-3">${day}</h3>
-      <div class="space-y-3">
-        ${['breakfast', 'lunch', 'dinner'].map(mealType => {
-          const meal = meals[mealType];
-          if (!meal) return '';
-          
-          const pantryData = loadPantryData();
-          const pantryAnalysis = calculatePantryScore(meal, pantryData.items || []);
-          
-          return `
-            <div class="bg-white rounded-lg p-3 border border-purple-100 hover:border-purple-300 cursor-pointer transform hover:scale-[1.02] transition-all duration-200" 
-                 onclick="showRecipeDetails('${meal.id}', '${day}', '${mealType}')">
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2">
-                  <span class="text-lg">${meal.image}</span>
-                  <div>
-                    <div class="font-semibold text-sm hover:text-purple-600 transition-colors">${meal.name}</div>
-                    <div class="text-xs text-gray-600">${mealType} • ${meal.cookTime}</div>
-                  </div>
-                </div>
-                <div class="flex flex-col gap-1">
-                  ${pantryAnalysis.matchPercentage > 0.5 ? `<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">🛒 ${Math.round(pantryAnalysis.matchPercentage * 100)}%</span>` : ''}
-                  <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">${meal.calories} cal</span>
-                </div>
-              </div>
-              <div class="text-xs text-gray-600 mb-2">
-                ${pantryAnalysis.availableIngredients}/${pantryAnalysis.totalIngredients} ingredients available
-                ${pantryAnalysis.hasExpiringIngredients ? ' • ⚠️ Uses expiring items' : ''}
-              </div>
-              <div class="text-xs text-gray-400 text-center">
-                🍽️ Click for recipe details & instructions
-              </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    </div>
-  `).join('');
-
-  // Add the recipe modal HTML to the page (only once)
-  if (!document.getElementById('recipe-modal')) {
-    const modalHTML = `
-      <div id="recipe-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          <div id="recipe-modal-content">
-            <!-- Recipe details will be inserted here -->
-          </div>
-        </div>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-  }
-};
-// Show detailed recipe information in modal
-window.showRecipeDetails = function(recipeId, day, mealType) {
-  const recipe = RECIPE_DATABASE.find(r => r.id === recipeId);
-  if (!recipe) return;
-
-  const pantryData = loadPantryData();
-  const pantryItems = pantryData.items || [];
-  const pantryAnalysis = calculatePantryScore(recipe, pantryItems);
-  
-  const modalContent = document.getElementById('recipe-modal-content');
-  modalContent.innerHTML = `
-    <!-- Modal Header -->
-    <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 rounded-t-lg">
-      <div class="flex justify-between items-start">
-        <div>
-          <h2 class="text-2xl font-bold mb-2">${recipe.image} ${recipe.name}</h2>
-          <div class="flex gap-4 text-sm opacity-90">
-            <span>🕒 ${recipe.cookTime}</span>
-            <span>👥 ${recipe.servings} servings</span>
-            <span>🏷️ ${recipe.mealType}</span>
-            <span>📅 ${day} ${mealType}</span>
-          </div>
-        </div>
-        <button onclick="closeRecipeModal()" 
-                class="text-white hover:text-gray-200 text-2xl font-bold transition-colors">
-          ×
-        </button>
-      </div>
-    </div>
-
-    <div class="p-6">
-      <!-- Quick Stats Row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-green-50 rounded-lg p-3 text-center">
-          <div class="text-2xl font-bold text-green-600">${recipe.calories}</div>
-          <div class="text-sm text-gray-600">Calories</div>
-        </div>
-        <div class="bg-blue-50 rounded-lg p-3 text-center">
-          <div class="text-2xl font-bold text-blue-600">${pantryAnalysis.availableIngredients}/${pantryAnalysis.totalIngredients}</div>
-          <div class="text-sm text-gray-600">In Pantry</div>
-        </div>
-        <div class="bg-orange-50 rounded-lg p-3 text-center">
-          <div class="text-2xl font-bold text-orange-600">${recipe.protein}g</div>
-          <div class="text-sm text-gray-600">Protein</div>
-        </div>
-        <div class="bg-purple-50 rounded-lg p-3 text-center">
-          <div class="text-2xl font-bold text-purple-600">${Math.round(pantryAnalysis.matchPercentage * 100)}%</div>
-          <div class="text-sm text-gray-600">Pantry Match</div>
-        </div>
-      </div>
-
-      <!-- Main Content Grid -->
-      <div class="grid md:grid-cols-2 gap-6">
-        
-        <!-- Left Column: Ingredients & Nutrition -->
-        <div class="space-y-6">
-          
-          <!-- Ingredients List -->
-          <div class="bg-gray-50 rounded-lg p-4">
-            <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <span class="text-xl">🛒</span> Ingredients
-            </h3>
-            <div class="space-y-2">
-              ${recipe.ingredients.map(ingredient => {
-                const pantryMatch = findPantryMatch(ingredient, pantryItems);
-                const hasInPantry = !!pantryMatch;
-                
-                return `
-                  <div class="flex items-center justify-between p-2 bg-white rounded border ${hasInPantry ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}">
-                    <div class="flex items-center gap-2">
-                      <span class="text-lg">${hasInPantry ? '✅' : '🛒'}</span>
-                      <span class="font-medium">${ingredient.name}</span>
-                    </div>
-                    <div class="text-right">
-                      <div class="text-sm font-medium">${ingredient.amount} ${ingredient.unit}</div>
-                      <div class="text-xs ${hasInPantry ? 'text-green-600' : 'text-red-600'}">
-                        ${hasInPantry ? 'Have in pantry' : 'Need to buy'}
-                      </div>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-
-          <!-- Detailed Nutrition -->
-          <div class="bg-gray-50 rounded-lg p-4">
-            <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <span class="text-xl">📊</span> Nutrition Facts
-            </h3>
-            <div class="space-y-3">
-              <div class="flex justify-between items-center py-2 border-b border-gray-200">
-                <span class="font-medium">Calories</span>
-                <span class="font-bold text-lg">${recipe.calories}</span>
-              </div>
-              
-              <!-- Macronutrients -->
-              <div class="space-y-2">
-                <div class="flex justify-between items-center">
-                  <span class="text-green-600 font-medium">Protein</span>
-                  <div class="text-right">
-                    <span class="font-bold">${recipe.protein}g</span>
-                    <span class="text-sm text-gray-500 ml-1">(${Math.round((recipe.protein * 4 / recipe.calories) * 100)}%)</span>
-                  </div>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-blue-600 font-medium">Carbohydrates</span>
-                  <div class="text-right">
-                    <span class="font-bold">${recipe.carbs}g</span>
-                    <span class="text-sm text-gray-500 ml-1">(${Math.round((recipe.carbs * 4 / recipe.calories) * 100)}%)</span>
-                  </div>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-orange-600 font-medium">Fat</span>
-                  <div class="text-right">
-                    <span class="font-bold">${recipe.fat}g</span>
-                    <span class="text-sm text-gray-500 ml-1">(${Math.round((recipe.fat * 9 / recipe.calories) * 100)}%)</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Visual Macro Breakdown -->
-              <div class="mt-4">
-                <div class="text-sm text-gray-600 mb-2">Macronutrient Distribution</div>
-                <div class="flex h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div class="bg-green-500" style="width: ${Math.round((recipe.protein * 4 / recipe.calories) * 100)}%"></div>
-                  <div class="bg-blue-500" style="width: ${Math.round((recipe.carbs * 4 / recipe.calories) * 100)}%"></div>
-                  <div class="bg-orange-500" style="width: ${Math.round((recipe.fat * 9 / recipe.calories) * 100)}%"></div>
-                </div>
-                <div class="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>🟢 Protein</span>
-                  <span>🔵 Carbs</span>
-                  <span>🟠 Fat</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Right Column: Instructions & Actions -->
-        <div class="space-y-6">
-          
-          <!-- Cooking Instructions -->
-          <div class="bg-gray-50 rounded-lg p-4">
-            <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <span class="text-xl">👨‍🍳</span> Quick Cooking Guide
-            </h3>
-            <div class="space-y-3">
-              ${getBasicInstructions(recipe).map((instruction, index) => `
-                <div class="flex gap-3">
-                  <div class="flex-shrink-0 w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                    ${index + 1}
-                  </div>
-                  <p class="text-gray-700 leading-relaxed pt-1">${instruction}</p>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-
-          <!-- Chef's Tips -->
-          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h4 class="font-semibold text-yellow-800 mb-2 flex items-center gap-2">
-              <span class="text-lg">💡</span> Chef's Tips
-            </h4>
-            <div class="text-sm text-yellow-700 space-y-1">
-              ${getChefsTips(recipe).map(tip => `<p>• ${tip}</p>`).join('')}
-            </div>
-          </div>
-
-          <!-- Recipe Info -->
-          <div class="flex flex-wrap gap-2">
-            <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
-              ${recipe.cuisine}
-            </span>
-            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-              ${recipe.mealType}
-            </span>
-            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-              ${recipe.servings} servings
-            </span>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="mt-8 border-t border-gray-200 pt-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          
-          <!-- Save Recipe -->
-          <button onclick="saveRecipeToFavorites('${recipe.id}')" 
-                  class="bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors">
-            <span class="text-lg">💾</span>
-            Save Recipe
-          </button>
-
-          <!-- Order Missing Ingredients -->
-          ${pantryAnalysis.missingIngredients > 0 ? `
-            <button onclick="orderMissingIngredients('${recipe.id}')" 
-                    class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors">
-              <span class="text-lg">🛒</span>
-              Order Missing (${pantryAnalysis.missingIngredients})
-            </button>
-          ` : `
-            <div class="bg-green-100 text-green-700 px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2">
-              <span class="text-lg">✅</span>
-              All Ingredients Available
-            </div>
-          `}
-
-          <!-- Modify Meal Plan -->
-          <button onclick="showRecipeBrowser('${recipe.mealType}', '${day}', '${mealType}')" 
-        class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors">
-  <span class="text-lg">🔄</span>
-  Change This Meal
-</button>
-          
-        </div>
-
-        <!-- Missing Ingredients List -->
-        ${pantryAnalysis.missing.length > 0 ? `
-          <div class="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-3">
-            <h4 class="font-semibold text-orange-800 mb-2">Missing Ingredients:</h4>
-            <div class="grid grid-cols-2 gap-2 text-sm">
-              ${pantryAnalysis.missing.map(item => `
-                <span class="text-orange-700">• ${item.ingredient.name} (${item.ingredient.amount} ${item.ingredient.unit})</span>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
-
-      </div>
-    </div>
-  `;
-
-  // Show the modal
-  document.getElementById('recipe-modal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden'; // Prevent background scrolling
-};
-
-// Close recipe modal
-window.closeRecipeModal = function() {
-  document.getElementById('recipe-modal').classList.add('hidden');
-  document.body.style.overflow = 'auto'; // Restore scrolling
-};
-
-// Generate basic cooking instructions based on recipe
-function getBasicInstructions(recipe) {
-  const instructions = [];
-  
-  // Category-based instructions
-  if (recipe.mealType === 'breakfast') {
-    instructions.push('Gather all ingredients and prep workspace');
-    instructions.push('Heat pan/griddle to medium heat if needed');
-    instructions.push('Combine ingredients according to recipe type');
-    instructions.push('Cook for recommended time, stirring as needed');
-    instructions.push('Season to taste and serve immediately');
-  } else if (recipe.mealType === 'lunch') {
-    instructions.push('Prep all vegetables and proteins first');
-    instructions.push('Heat cooking oil in large pan or skillet');
-    instructions.push('Cook proteins until almost done');
-    instructions.push('Add vegetables and seasonings');
-    instructions.push('Combine everything and serve hot');
-  } else if (recipe.mealType === 'dinner') {
-    instructions.push('Preheat oven to 400°F if baking');
-    instructions.push('Season proteins and let come to room temperature');
-    instructions.push('Cook proteins using preferred method');
-    instructions.push('Prepare sides and vegetables');
-    instructions.push('Let proteins rest, then plate and serve');
-  }
-
-  return instructions;
-}
-
-// Generate chef's tips based on recipe
-function getChefsTips(recipe) {
-  const tips = [];
-  
-  // Ingredient-specific tips
-  if (recipe.ingredients.some(ing => ing.name.toLowerCase().includes('chicken'))) {
-    tips.push('Use a meat thermometer - chicken should reach 165°F internal temperature');
-  }
-  
-  if (recipe.ingredients.some(ing => ing.name.toLowerCase().includes('salmon'))) {
-    tips.push('Cook salmon skin-side down first for crispy skin');
-  }
-
-  if (recipe.ingredients.some(ing => ing.name.toLowerCase().includes('quinoa'))) {
-    tips.push('Rinse quinoa before cooking to remove bitter coating');
-  }
-
-  // Meal type tips
-  if (recipe.mealType === 'breakfast') {
-    tips.push('Prep ingredients the night before for quicker morning assembly');
-  } else if (recipe.mealType === 'lunch') {
-    tips.push('This recipe is perfect for meal prep - make extra portions');
-  } else if (recipe.mealType === 'dinner') {
-    tips.push('Let meat rest for 5 minutes after cooking for better texture');
-  }
-
-  // Default tips if none match
-  if (tips.length === 0) {
-    tips.push('Read through all steps before starting');
-    tips.push('Prep all ingredients first (mise en place)');
-    tips.push('Adjust seasoning to taste at the end');
-  }
-
-  return tips.slice(0, 3); // Limit to 3 tips
-}
-
-// Recipe action functions
-window.saveRecipeToFavorites = function(recipeId) {
-  const favorites = JSON.parse(localStorage.getItem('fueliq_favorite_recipes') || '[]');
-  if (!favorites.includes(recipeId)) {
-    favorites.push(recipeId);
-    localStorage.setItem('fueliq_favorite_recipes', JSON.stringify(favorites));
-    alert('Recipe saved to your favorites! 💾');
-  } else {
-    alert('Recipe is already in your favorites! ⭐');
-  }
-};
-
-window.orderMissingIngredients = function(recipeId) {
-  const recipe = RECIPE_DATABASE.find(r => r.id === recipeId);
-  if (!recipe) return;
-  
-  const pantryData = loadPantryData();
-  const pantryItems = pantryData.items || [];
-  const pantryAnalysis = calculatePantryScore(recipe, pantryItems);
-  
-  localStorage.setItem('fueliq_recipe_shopping_list', JSON.stringify(pantryAnalysis.missing));
-  
-  alert(`${pantryAnalysis.missing.length} missing ingredients added to your shopping list! Redirecting to delivery options... 🛒`);
-  
-  // Redirect to delivery tab with shopping list
-  if (window.setCurrentView) {
-    window.setCurrentView('delivery');
-  }
-};
-
-window.modifyMealPlan = function(day, mealType, currentRecipeId) {
-  alert(`Meal modification feature coming soon!\n\nDay: ${day}\nMeal: ${mealType}\nCurrent Recipe: ${currentRecipeId}\n\nThis will allow you to browse alternative recipes and swap them in your meal plan! ✏️`);
-};
-// Recipe Browser & Selection System
-// Add these functions to your meal-planning.js file
-
-// Show recipe browser modal
-window.showRecipeBrowser = function(filterMealType = null, replaceDay = null, replaceMealType = null) {
-  const pantryData = loadPantryData();
-  const pantryItems = pantryData.items || [];
-  
-  // Calculate pantry scores for all recipes
-  const recipesWithScores = RECIPE_DATABASE.map(recipe => ({
-    ...recipe,
-    pantryAnalysis: calculatePantryScore(recipe, pantryItems)
-  }));
-
-  const modalHTML = `
-    <div id="recipe-browser-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6">
-          <div class="flex justify-between items-center">
-            <div>
-              <h2 class="text-2xl font-bold mb-2">🍽️ Recipe Browser</h2>
-              <p class="opacity-90">
-                ${filterMealType ? `Showing ${filterMealType} recipes` : 'Browse all recipes'} 
-                ${replaceDay ? `• Replacing ${replaceDay} ${replaceMealType}` : ''}
-              </p>
-            </div>
-            <button onclick="closeRecipeBrowser()" 
-                    class="text-white hover:text-gray-200 text-2xl font-bold transition-colors">
-              ×
-            </button>
-          </div>
-          
-          <!-- Search and Filters -->
-          <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
-            <input type="text" id="recipe-search" placeholder="Search recipes..." 
-                   class="px-4 py-2 rounded-lg text-gray-800">
-            
-            <select id="meal-type-filter" class="px-4 py-2 rounded-lg text-gray-800">
-              <option value="">All Meal Types</option>
-              <option value="breakfast" ${filterMealType === 'breakfast' ? 'selected' : ''}>Breakfast</option>
-              <option value="lunch" ${filterMealType === 'lunch' ? 'selected' : ''}>Lunch</option>
-              <option value="dinner" ${filterMealType === 'dinner' ? 'selected' : ''}>Dinner</option>
-            </select>
-            
-            <select id="cuisine-filter" class="px-4 py-2 rounded-lg text-gray-800">
-              <option value="">All Cuisines</option>
-              <option value="Mediterranean">Mediterranean</option>
-              <option value="American">American</option>
-              <option value="Asian">Asian</option>
-            </select>
-            
-            <select id="pantry-filter" class="px-4 py-2 rounded-lg text-gray-800">
-              <option value="">All Recipes</option>
-              <option value="high-match">High Pantry Match (75%+)</option>
-              <option value="medium-match">Medium Match (50%+)</option>
-              <option value="can-make">Can Make Now (100%)</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Recipe Grid -->
-        <div class="flex-1 overflow-y-auto p-6">
-          <div id="recipe-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <!-- Recipes will be populated here -->
-          </div>
-          
-          <!-- No Results Message -->
-          <div id="no-results" class="hidden text-center py-12">
-            <span class="text-6xl">🔍</span>
-            <p class="text-xl text-gray-600 mt-4">No recipes found</p>
-            <p class="text-gray-500">Try adjusting your filters or search terms</p>
-          </div>
-        </div>
-
-        <!-- Footer Stats -->
-        <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
-          <div class="flex justify-between items-center text-sm text-gray-600">
-            <span id="recipe-count">Showing ${recipesWithScores.length} recipes</span>
-            <span id="pantry-stats">Pantry: ${pantryItems.length} items</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // Remove existing modal if any
-  const existingModal = document.getElementById('recipe-browser-modal');
-  if (existingModal) existingModal.remove();
-
-  // Add new modal
-  document.body.insertAdjacentHTML('beforeend', modalHTML);
-  document.body.style.overflow = 'hidden';
-
-  // Initialize filters and display
-  setupRecipeBrowserEvents(recipesWithScores, replaceDay, replaceMealType);
-  displayRecipes(recipesWithScores);
-};
-
-// Setup event listeners for recipe browser
-function setupRecipeBrowserEvents(allRecipes, replaceDay, replaceMealType) {
-  const searchInput = document.getElementById('recipe-search');
-  const mealTypeFilter = document.getElementById('meal-type-filter');
-  const cuisineFilter = document.getElementById('cuisine-filter');
-  const pantryFilter = document.getElementById('pantry-filter');
-
-  // Filter function
-  const filterRecipes = () => {
-    const searchTerm = searchInput.value.toLowerCase();
-    const mealType = mealTypeFilter.value;
-    const cuisine = cuisineFilter.value;
-    const pantryMatch = pantryFilter.value;
-
-    let filtered = allRecipes.filter(recipe => {
-      // Search filter
-      const matchesSearch = !searchTerm || 
-        recipe.name.toLowerCase().includes(searchTerm) ||
-        recipe.ingredients.some(ing => ing.name.toLowerCase().includes(searchTerm));
-
-      // Meal type filter
-      const matchesMealType = !mealType || recipe.mealType === mealType;
-
-      // Cuisine filter
-      const matchesCuisine = !cuisine || recipe.cuisine === cuisine;
-
-      // Pantry match filter
-      let matchesPantry = true;
-      if (pantryMatch === 'high-match') {
-        matchesPantry = recipe.pantryAnalysis.matchPercentage >= 0.75;
-      } else if (pantryMatch === 'medium-match') {
-        matchesPantry = recipe.pantryAnalysis.matchPercentage >= 0.5;
-      } else if (pantryMatch === 'can-make') {
-        matchesPantry = recipe.pantryAnalysis.matchPercentage === 1;
-      }
-
-      return matchesSearch && matchesMealType && matchesCuisine && matchesPantry;
-    });
-
-    displayRecipes(filtered);
+  const displayWeekPlan = (weekPlan) => {
+    const calendar = document.getElementById('weekly-calendar');
     
-    // Update count
-    document.getElementById('recipe-count').textContent = `Showing ${filtered.length} recipes`;
+    calendar.innerHTML = Object.entries(weekPlan).map(([day, meals]) => `
+      <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+        <h3 class="font-bold text-purple-800 mb-3">${day}</h3>
+        <div class="space-y-3">
+          ${['breakfast', 'lunch', 'dinner'].map(mealType => {
+            const meal = meals[mealType];
+            if (!meal) return '';
+            
+            const pantryData = loadPantryData();
+            const pantryAnalysis = calculatePantryScore(meal, pantryData.items || []);
+            
+            return `
+              <div class="bg-white rounded-lg p-3 border border-purple-100 hover:border-purple-300 cursor-pointer transform hover:scale-[1.02] transition-all duration-200" 
+                   onclick="showRecipeDetails('${meal.id}', '${day}', '${mealType}')">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">${meal.image}</span>
+                    <div>
+                      <div class="font-semibold text-sm hover:text-purple-600 transition-colors">${meal.name}</div>
+                      <div class="text-xs text-gray-600">${mealType} • ${meal.cookTime}</div>
+                    </div>
+                  </div>
+                  <div class="flex flex-col gap-1">
+                    ${pantryAnalysis.matchPercentage > 0.5 ? `<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">🛒 ${Math.round(pantryAnalysis.matchPercentage * 100)}%</span>` : ''}
+                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">${meal.calories} cal</span>
+                  </div>
+                </div>
+                <div class="text-xs text-gray-600 mb-2">
+                  ${pantryAnalysis.availableIngredients}/${pantryAnalysis.totalIngredients} ingredients available
+                  ${pantryAnalysis.hasExpiringIngredients ? ' • ⚠️ Uses expiring items' : ''}
+                </div>
+                <div class="text-xs text-gray-400 text-center">
+                  🍽️ Click for recipe details & instructions
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    // Add the recipe modal HTML to the page (only once)
+    if (!document.getElementById('recipe-modal')) {
+      const modalHTML = `
+        <div id="recipe-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+          <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div id="recipe-modal-content">
+              <!-- Recipe details will be inserted here -->
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
   };
 
-  // Add event listeners
-  searchInput.addEventListener('input', filterRecipes);
-  mealTypeFilter.addEventListener('change', filterRecipes);
-  cuisineFilter.addEventListener('change', filterRecipes);
-  pantryFilter.addEventListener('change', filterRecipes);
-
-  // Store replace info for later use
-  window.recipeReplacementInfo = { replaceDay, replaceMealType };
-}
-
-// Display recipes in grid
-function displayRecipes(recipes) {
-  const grid = document.getElementById('recipe-grid');
-  const noResults = document.getElementById('no-results');
-
-  if (recipes.length === 0) {
-    grid.classList.add('hidden');
-    noResults.classList.remove('hidden');
-    return;
-  }
-
-  grid.classList.remove('hidden');
-  noResults.classList.add('hidden');
-
-  // Sort by pantry match percentage (highest first)
-  const sortedRecipes = [...recipes].sort((a, b) => 
-    b.pantryAnalysis.matchPercentage - a.pantryAnalysis.matchPercentage
-  );
-
-  grid.innerHTML = sortedRecipes.map(recipe => {
-    const pantryMatch = Math.round(recipe.pantryAnalysis.matchPercentage * 100);
-    const canMakeNow = recipe.pantryAnalysis.matchPercentage === 1;
-    const highMatch = recipe.pantryAnalysis.matchPercentage >= 0.75;
+  // Enhanced meal generation with choice options
+  window.generateMealPlanWithChoices = function() {
+    const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
+    const pantryData = loadPantryData();
+    const pantryItems = pantryData.items || [];
     
-    return `
-      <div class="bg-white rounded-lg border border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all cursor-pointer" 
-           onclick="selectRecipeFromBrowser('${recipe.id}')">
-        
-        <!-- Recipe Header -->
-        <div class="p-4 border-b border-gray-100">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-2xl">${recipe.image}</span>
-            <div class="flex gap-1">
-              ${canMakeNow ? 
-                '<span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">✅ Can Make Now</span>' :
-                highMatch ? 
-                '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-bold">🔥 High Match</span>' :
-                '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-bold">🛒 Need Items</span>'
-              }
-            </div>
-          </div>
+    // Calculate scores for all recipes
+    const scoredRecipes = RECIPE_DATABASE.map(recipe => {
+      const pantryAnalysis = calculatePantryScore(recipe, pantryItems);
+      const preferenceScore = calculatePreferenceScore(recipe, userProfile);
+      
+      return {
+        ...recipe,
+        pantryAnalysis,
+        preferenceScore,
+        totalScore: (pantryAnalysis.score * 0.4) + (preferenceScore * 0.6)
+      };
+    });
+
+    // Sort by total score
+    scoredRecipes.sort((a, b) => b.totalScore - a.totalScore);
+
+    // Generate plan with top choices
+    const weekPlan = {};
+    const usedRecipes = [];
+
+    for (let day = 0; day < 7; day++) {
+      const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day];
+      
+      // Get best recipes for each meal type
+      const breakfast = selectBestRecipe(scoredRecipes, 'breakfast', usedRecipes);
+      const lunch = selectBestRecipe(scoredRecipes, 'lunch', usedRecipes);
+      const dinner = selectBestRecipe(scoredRecipes, 'dinner', usedRecipes);
+
+      weekPlan[dayName] = { breakfast, lunch, dinner };
+    }
+
+    return weekPlan;
+  };
+
+  // Placeholder functions for modal functionality
+  window.showRecipeDetails = function(recipeId, day, mealType) {
+    const recipe = RECIPE_DATABASE.find(r => r.id === recipeId);
+    if (!recipe) return;
+    
+    alert(`Recipe Details:\n\n${recipe.name}\n${recipe.cookTime} • ${recipe.calories} calories\n\nIngredients: ${recipe.ingredients.map(i => i.name).join(', ')}\n\nThis would show a detailed recipe modal with cooking instructions, nutrition facts, and pantry analysis.`);
+  };
+
+  window.showRecipeBrowser = function() {
+    alert('Recipe Browser\n\nThis feature would show a searchable grid of all available recipes with filters for meal type, cuisine, and pantry match percentage. You could select recipes to replace meals in your current plan.');
+  };
+
+  // Navigation to grocery delivery
+  window.navigateToGroceryWithList = function() {
+    if (window.navigationInProgress) {
+      console.log('⚠️ Navigation already in progress, skipping...');
+      return;
+    }
+    
+    window.navigationInProgress = true;
+    
+    try {
+      const currentPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
+      
+      if (Object.keys(currentPlan).length === 0) {
+        alert('❌ No meal plan found. Please generate a meal plan first.');
+        return;
+      }
+      
+      const shoppingList = generateShoppingList(currentPlan);
+      
+      if (shoppingList.length === 0) {
+        alert('✅ All ingredients are already in your pantry!');
+        return;
+      }
+      
+      console.log('🛒 Generating shopping list with', shoppingList.length, 'items');
+      
+      localStorage.removeItem('fueliq_pending_grocery_list');
+      localStorage.setItem('fueliq_pending_grocery_list', JSON.stringify(shoppingList));
+      
+      if (window.FuelIQIntegration && !window.integrationEventSent) {
+        try {
+          window.integrationEventSent = true;
           
-          <h3 class="font-bold text-gray-800 hover:text-purple-600 transition-colors">${recipe.name}</h3>
-          <div class="text-sm text-gray-600 mt-1">
-            ${recipe.mealType} • ${recipe.cuisine} • ${recipe.cookTime}
-          </div>
-        </div>
-
-        <!-- Pantry Analysis -->
-        <div class="p-4 bg-gray-50">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-medium text-gray-700">Pantry Match</span>
-            <span class="text-sm font-bold ${canMakeNow ? 'text-green-600' : highMatch ? 'text-blue-600' : 'text-orange-600'}">
-              ${pantryMatch}%
-            </span>
-          </div>
+          window.FuelIQIntegration.emit('groceryListGenerated', {
+            ingredients: shoppingList,
+            source: 'meal_planning',
+            totalItems: shoppingList.length,
+            timestamp: Date.now()
+          });
           
-          <!-- Progress bar -->
-          <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-            <div class="h-2 rounded-full ${canMakeNow ? 'bg-green-500' : highMatch ? 'bg-blue-500' : 'bg-orange-500'}" 
-                 style="width: ${pantryMatch}%"></div>
-          </div>
+          if (window.FuelIQIntegration.utils && window.FuelIQIntegration.utils.showSuccessMessage) {
+            window.FuelIQIntegration.utils.showSuccessMessage(
+              `Generated grocery list with ${shoppingList.length} ingredients!`
+            );
+          }
           
-          <div class="text-xs text-gray-600">
-            ${recipe.pantryAnalysis.availableIngredients}/${recipe.pantryAnalysis.totalIngredients} ingredients available
-            ${recipe.pantryAnalysis.hasExpiringIngredients ? ' • ⚠️ Uses expiring items' : ''}
-          </div>
-        </div>
-
-        <!-- Recipe Stats -->
-        <div class="p-4 border-t border-gray-100">
-          <div class="grid grid-cols-3 gap-3 text-center">
-            <div>
-              <div class="text-lg font-bold text-gray-800">${recipe.calories}</div>
-              <div class="text-xs text-gray-600">Calories</div>
-            </div>
-            <div>
-              <div class="text-lg font-bold text-green-600">${recipe.protein}g</div>
-              <div class="text-xs text-gray-600">Protein</div>
-            </div>
-            <div>
-              <div class="text-lg font-bold text-purple-600">${recipe.servings}</div>
-              <div class="text-xs text-gray-600">Servings</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Action Area -->
-        <div class="p-4 bg-purple-50 rounded-b-lg">
-          <div class="text-center">
-            <span class="text-sm text-purple-700 font-medium">
-              ${window.recipeReplacementInfo?.replaceDay ? 
-                `📅 Replace ${window.recipeReplacementInfo.replaceDay} ${window.recipeReplacementInfo.replaceMealType}` : 
-                '🍽️ Click to view details & add to meal plan'
-              }
-            </span>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-// Handle recipe selection from browser
-window.selectRecipeFromBrowser = function(recipeId) {
-  const recipe = RECIPE_DATABASE.find(r => r.id === recipeId);
-  if (!recipe) return;
-
-  // Check if we're replacing a meal or just viewing
-  if (window.recipeReplacementInfo?.replaceDay && window.recipeReplacementInfo?.replaceMealType) {
-    // Replace the meal in the current plan
-    replaceMealInPlan(window.recipeReplacementInfo.replaceDay, window.recipeReplacementInfo.replaceMealType, recipe);
-    closeRecipeBrowser();
-  } else {
-    // Just show recipe details
-    closeRecipeBrowser();
-    setTimeout(() => {
-      showRecipeDetails(recipeId, 'Selected', 'Recipe');
-    }, 300);
-  }
-};
-
-// Replace meal in current plan
-function replaceMealInPlan(day, mealType, newRecipe) {
-  // Get current meal plan
-  let currentPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
-  
-  if (currentPlan[day]) {
-    // Replace the meal
-    currentPlan[day][mealType] = newRecipe;
-    
-    // Save updated plan
-    localStorage.setItem('fueliq_meal_plan', JSON.stringify(currentPlan));
-    
-    // Regenerate shopping list
-    const shoppingList = generateShoppingList(currentPlan);
-    displayShoppingList(shoppingList);
-    
-    // Update the display
-    displayWeekPlan(currentPlan);
-    
-    alert(`✅ ${day} ${mealType} updated to "${newRecipe.name}"!\n\nShopping list has been automatically updated.`);
-  }
-}
-
-// Close recipe browser
-window.closeRecipeBrowser = function() {
-  const modal = document.getElementById('recipe-browser-modal');
-  if (modal) {
-    modal.remove();
-    document.body.style.overflow = 'auto';
-  }
-  // Clean up replacement info
-  delete window.recipeReplacementInfo;
-};
-
-// Enhanced meal generation with choice options
-window.generateMealPlanWithChoices = function() {
-  const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
-  const pantryData = loadPantryData();
-  const pantryItems = pantryData.items || [];
-  
-  // Calculate scores for all recipes
-  const scoredRecipes = RECIPE_DATABASE.map(recipe => {
-    const pantryAnalysis = calculatePantryScore(recipe, pantryItems);
-    const preferenceScore = calculatePreferenceScore(recipe, userProfile);
-    
-    return {
-      ...recipe,
-      pantryAnalysis,
-      preferenceScore,
-      totalScore: (pantryAnalysis.score * 0.4) + (preferenceScore * 0.6)
-    };
-  });
-
-  // Sort by total score
-  scoredRecipes.sort((a, b) => b.totalScore - a.totalScore);
-
-  // Generate plan with top choices
-  const weekPlan = {};
-  const usedRecipes = [];
-
-  for (let day = 0; day < 7; day++) {
-    const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day];
-    
-    // Get best recipes for each meal type
-    const breakfast = selectBestRecipe(scoredRecipes, 'breakfast', usedRecipes);
-    const lunch = selectBestRecipe(scoredRecipes, 'lunch', usedRecipes);
-    const dinner = selectBestRecipe(scoredRecipes, 'dinner', usedRecipes);
-
-    weekPlan[dayName] = { breakfast, lunch, dinner };
-  }
-
-  return weekPlan;
-};
+          setTimeout(() => {
+            window.integrationEventSent = false;
+          }, 5000);
+          
+        } catch (e) {
+          console.error('Integration event failed:', e);
+          window.integrationEventSent = false;
+        }
+      }
+      
+      try {
+        if (window.setCurrentView) {
+          window.setCurrentView('delivery');
+        } else {
+          const navigationEvent = new CustomEvent('navigateToTab', { detail: 'delivery' });
+          window.dispatchEvent(navigationEvent);
+        }
+      } catch (e) {
+        console.error('Navigation failed:', e);
+        alert('Please manually switch to the Delivery tab to see your grocery list!');
+      }
+      
+    } finally {
+      setTimeout(() => {
+        window.navigationInProgress = false;
+      }, 2000);
+    }
+  };
 
   // Cleanup function
   const cleanup = () => {
@@ -1764,155 +1039,39 @@ window.generateMealPlanWithChoices = function() {
     generateSmartMealPlan,
     generateShoppingList
   };
-// ADD THIS SECTION TO THE END OF YOUR meal-planning.js FILE
-// (Right before the final })(); line)
 
-// Integration hooks for grocery delivery
-const initializeIntegration = () => {
-  if (window.FuelIQIntegration && typeof window.FuelIQIntegration.registerModule === 'function') {
-    console.log('🔗 Meal Planning connected to integration system');
-    
-    // Register this module
-    try {
-      window.FuelIQIntegration.registerModule('mealPlanning', {
-        generatePlan: generateMealPlanWithChoices,
-        getShoppingList: generateShoppingList,
-        getCurrentPlan: () => JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}')
-      });
-    } catch (e) {
-      console.error('Failed to register meal planning module:', e);
-    }
-    
-    // Listen for pantry updates - FIXED: removed .events
-    try {
-      window.FuelIQIntegration.on('pantryUpdated', (data) => {
-        console.log('📦 Pantry updated, refreshing meal suggestions');
-        if (typeof showSmartSuggestions === 'function') {
-          showSmartSuggestions();
-        }
-      });
-    } catch (e) {
-      console.error('Failed to setup pantry listener:', e);
-    }
-  } else {
-    console.warn('FuelIQIntegration not ready, retrying...');
-    setTimeout(initializeIntegration, 1000);
-  }
-};
-
-// Enhanced navigation to grocery delivery - FIXED: made it a window function
-window.navigateToGroceryWithList = function() {
-  // Prevent multiple executions
-  if (window.navigationInProgress) {
-    console.log('⚠️ Navigation already in progress, skipping...');
-    return;
-  }
-  
-  window.navigationInProgress = true;
-  
-  try {
-    const currentPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
-    
-    if (Object.keys(currentPlan).length === 0) {
-      alert('❌ No meal plan found. Please generate a meal plan first.');
-      return;
-    }
-    
-    const shoppingList = generateShoppingList(currentPlan);
-    
-    if (shoppingList.length === 0) {
-      alert('✅ All ingredients are already in your pantry!');
-      return;
-    }
-    
-    console.log('🛒 Generating shopping list with', shoppingList.length, 'items');
-    
-    // 🔥 CLEAR ANY EXISTING PENDING LIST FIRST
-    localStorage.removeItem('fueliq_pending_grocery_list');
-    
-    // Store NEW shopping list for grocery delivery
-    localStorage.setItem('fueliq_pending_grocery_list', JSON.stringify(shoppingList));
-    
-    // 🎯 EMIT INTEGRATION EVENT ONLY ONCE
-    if (window.FuelIQIntegration && !window.integrationEventSent) {
+  // Integration initialization
+  const initializeIntegration = () => {
+    if (window.FuelIQIntegration && typeof window.FuelIQIntegration.registerModule === 'function') {
+      console.log('🔗 Meal Planning connected to integration system');
+      
       try {
-        window.integrationEventSent = true;
-        
-        window.FuelIQIntegration.emit('groceryListGenerated', {
-          ingredients: shoppingList,
-          source: 'meal_planning',
-          totalItems: shoppingList.length,
-          timestamp: Date.now() // Add timestamp to prevent duplicates
+        window.FuelIQIntegration.registerModule('mealPlanning', {
+          generatePlan: generateMealPlanWithChoices,
+          getShoppingList: generateShoppingList,
+          getCurrentPlan: () => JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}')
         });
-        
-        if (window.FuelIQIntegration.utils && window.FuelIQIntegration.utils.showSuccessMessage) {
-          window.FuelIQIntegration.utils.showSuccessMessage(
-            `Generated grocery list with ${shoppingList.length} ingredients!`
-          );
-        }
-        
-        // Reset flag after delay
-        setTimeout(() => {
-          window.integrationEventSent = false;
-        }, 5000);
-        
       } catch (e) {
-        console.error('Integration event failed:', e);
-        window.integrationEventSent = false;
+        console.error('Failed to register meal planning module:', e);
       }
-    }
-    
-    // 🧭 NAVIGATE TO GROCERY DELIVERY
-    try {
-      if (window.setCurrentView) {
-        window.setCurrentView('delivery');
-      } else {
-        const navigationEvent = new CustomEvent('navigateToTab', { detail: 'delivery' });
-        window.dispatchEvent(navigationEvent);
+      
+      try {
+        window.FuelIQIntegration.on('pantryUpdated', (data) => {
+          console.log('📦 Pantry updated, refreshing meal suggestions');
+          if (typeof showSmartSuggestions === 'function') {
+            showSmartSuggestions();
+          }
+        });
+      } catch (e) {
+        console.error('Failed to setup pantry listener:', e);
       }
-    } catch (e) {
-      console.error('Navigation failed:', e);
-      alert('Please manually switch to the Delivery tab to see your grocery list!');
+    } else {
+      console.warn('FuelIQIntegration not ready, retrying...');
+      setTimeout(initializeIntegration, 1000);
     }
-    
-  } finally {
-    // Always reset the navigation flag
-    setTimeout(() => {
-      window.navigationInProgress = false;
-    }, 2000);
-  }
-};
+  };
 
-// Enhanced generate plan function - FIXED: no const reassignment
-const enhancedGeneratePlan = function() {
-  // Call the original generate plan logic
-  const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
-  const weekPlan = generateMealPlanWithChoices();
-  const shoppingList = generateShoppingList(weekPlan);
+  // Initialize integration when module loads
+  setTimeout(initializeIntegration, 1000);
 
-  displayWeekPlan(weekPlan);
-  displayShoppingList(shoppingList);
-
-  document.getElementById('meal-plan-display').classList.remove('hidden');
-  localStorage.setItem('fueliq_meal_plan', JSON.stringify(weekPlan));
-
-  console.log('✅ Smart meal plan generated with pantry integration!');
-  
-  // Add integration event - FIXED: removed .events
-  if (window.FuelIQIntegration) {
-    try {
-      window.FuelIQIntegration.emit('mealPlanCreated', weekPlan);
-      window.FuelIQIntegration.setSharedData('mealPlans', weekPlan);
-    } catch (e) {
-      console.error('Integration event failed:', e);
-    }
-  }
-};
-
-// FIXED: Replace the function reference instead of reassigning const
-const originalGeneratePlan = generatePlan;
-generatePlan = enhancedGeneratePlan;
-
-// Initialize integration when module loads
-setTimeout(initializeIntegration, 1000);
 })();
