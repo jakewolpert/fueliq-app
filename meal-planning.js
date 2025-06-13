@@ -548,9 +548,125 @@
     });
   }
 
-  // Enhanced shopping list display with clear quantities and context
+  // Enhanced shopping list display with smart consolidation
   const displayShoppingList = (shoppingList) => {
     const container = document.getElementById('shopping-list');
+    
+    if (shoppingList.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-6">
+          <span class="text-4xl">🎉</span>
+          <p class="text-lg font-semibold text-green-600 mt-2">You have everything you need!</p>
+          <p class="text-gray-600">All ingredients are available in your pantry.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const totalCost = shoppingList.reduce((sum, item) => sum + (item.estimatedCost * item.neededAmount), 0);
+    const consolidatedItems = shoppingList.filter(item => item.consolidationInfo);
+
+    const grouped = {};
+    shoppingList.forEach(item => {
+      if (!grouped[item.category]) grouped[item.category] = [];
+      grouped[item.category].push(item);
+    });
+
+    container.innerHTML = `
+      <div class="space-y-4">
+        <!-- Smart Shopping Summary -->
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h4 class="font-bold text-blue-800">🧠 Smart Shopping Summary</h4>
+              <p class="text-sm text-blue-600">
+                ${shoppingList.length} items needed • ${consolidatedItems.length} ingredients consolidated • Est. $${totalCost.toFixed(2)}
+              </p>
+            </div>
+            <div class="text-xs text-blue-600 text-right">
+              <div>💡 ${consolidatedItems.length} smart consolidations saved you from duplicate orders</div>
+              <div>📦 ${shoppingList.filter(item => item.hasPantryItem).length} items partially in pantry</div>
+            </div>
+          </div>
+          
+          ${consolidatedItems.length > 0 ? `
+            <div class="bg-green-100 border border-green-300 rounded-lg p-3 mt-3">
+              <h5 class="font-semibold text-green-800 text-sm mb-2">🔄 Consolidated Ingredients:</h5>
+              <div class="text-xs text-green-700 space-y-1">
+                ${consolidatedItems.slice(0, 3).map(item => 
+                  `<div>• <strong>${item.name}</strong>: ${item.consolidationInfo.summary}</div>`
+                ).join('')}
+                ${consolidatedItems.length > 3 ? `<div>• And ${consolidatedItems.length - 3} more...</div>` : ''}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Shopping List by Category -->
+        ${Object.entries(grouped).map(([category, items]) => `
+          <div class="border border-gray-200 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-semibold text-gray-800 capitalize flex items-center">
+                ${getCategoryIcon(category)} ${category}
+                <span class="ml-2 text-sm text-gray-500">(${items.length} items)</span>
+              </h4>
+              <div class="text-sm text-gray-600">
+                Est. $${items.reduce((sum, item) => sum + (item.estimatedCost * item.neededAmount), 0).toFixed(2)}
+              </div>
+            </div>
+            <div class="space-y-3">
+              ${items.map(item => `
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                      <div class="flex items-center space-x-3">
+                        <input type="checkbox" class="delivery-item" data-item='${JSON.stringify(item)}' checked>
+                        <div>
+                          <div class="font-medium text-gray-800 flex items-center gap-2">
+                            ${item.name}
+                            ${item.consolidationInfo ? `
+                              <span class="bg-purple-100 text-purple-600 px-2 py-1 rounded-full text-xs font-bold">
+                                🔄 ${item.consolidationInfo.mealsCount} meals
+                              </span>
+                            ` : ''}
+                          </div>
+                          <div class="text-sm text-gray-600">
+                            Need: <strong>${formatQuantity(item.neededAmount, item.unit)}</strong>
+                            ${item.hasPantryItem ? 
+                              `• Have: ${formatQuantity(item.pantryAvailable, item.unit)} in pantry` : 
+                              '• Not in pantry'
+                            }
+                          </div>
+                          <div class="text-xs text-gray-500 mt-1">
+                            ${item.consolidationInfo ? 
+                              `Smart consolidation: ${item.consolidationInfo.summary}` :
+                              `For: ${item.recipes.slice(0, 2).join(', ')}${item.recipes.length > 2 ? ` +${item.recipes.length - 2} more` : ''}`
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="text-right ml-4">
+                      <div class="text-sm font-bold text-orange-600">
+                        $${(item.estimatedCost * item.neededAmount).toFixed(2)}
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        $${item.estimatedCost.toFixed(2)} per ${item.unit}
+                      </div>
+                      <button onclick="showIngredientDetails('${item.name}')" 
+                              class="text-xs text-blue-500 hover:text-blue-600 mt-1">
+                        View details
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  };
     
     if (shoppingList.length === 0) {
       container.innerHTML = `
