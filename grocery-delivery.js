@@ -760,7 +760,19 @@ setTimeout(() => {
     checkoutBtn.disabled = subtotal < service.minOrder;
     updatePriceComparison();
   }
+}
 
+  // 🆕 NEW: Remove item from cart
+  function removeFromCart(index) {
+    if (index >= 0 && index < shoppingCart.length) {
+      const removedItem = shoppingCart[index];
+      shoppingCart.splice(index, 1);
+      updateCart();
+      console.log(`✅ Removed ${removedItem.product.name} from cart`);
+    }
+  }
+
+  function updatePriceComparison() {
   function updatePriceComparison() {
     const container = document.getElementById('priceComparison');
     if (!container || shoppingCart.length === 0) return;
