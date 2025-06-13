@@ -1,680 +1,524 @@
-// FuelIQ Wearables Integration Module
-// Save this as: wearables-tab.js
-
+// wearables-tab.js - FuelIQ Wearables Integration with Demo Support
 (function() {
+    'use strict';
+    
     // Prevent multiple loading
     if (window.FuelIQWearables) {
         return;
     }
 
-    // Safe Storage Functions
+    // Demo mode detection
+    const isDemoMode = () => {
+        return window.TerryDemo && window.TerryDemo.utils && window.TerryDemo.utils.getDemoStatus();
+    };
+
+    // Terry's Garmin Forerunner 955 Demo Data
+    const TERRY_WEARABLE_DATA = {
+        device: {
+            name: "Garmin Forerunner 955",
+            type: "smartwatch",
+            brand: "Garmin",
+            model: "Forerunner 955",
+            batteryLevel: 74,
+            lastSync: "2025-06-13T08:15:00Z",
+            firmwareVersion: "20.26",
+            connected: true
+        },
+        todayStats: {
+            steps: 8247,
+            stepsGoal: 10000,
+            activeMinutes: 32,
+            activeGoal: 45,
+            caloriesBurned: 1847,
+            caloriesGoal: 2200,
+            distance: 3.2, // miles
+            floors: 12,
+            heartRate: {
+                current: 72,
+                resting: 58,
+                max: 186,
+                zones: {
+                    fat_burn: 45, // minutes
+                    cardio: 28,
+                    peak: 8
+                }
+            }
+        },
+        sleepData: {
+            totalSleep: 7.8, // hours
+            sleepGoal: 8.0,
+            deepSleep: 1.4,
+            lightSleep: 5.2,
+            remSleep: 1.2,
+            sleepScore: 83,
+            bedtime: "22:45",
+            wakeTime: "06:30",
+            efficiency: 92
+        },
+        weeklyStats: {
+            totalSteps: 58394,
+            totalActiveMinutes: 248,
+            totalCalories: 12890,
+            averageHeartRate: 68,
+            totalDistance: 23.1,
+            workouts: 4
+        },
+        recentWorkouts: [
+            {
+                date: "2025-06-13",
+                type: "Running",
+                duration: 28, // minutes
+                distance: 3.2,
+                calories: 298,
+                avgHeartRate: 154,
+                maxHeartRate: 172
+            },
+            {
+                date: "2025-06-12",
+                type: "Cycling",
+                duration: 45,
+                distance: 12.8,
+                calories: 456,
+                avgHeartRate: 142,
+                maxHeartRate: 165
+            },
+            {
+                date: "2025-06-11",
+                type: "Strength Training",
+                duration: 35,
+                distance: 0,
+                calories: 234,
+                avgHeartRate: 118,
+                maxHeartRate: 148
+            }
+        ],
+        healthMetrics: {
+            vo2Max: 52,
+            bodyBattery: 68,
+            stress: 22, // lower is better
+            respirationRate: 14,
+            pulseOx: 98,
+            trainingStatus: "Productive",
+            trainingLoad: 142
+        }
+    };
+
+    // Available wearable devices (for personal mode)
+    const AVAILABLE_DEVICES = [
+        { name: "Apple Watch Series 9", brand: "Apple", type: "smartwatch" },
+        { name: "Fitbit Versa 4", brand: "Fitbit", type: "fitness_tracker" },
+        { name: "Garmin Forerunner 955", brand: "Garmin", type: "smartwatch" },
+        { name: "Samsung Galaxy Watch 6", brand: "Samsung", type: "smartwatch" },
+        { name: "WHOOP 4.0", brand: "WHOOP", type: "fitness_tracker" },
+        { name: "Oura Ring Gen3", brand: "Oura", type: "smart_ring" },
+        { name: "Polar Vantage V3", brand: "Polar", type: "smartwatch" }
+    ];
+
+    // Safe storage functions
     const isLocalStorageAvailable = () => {
         try {
             const test = '__localStorage_test__';
             localStorage.setItem(test, test);
             localStorage.removeItem(test);
             return true;
-        } catch (e) {
+        } catch(e) {
             return false;
         }
     };
 
-    const memoryStorage = {};
+    const safeStorage = {
+        getItem: (key) => {
+            if (isLocalStorageAvailable()) {
+                return localStorage.getItem(key);
+            }
+            return null;
+        },
+        setItem: (key, value) => {
+            if (isLocalStorageAvailable()) {
+                try {
+                    localStorage.setItem(key, value);
+                } catch(e) {
+                    console.warn('Storage quota exceeded');
+                }
+            }
+        }
+    };
 
+    // Get wearable data based on mode
+    const getWearableData = () => {
+        if (isDemoMode()) {
+            return TERRY_WEARABLE_DATA;
+        }
+        
+        // Load personal data from storage
+        const stored = safeStorage.getItem('user_wearable_data');
+        if (stored) {
+            try {
+                return JSON.parse(stored);
+            } catch(e) {
+                console.warn('Error loading wearable data:', e);
+            }
+        }
+        
+        return null; // No device connected in personal mode
+    };
+
+    // Save wearable data (only in personal mode)
     const saveWearableData = (data) => {
-        const key = 'fueliq_wearables';
-        const dataStr = JSON.stringify(data);
-        
-        if (isLocalStorageAvailable()) {
-            try {
-                localStorage.setItem(key, dataStr);
-            } catch (e) {
-                console.warn('localStorage failed, using memory storage:', e);
-                memoryStorage[key] = dataStr;
-            }
-        } else {
-            memoryStorage[key] = dataStr;
+        if (!isDemoMode()) {
+            safeStorage.setItem('user_wearable_data', JSON.stringify(data));
         }
     };
 
-    const loadWearableData = () => {
-        const key = 'fueliq_wearables';
-        let data = null;
+    // Calculate progress percentage
+    const calculateProgress = (current, goal) => {
+        return Math.min(100, Math.round((current / goal) * 100));
+    };
+
+    // Format time duration
+    const formatDuration = (minutes) => {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    };
+
+    // Create progress bar HTML
+    const createProgressBar = (current, goal, color = 'blue') => {
+        const percentage = calculateProgress(current, goal);
+        return `
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-${color}-500 h-2 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
+            </div>
+        `;
+    };
+
+    // Render device connection status
+    const renderDeviceStatus = () => {
+        const data = getWearableData();
+        const statusContainer = document.getElementById('device-status');
         
-        if (isLocalStorageAvailable()) {
-            try {
-                data = localStorage.getItem(key);
-            } catch (e) {
-                console.warn('localStorage failed, using memory storage:', e);
-                data = memoryStorage[key];
-            }
-        } else {
-            data = memoryStorage[key];
-        }
-        
-        return data ? JSON.parse(data) : {
-            connectedDevices: [],
-            healthData: {
-                today: {},
-                history: []
-            },
-            lastSync: null,
-            settings: {
-                autoSync: true,
-                syncInterval: 300000, // 5 minutes
-                adjustCaloriesForActivity: true
-            }
-        };
-    };
+        if (!statusContainer) return;
 
-    // Device Integration APIs
-    const DeviceAPIs = {
-        garmin: {
-            name: 'Garmin Connect IQ',
-            icon: '⌚',
-            color: 'blue',
-            scopes: ['activities', 'sleep', 'dailies'],
-            connect: async () => {
-                // In a real implementation, this would use Garmin Connect IQ SDK
-                // For demo, we'll simulate the connection
-                return new Promise((resolve) => {
-                    setTimeout(() => {
-                        resolve({
-                            deviceId: 'garmin_' + Date.now(),
-                            deviceName: 'Garmin Forerunner',
-                            connected: true,
-                            lastSync: new Date().toISOString()
-                        });
-                    }, 2000);
-                });
-            },
-            fetchData: async () => {
-                // Simulate Garmin data fetch
-                return {
-                    steps: Math.floor(Math.random() * 5000) + 8000,
-                    calories: Math.floor(Math.random() * 500) + 400,
-                    distance: parseFloat((Math.random() * 3 + 2).toFixed(2)),
-                    activeMinutes: Math.floor(Math.random() * 60) + 30,
-                    heartRate: {
-                        resting: Math.floor(Math.random() * 15) + 55,
-                        max: Math.floor(Math.random() * 30) + 180,
-                        current: Math.floor(Math.random() * 40) + 80
-                    },
-                    sleep: {
-                        totalSleep: Math.floor(Math.random() * 120) + 420, // minutes
-                        deepSleep: Math.floor(Math.random() * 60) + 90,
-                        lightSleep: Math.floor(Math.random() * 180) + 240,
-                        awake: Math.floor(Math.random() * 30) + 10,
-                        sleepScore: Math.floor(Math.random() * 30) + 70
-                    },
-                    workouts: [
-                        {
-                            type: 'Running',
-                            duration: 35,
-                            calories: 350,
-                            timestamp: new Date().toISOString()
-                        }
-                    ]
-                };
-            }
-        },
-        apple: {
-            name: 'Apple Health',
-            icon: '🍎',
-            color: 'gray',
-            scopes: ['steps', 'heart_rate', 'sleep', 'workouts'],
-            connect: async () => {
-                // Simulate Apple Health connection
-                return new Promise((resolve) => {
-                    setTimeout(() => {
-                        resolve({
-                            deviceId: 'apple_' + Date.now(),
-                            deviceName: 'Apple Watch',
-                            connected: true,
-                            lastSync: new Date().toISOString()
-                        });
-                    }, 1500);
-                });
-            },
-            fetchData: async () => {
-                return {
-                    steps: Math.floor(Math.random() * 4000) + 9000,
-                    calories: Math.floor(Math.random() * 400) + 450,
-                    distance: parseFloat((Math.random() * 4 + 3).toFixed(2)),
-                    activeMinutes: Math.floor(Math.random() * 50) + 40,
-                    heartRate: {
-                        resting: Math.floor(Math.random() * 12) + 58,
-                        max: Math.floor(Math.random() * 25) + 185,
-                        current: Math.floor(Math.random() * 35) + 85
-                    },
-                    sleep: {
-                        totalSleep: Math.floor(Math.random() * 100) + 440,
-                        deepSleep: Math.floor(Math.random() * 50) + 100,
-                        lightSleep: Math.floor(Math.random() * 160) + 260,
-                        awake: Math.floor(Math.random() * 25) + 15,
-                        sleepScore: Math.floor(Math.random() * 25) + 75
-                    }
-                };
-            }
-        },
-        fitbit: {
-            name: 'Fitbit',
-            icon: '💚',
-            color: 'green',
-            scopes: ['activity', 'heartrate', 'sleep'],
-            connect: async () => {
-                return new Promise((resolve) => {
-                    setTimeout(() => {
-                        resolve({
-                            deviceId: 'fitbit_' + Date.now(),
-                            deviceName: 'Fitbit Versa',
-                            connected: true,
-                            lastSync: new Date().toISOString()
-                        });
-                    }, 1800);
-                });
-            },
-            fetchData: async () => {
-                return {
-                    steps: Math.floor(Math.random() * 3500) + 10000,
-                    calories: Math.floor(Math.random() * 300) + 500,
-                    distance: parseFloat((Math.random() * 2.5 + 3.5).toFixed(2)),
-                    activeMinutes: Math.floor(Math.random() * 45) + 35,
-                    heartRate: {
-                        resting: Math.floor(Math.random() * 10) + 60,
-                        max: Math.floor(Math.random() * 20) + 190,
-                        current: Math.floor(Math.random() * 30) + 90
-                    },
-                    sleep: {
-                        totalSleep: Math.floor(Math.random() * 90) + 450,
-                        deepSleep: Math.floor(Math.random() * 40) + 110,
-                        lightSleep: Math.floor(Math.random() * 150) + 270,
-                        awake: Math.floor(Math.random() * 20) + 20,
-                        sleepScore: Math.floor(Math.random() * 20) + 80
-                    }
-                };
-            }
-        }
-    };
-
-    // Data Processing Functions
-    const calculateAdjustedCalories = (baseCalories, activityData) => {
-        if (!activityData) return baseCalories;
-        
-        // Adjust based on activity level
-        const stepMultiplier = Math.max(0, (activityData.steps - 8000) / 2000) * 50;
-        const exerciseCalories = activityData.calories || 0;
-        
-        return Math.round(baseCalories + stepMultiplier + (exerciseCalories * 0.5));
-    };
-
-    const getActivityLevel = (steps) => {
-        if (steps < 5000) return { level: 'Sedentary', color: 'red', emoji: '😴' };
-        if (steps < 8000) return { level: 'Lightly Active', color: 'yellow', emoji: '🚶' };
-        if (steps < 12000) return { level: 'Moderately Active', color: 'green', emoji: '🏃' };
-        return { level: 'Very Active', color: 'blue', emoji: '💪' };
-    };
-
-    const getSleepQuality = (sleepScore) => {
-        if (sleepScore >= 85) return { quality: 'Excellent', color: 'green', emoji: '😴' };
-        if (sleepScore >= 70) return { quality: 'Good', color: 'blue', emoji: '😊' };
-        if (sleepScore >= 55) return { quality: 'Fair', color: 'yellow', emoji: '😐' };
-        return { quality: 'Poor', color: 'red', emoji: '😵' };
-    };
-
-    // Device Connection Modal
-    const DeviceConnectionModal = ({ onConnect, onClose }) => {
-        const [connecting, setConnecting] = React.useState(null);
-
-        const handleConnect = async (deviceType) => {
-            setConnecting(deviceType);
-            try {
-                const device = await DeviceAPIs[deviceType].connect();
-                onConnect(deviceType, device);
-            } catch (error) {
-                console.error('Connection failed:', error);
-                alert('Connection failed. Please try again.');
-            } finally {
-                setConnecting(null);
-            }
-        };
-
-        return React.createElement('div', { 
-            className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50' 
-        },
-            React.createElement('div', { 
-                className: 'bg-white rounded-xl p-6 w-full max-w-lg' 
-            },
-                React.createElement('div', { className: 'flex justify-between items-center mb-6' },
-                    React.createElement('h3', { className: 'text-xl font-bold text-gray-800' }, 'Connect Your Device'),
-                    React.createElement('button', { 
-                        onClick: onClose,
-                        className: 'text-gray-500 hover:text-gray-700 text-xl font-bold' 
-                    }, '×')
-                ),
-
-                React.createElement('div', { className: 'space-y-4' },
-                    ...Object.entries(DeviceAPIs).map(([key, api]) =>
-                        React.createElement('button', {
-                            key: key,
-                            onClick: () => handleConnect(key),
-                            disabled: connecting === key,
-                            className: `w-full p-4 border-2 border-gray-200 rounded-lg hover:border-${api.color}-300 hover:bg-${api.color}-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed`
-                        },
-                            React.createElement('div', { className: 'flex items-center gap-4' },
-                                React.createElement('span', { className: 'text-3xl' }, api.icon),
-                                React.createElement('div', { className: 'text-left flex-1' },
-                                    React.createElement('div', { className: 'font-semibold text-gray-800' }, api.name),
-                                    React.createElement('div', { className: 'text-sm text-gray-600' }, 
-                                        `Tracks: ${api.scopes.join(', ')}`
-                                    )
-                                ),
-                                connecting === key ? 
-                                    React.createElement('div', { className: 'animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500' }) :
-                                    React.createElement('span', { className: 'text-gray-400' }, '→')
-                            )
-                        )
-                    )
-                ),
-
-                React.createElement('div', { className: 'mt-6 p-4 bg-blue-50 rounded-lg' },
-                    React.createElement('p', { className: 'text-blue-800 text-sm' },
-                        '🔒 Your data stays private and secure. We only access the health metrics you choose to share.'
-                    )
-                )
-            )
-        );
-    };
-
-    // Health Metrics Dashboard
-    const HealthMetricCard = ({ title, value, unit, goal, icon, color, trend }) => {
-        const percentage = goal ? Math.min((value / goal) * 100, 100) : 0;
-        
-        return React.createElement('div', { className: 'bg-white rounded-xl p-6 shadow-lg border border-gray-200' },
-            React.createElement('div', { className: 'flex items-center justify-between mb-4' },
-                React.createElement('div', { className: 'flex items-center gap-3' },
-                    React.createElement('span', { className: 'text-2xl' }, icon),
-                    React.createElement('h3', { className: 'font-bold text-gray-800' }, title)
-                ),
-                trend && React.createElement('span', { 
-                    className: `text-sm font-medium ${trend > 0 ? 'text-green-600' : 'text-red-600'}` 
-                }, trend > 0 ? '↗️' : '↘️')
-            ),
+        if (data && data.device) {
+            const device = data.device;
+            const lastSyncTime = new Date(device.lastSync).toLocaleTimeString();
             
-            React.createElement('div', { className: 'mb-4' },
-                React.createElement('div', { className: 'flex items-baseline gap-2' },
-                    React.createElement('span', { className: 'text-3xl font-bold text-gray-900' }, 
-                        typeof value === 'number' ? value.toLocaleString() : value
-                    ),
-                    React.createElement('span', { className: 'text-lg text-gray-600' }, unit),
-                    goal && React.createElement('span', { className: 'text-gray-400' }, 
-                        `/ ${goal.toLocaleString()} ${unit}`
-                    )
-                )
-            ),
-
-            goal && React.createElement('div', { className: 'mb-2' },
-                React.createElement('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-                    React.createElement('div', {
-                        className: `h-3 rounded-full bg-gradient-to-r from-${color}-400 to-${color}-600 transition-all duration-500`,
-                        style: { width: `${percentage}%` }
-                    })
-                )
-            ),
-
-            goal && React.createElement('div', { className: 'text-sm text-gray-600' },
-                `${Math.round(percentage)}% of daily goal`
-            )
-        );
+            statusContainer.innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-sm border">
+                    ${isDemoMode() ? '<div class="flex items-center justify-between mb-4"><h3 class="text-lg font-semibold text-gray-900">Connected Device</h3><span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">🎭 DEMO</span></div>' : '<h3 class="text-lg font-semibold text-gray-900 mb-4">Connected Device</h3>'}
+                    <div class="flex items-center space-x-4">
+                        <div class="text-4xl">⌚</div>
+                        <div class="flex-1">
+                            <h4 class="font-medium text-gray-900">${device.name}</h4>
+                            <p class="text-sm text-gray-500">${device.brand} • ${device.model}</p>
+                            <div class="flex items-center space-x-4 mt-2">
+                                <span class="flex items-center text-sm ${device.connected ? 'text-green-600' : 'text-red-600'}">
+                                    <div class="w-2 h-2 rounded-full ${device.connected ? 'bg-green-500' : 'bg-red-500'} mr-2"></div>
+                                    ${device.connected ? 'Connected' : 'Disconnected'}
+                                </span>
+                                <span class="text-sm text-gray-500">Battery: ${device.batteryLevel}%</span>
+                                <span class="text-sm text-gray-500">Last sync: ${lastSyncTime}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            statusContainer.innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-sm border">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Connect Your Device</h3>
+                    <p class="text-gray-600 mb-4">Connect your wearable device to track your health and fitness data.</p>
+                    <button onclick="window.FuelIQWearables.showDeviceSetup()" 
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        Connect Device
+                    </button>
+                </div>
+            `;
+        }
     };
 
-    // Sleep Analysis Component
-    const SleepAnalysis = ({ sleepData }) => {
-        if (!sleepData) return null;
+    // Render today's stats
+    const renderTodayStats = () => {
+        const data = getWearableData();
+        const statsContainer = document.getElementById('today-stats');
+        
+        if (!statsContainer || !data || !data.todayStats) return;
 
-        const totalHours = (sleepData.totalSleep / 60).toFixed(1);
-        const sleepQuality = getSleepQuality(sleepData.sleepScore);
-
-        return React.createElement('div', { className: 'bg-white rounded-xl p-6 shadow-lg border border-gray-200' },
-            React.createElement('div', { className: 'flex items-center justify-between mb-6' },
-                React.createElement('h3', { className: 'text-xl font-bold text-gray-800' }, '😴 Sleep Analysis'),
-                React.createElement('div', { className: `px-3 py-1 rounded-full text-sm font-medium bg-${sleepQuality.color}-100 text-${sleepQuality.color}-700` },
-                    `${sleepQuality.emoji} ${sleepQuality.quality}`
-                )
-            ),
-
-            React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mb-6' },
-                React.createElement('div', { className: 'text-center' },
-                    React.createElement('div', { className: 'text-2xl font-bold text-blue-600' }, totalHours),
-                    React.createElement('div', { className: 'text-sm text-gray-600' }, 'Total Hours')
-                ),
-                React.createElement('div', { className: 'text-center' },
-                    React.createElement('div', { className: 'text-2xl font-bold text-purple-600' }, Math.round(sleepData.deepSleep / 60 * 10) / 10),
-                    React.createElement('div', { className: 'text-sm text-gray-600' }, 'Deep Sleep')
-                ),
-                React.createElement('div', { className: 'text-center' },
-                    React.createElement('div', { className: 'text-2xl font-bold text-green-600' }, Math.round(sleepData.lightSleep / 60 * 10) / 10),
-                    React.createElement('div', { className: 'text-sm text-gray-600' }, 'Light Sleep')
-                ),
-                React.createElement('div', { className: 'text-center' },
-                    React.createElement('div', { className: 'text-2xl font-bold text-gray-600' }, sleepData.sleepScore),
-                    React.createElement('div', { className: 'text-sm text-gray-600' }, 'Sleep Score')
-                )
-            ),
-
-            React.createElement('div', { className: 'space-y-3' },
-                React.createElement('div', { className: 'flex justify-between items-center' },
-                    React.createElement('span', { className: 'font-medium text-purple-600' }, 'Deep Sleep'),
-                    React.createElement('div', { className: 'w-32 bg-gray-200 rounded-full h-2' },
-                        React.createElement('div', { 
-                            className: 'bg-purple-500 h-2 rounded-full',
-                            style: { width: `${(sleepData.deepSleep / sleepData.totalSleep) * 100}%` }
-                        })
-                    )
-                ),
-                React.createElement('div', { className: 'flex justify-between items-center' },
-                    React.createElement('span', { className: 'font-medium text-green-600' }, 'Light Sleep'),
-                    React.createElement('div', { className: 'w-32 bg-gray-200 rounded-full h-2' },
-                        React.createElement('div', { 
-                            className: 'bg-green-500 h-2 rounded-full',
-                            style: { width: `${(sleepData.lightSleep / sleepData.totalSleep) * 100}%` }
-                        })
-                    )
-                ),
-                React.createElement('div', { className: 'flex justify-between items-center' },
-                    React.createElement('span', { className: 'font-medium text-red-600' }, 'Awake'),
-                    React.createElement('div', { className: 'w-32 bg-gray-200 rounded-full h-2' },
-                        React.createElement('div', { 
-                            className: 'bg-red-500 h-2 rounded-full',
-                            style: { width: `${(sleepData.awake / sleepData.totalSleep) * 100}%` }
-                        })
-                    )
-                )
-            )
-        );
+        const stats = data.todayStats;
+        
+        statsContainer.innerHTML = `
+            <div class="bg-white p-6 rounded-lg shadow-sm border">
+                ${isDemoMode() ? '<div class="flex items-center justify-between mb-4"><h3 class="text-lg font-semibold text-gray-900">Today\'s Activity</h3><span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">🎭 DEMO</span></div>' : '<h3 class="text-lg font-semibold text-gray-900 mb-4">Today\'s Activity</h3>'}
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <div class="text-2xl mb-2">👟</div>
+                        <div class="text-2xl font-bold text-blue-600">${stats.steps.toLocaleString()}</div>
+                        <div class="text-sm text-gray-500">of ${stats.stepsGoal.toLocaleString()} steps</div>
+                        ${createProgressBar(stats.steps, stats.stepsGoal, 'blue')}
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="text-2xl mb-2">⚡</div>
+                        <div class="text-2xl font-bold text-green-600">${stats.activeMinutes}</div>
+                        <div class="text-sm text-gray-500">of ${stats.activeGoal} min active</div>
+                        ${createProgressBar(stats.activeMinutes, stats.activeGoal, 'green')}
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="text-2xl mb-2">🔥</div>
+                        <div class="text-2xl font-bold text-red-600">${stats.caloriesBurned}</div>
+                        <div class="text-sm text-gray-500">of ${stats.caloriesGoal} calories</div>
+                        ${createProgressBar(stats.caloriesBurned, stats.caloriesGoal, 'red')}
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="text-2xl mb-2">📍</div>
+                        <div class="text-2xl font-bold text-purple-600">${stats.distance}</div>
+                        <div class="text-sm text-gray-500">miles traveled</div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 pt-4 border-t">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-red-500">❤️</span>
+                            <span class="font-medium">Heart Rate</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold">${stats.heartRate.current} BPM</div>
+                            <div class="text-sm text-gray-500">Resting: ${stats.heartRate.resting}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
     };
 
-    // Main Wearables Component
-    const WearablesHub = () => {
-        const [wearableData, setWearableData] = React.useState(loadWearableData());
-        const [showConnectionModal, setShowConnectionModal] = React.useState(false);
-        const [syncing, setSyncing] = React.useState(false);
-        const [healthData, setHealthData] = React.useState(null);
+    // Render sleep data
+    const renderSleepData = () => {
+        const data = getWearableData();
+        const sleepContainer = document.getElementById('sleep-data');
+        
+        if (!sleepContainer || !data || !data.sleepData) return;
 
-        React.useEffect(() => {
-            saveWearableData(wearableData);
-        }, [wearableData]);
-
-        React.useEffect(() => {
-            if (wearableData.connectedDevices.length > 0) {
-                syncData();
-            }
-        }, []);
-
-        const connectDevice = (deviceType, deviceInfo) => {
-            setWearableData(prev => ({
-                ...prev,
-                connectedDevices: [...prev.connectedDevices, { type: deviceType, ...deviceInfo }]
-            }));
-            setShowConnectionModal(false);
-            syncData();
-        };
-
-        const syncData = async () => {
-            if (wearableData.connectedDevices.length === 0) return;
-            
-            setSyncing(true);
-            try {
-                // Get data from the first connected device (in real app, you'd sync all)
-                const primaryDevice = wearableData.connectedDevices[0];
-                const data = await DeviceAPIs[primaryDevice.type].fetchData();
+        const sleep = data.sleepData;
+        
+        sleepContainer.innerHTML = `
+            <div class="bg-white p-6 rounded-lg shadow-sm border">
+                ${isDemoMode() ? '<div class="flex items-center justify-between mb-4"><h3 class="text-lg font-semibold text-gray-900">Sleep Analysis</h3><span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">🎭 DEMO</span></div>' : '<h3 class="text-lg font-semibold text-gray-900 mb-4">Sleep Analysis</h3>'}
                 
-                setHealthData(data);
-                setWearableData(prev => ({
-                    ...prev,
-                    healthData: {
-                        today: data,
-                        history: [...prev.healthData.history, { date: new Date().toISOString(), data }].slice(-30)
-                    },
-                    lastSync: new Date().toISOString()
-                }));
-
-                // Update calorie goals based on activity
-                if (prev => prev.settings.adjustCaloriesForActivity) {
-                    updateCalorieGoals(data);
-                }
-            } catch (error) {
-                console.error('Sync failed:', error);
-            } finally {
-                setSyncing(false);
-            }
-        };
-
-        const updateCalorieGoals = (activityData) => {
-            try {
-                const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
-                const userGoals = JSON.parse(localStorage.getItem('fueliq_user_goals') || '{}');
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-blue-600">${sleep.totalSleep}h</div>
+                        <div class="text-sm text-gray-500">Total Sleep</div>
+                        ${createProgressBar(sleep.totalSleep * 60, sleep.sleepGoal * 60, 'blue')}
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-600">${sleep.sleepScore}</div>
+                        <div class="text-sm text-gray-500">Sleep Score</div>
+                        ${createProgressBar(sleep.sleepScore, 100, 'purple')}
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-green-600">${sleep.efficiency}%</div>
+                        <div class="text-sm text-gray-500">Efficiency</div>
+                        ${createProgressBar(sleep.efficiency, 100, 'green')}
+                    </div>
+                </div>
                 
-                if (userGoals.dailyCalories) {
-                    const adjustedCalories = calculateAdjustedCalories(userGoals.dailyCalories, activityData);
-                    const updatedGoals = { ...userGoals, dailyCalories: adjustedCalories };
-                    localStorage.setItem('fueliq_user_goals', JSON.stringify(updatedGoals));
-                }
-            } catch (error) {
-                console.error('Failed to update calorie goals:', error);
-            }
-        };
+                <div class="grid grid-cols-3 gap-4 text-center text-sm">
+                    <div>
+                        <div class="font-medium text-gray-900">${sleep.deepSleep}h</div>
+                        <div class="text-gray-500">Deep</div>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">${sleep.lightSleep}h</div>
+                        <div class="text-gray-500">Light</div>
+                    </div>
+                    <div>
+                        <div class="font-medium text-gray-900">${sleep.remSleep}h</div>
+                        <div class="text-gray-500">REM</div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t flex justify-between text-sm text-gray-600">
+                    <span>Bedtime: ${sleep.bedtime}</span>
+                    <span>Wake: ${sleep.wakeTime}</span>
+                </div>
+            </div>
+        `;
+    };
 
-        const disconnectDevice = (deviceId) => {
-            setWearableData(prev => ({
-                ...prev,
-                connectedDevices: prev.connectedDevices.filter(device => device.deviceId !== deviceId)
-            }));
-        };
+    // Render recent workouts
+    const renderRecentWorkouts = () => {
+        const data = getWearableData();
+        const workoutsContainer = document.getElementById('recent-workouts');
+        
+        if (!workoutsContainer || !data || !data.recentWorkouts) return;
 
-        const activityLevel = healthData ? getActivityLevel(healthData.steps) : null;
-
-        return React.createElement('div', { className: 'max-w-6xl mx-auto p-6' },
-            // Header
-            React.createElement('div', { className: 'bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 mb-6 text-white' },
-                React.createElement('div', { className: 'flex items-center justify-between' },
-                    React.createElement('div', null,
-                        React.createElement('h1', { className: 'text-3xl font-bold mb-2' }, '⌚ Wearables Hub'),
-                        React.createElement('p', { className: 'text-lg opacity-90' }, 'Connect your fitness devices for comprehensive health tracking'),
-                        activityLevel && React.createElement('div', { className: 'mt-3 flex items-center gap-2' },
-                            React.createElement('span', { className: 'text-xl' }, activityLevel.emoji),
-                            React.createElement('span', { className: 'font-semibold' }, `Today: ${activityLevel.level}`)
-                        )
-                    ),
-                    React.createElement('div', { className: 'text-right' },
-                        React.createElement('div', { className: 'text-sm opacity-90' }, 'Connected Devices'),
-                        React.createElement('div', { className: 'text-2xl font-bold' }, wearableData.connectedDevices.length),
-                        wearableData.lastSync && React.createElement('div', { className: 'text-xs opacity-75 mt-1' },
-                            `Last sync: ${new Date(wearableData.lastSync).toLocaleTimeString()}`
-                        )
-                    )
-                )
-            ),
-
-            // Connection Status & Actions
-            React.createElement('div', { className: 'mb-6' },
-                wearableData.connectedDevices.length === 0 ? 
-                    React.createElement('div', { className: 'bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center' },
-                        React.createElement('div', { className: 'text-4xl mb-3' }, '📱'),
-                        React.createElement('h3', { className: 'text-xl font-bold text-yellow-800 mb-2' }, 'No Devices Connected'),
-                        React.createElement('p', { className: 'text-yellow-700 mb-4' }, 'Connect your fitness tracker to unlock comprehensive health insights'),
-                        React.createElement('button', {
-                            onClick: () => setShowConnectionModal(true),
-                            className: 'bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-semibold'
-                        }, 'Connect Your Device')
-                    ) :
-                    React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
-                        // Connected Devices
-                        React.createElement('div', { className: 'bg-white rounded-xl p-6 shadow-lg border border-gray-200' },
-                            React.createElement('h3', { className: 'text-lg font-bold text-gray-800 mb-4' }, 'Connected Devices'),
-                            React.createElement('div', { className: 'space-y-3' },
-                                ...wearableData.connectedDevices.map(device => 
-                                    React.createElement('div', { 
-                                        key: device.deviceId,
-                                        className: 'flex items-center justify-between p-3 bg-gray-50 rounded-lg'
-                                    },
-                                        React.createElement('div', { className: 'flex items-center gap-3' },
-                                            React.createElement('span', { className: 'text-xl' }, DeviceAPIs[device.type].icon),
-                                            React.createElement('div', null,
-                                                React.createElement('div', { className: 'font-semibold' }, device.deviceName),
-                                                React.createElement('div', { className: 'text-sm text-gray-600' }, DeviceAPIs[device.type].name)
-                                            )
-                                        ),
-                                        React.createElement('button', {
-                                            onClick: () => disconnectDevice(device.deviceId),
-                                            className: 'text-red-500 hover:text-red-700 text-sm font-medium'
-                                        }, 'Disconnect')
-                                    )
-                                )
-                            )
-                        ),
+        workoutsContainer.innerHTML = `
+            <div class="bg-white p-6 rounded-lg shadow-sm border">
+                ${isDemoMode() ? '<div class="flex items-center justify-between mb-4"><h3 class="text-lg font-semibold text-gray-900">Recent Workouts</h3><span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">🎭 DEMO</span></div>' : '<h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Workouts</h3>'}
+                
+                <div class="space-y-3">
+                    ${data.recentWorkouts.map(workout => {
+                        const workoutIcon = {
+                            'Running': '🏃‍♂️',
+                            'Cycling': '🚴‍♂️',
+                            'Strength Training': '💪',
+                            'Swimming': '🏊‍♂️',
+                            'Yoga': '🧘‍♂️'
+                        };
                         
-                        // Sync Controls
-                        React.createElement('div', { className: 'bg-white rounded-xl p-6 shadow-lg border border-gray-200' },
-                            React.createElement('h3', { className: 'text-lg font-bold text-gray-800 mb-4' }, 'Sync Controls'),
-                            React.createElement('div', { className: 'space-y-4' },
-                                React.createElement('button', {
-                                    onClick: syncData,
-                                    disabled: syncing,
-                                    className: 'w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2'
-                                },
-                                    syncing ? 
-                                        React.createElement('div', { className: 'animate-spin rounded-full h-5 w-5 border-b-2 border-white' }) :
-                                        React.createElement('span', null, '🔄'),
-                                    syncing ? 'Syncing...' : 'Sync Now'
-                                ),
-                                React.createElement('button', {
-                                    onClick: () => setShowConnectionModal(true),
-                                    className: 'w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg font-semibold'
-                                }, '+ Add Another Device')
-                            )
-                        )
-                    )
-            ),
-
-            // Health Metrics Dashboard
-            healthData && React.createElement('div', { className: 'space-y-6' },
-                // Primary Metrics
-                React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6' },
-                    React.createElement(HealthMetricCard, {
-                        title: 'Steps',
-                        value: healthData.steps,
-                        unit: '',
-                        goal: 10000,
-                        icon: '👟',
-                        color: 'blue'
-                    }),
-                    React.createElement(HealthMetricCard, {
-                        title: 'Calories Burned',
-                        value: healthData.calories,
-                        unit: 'kcal',
-                        goal: 600,
-                        icon: '🔥',
-                        color: 'orange'
-                    }),
-                    React.createElement(HealthMetricCard, {
-                        title: 'Distance',
-                        value: healthData.distance,
-                        unit: 'miles',
-                        goal: 5,
-                        icon: '📍',
-                        color: 'green'
-                    }),
-                    React.createElement(HealthMetricCard, {
-                        title: 'Active Minutes',
-                        value: healthData.activeMinutes,
-                        unit: 'min',
-                        goal: 30,
-                        icon: '⏱️',
-                        color: 'purple'
-                    })
-                ),
-
-                // Heart Rate & Sleep
-                React.createElement('div', { className: 'grid grid-cols-1 lg:grid-cols-2 gap-6' },
-                    // Heart Rate
-                    React.createElement('div', { className: 'bg-white rounded-xl p-6 shadow-lg border border-gray-200' },
-                        React.createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-6 flex items-center gap-2' },
-                            React.createElement('span', null, '❤️'),
-                            'Heart Rate'
-                        ),
-                        React.createElement('div', { className: 'grid grid-cols-3 gap-4' },
-                            React.createElement('div', { className: 'text-center' },
-                                React.createElement('div', { className: 'text-2xl font-bold text-red-600' }, healthData.heartRate.current),
-                                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Current BPM')
-                            ),
-                            React.createElement('div', { className: 'text-center' },
-                                React.createElement('div', { className: 'text-2xl font-bold text-blue-600' }, healthData.heartRate.resting),
-                                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Resting BPM')
-                            ),
-                            React.createElement('div', { className: 'text-center' },
-                                React.createElement('div', { className: 'text-2xl font-bold text-orange-600' }, healthData.heartRate.max),
-                                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Max BPM')
-                            )
-                        )
-                    ),
-
-                    // Sleep Analysis
-                    React.createElement(SleepAnalysis, { sleepData: healthData.sleep })
-                ),
-
-                // Recent Workouts
-                healthData.workouts && healthData.workouts.length > 0 && React.createElement('div', { className: 'bg-white rounded-xl p-6 shadow-lg border border-gray-200' },
-                    React.createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-6 flex items-center gap-2' },
-                        React.createElement('span', null, '💪'),
-                        'Recent Workouts'
-                    ),
-                    React.createElement('div', { className: 'space-y-3' },
-                        ...healthData.workouts.map((workout, index) =>
-                            React.createElement('div', { 
-                                key: index,
-                                className: 'flex items-center justify-between p-4 bg-gray-50 rounded-lg'
-                            },
-                                React.createElement('div', { className: 'flex items-center gap-3' },
-                                    React.createElement('span', { className: 'text-xl' }, '🏃'),
-                                    React.createElement('div', null,
-                                        React.createElement('div', { className: 'font-semibold' }, workout.type),
-                                        React.createElement('div', { className: 'text-sm text-gray-600' }, 
-                                            `${workout.duration} minutes • ${workout.calories} calories`
-                                        )
-                                    )
-                                ),
-                                React.createElement('div', { className: 'text-sm text-gray-500' },
-                                    new Date(workout.timestamp).toLocaleDateString()
-                                )
-                            )
-                        )
-                    )
-                )
-            ),
-
-            // Modals
-            showConnectionModal && React.createElement(DeviceConnectionModal, {
-                onConnect: connectDevice,
-                onClose: () => setShowConnectionModal(false)
-            })
-        );
+                        return `
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    <div class="text-2xl">${workoutIcon[workout.type] || '🏋️‍♂️'}</div>
+                                    <div>
+                                        <div class="font-medium text-gray-900">${workout.type}</div>
+                                        <div class="text-sm text-gray-500">${new Date(workout.date).toLocaleDateString()}</div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm font-medium">${formatDuration(workout.duration)}</div>
+                                    <div class="text-sm text-gray-500">${workout.calories} cal</div>
+                                    ${workout.distance > 0 ? `<div class="text-sm text-gray-500">${workout.distance} mi</div>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
     };
 
-    // Export for integration
-    const renderWearablesHub = (containerId) => {
-        const container = document.getElementById(containerId);
-        if (container) {
-            ReactDOM.render(React.createElement(WearablesHub), container);
+    // Show device setup modal
+    const showDeviceSetup = () => {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        modal.innerHTML = `
+            <div class="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+                <h3 class="text-lg font-semibold mb-4">Connect Wearable Device</h3>
+                <p class="text-gray-600 mb-4">Select your device to begin syncing health and fitness data:</p>
+                
+                <div class="space-y-2 mb-4">
+                    ${AVAILABLE_DEVICES.map(device => `
+                        <div class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer" 
+                             onclick="window.FuelIQWearables.connectDevice('${device.name}', '${device.brand}')">
+                            <div class="text-2xl mr-3">⌚</div>
+                            <div>
+                                <div class="font-medium">${device.name}</div>
+                                <div class="text-sm text-gray-500">${device.brand}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button onclick="this.closest('.fixed').remove()" 
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    };
+
+    // Connect device (simulate)
+    const connectDevice = (deviceName, brand) => {
+        if (isDemoMode()) {
+            alert('Demo mode: Device connection simulated');
+            return;
         }
+        
+        // Simulate device connection
+        const deviceData = {
+            device: {
+                name: deviceName,
+                type: "smartwatch",
+                brand: brand,
+                model: deviceName,
+                batteryLevel: Math.floor(Math.random() * 30) + 70, // 70-100%
+                lastSync: new Date().toISOString(),
+                firmwareVersion: "1.0.0",
+                connected: true
+            },
+            todayStats: {
+                steps: Math.floor(Math.random() * 5000) + 3000,
+                stepsGoal: 10000,
+                activeMinutes: Math.floor(Math.random() * 30) + 15,
+                activeGoal: 45,
+                caloriesBurned: Math.floor(Math.random() * 800) + 1200,
+                caloriesGoal: 2000,
+                distance: Math.random() * 3 + 1,
+                floors: Math.floor(Math.random() * 15) + 5,
+                heartRate: {
+                    current: Math.floor(Math.random() * 20) + 65,
+                    resting: Math.floor(Math.random() * 10) + 55,
+                    max: 180,
+                    zones: {
+                        fat_burn: Math.floor(Math.random() * 30) + 20,
+                        cardio: Math.floor(Math.random() * 20) + 10,
+                        peak: Math.floor(Math.random() * 10) + 2
+                    }
+                }
+            },
+            sleepData: {
+                totalSleep: Math.random() * 2 + 6.5,
+                sleepGoal: 8.0,
+                deepSleep: Math.random() * 0.5 + 1,
+                lightSleep: Math.random() * 1 + 4,
+                remSleep: Math.random() * 0.5 + 1,
+                sleepScore: Math.floor(Math.random() * 20) + 70,
+                bedtime: "22:30",
+                wakeTime: "06:45",
+                efficiency: Math.floor(Math.random() * 10) + 85
+            }
+        };
+        
+        saveWearableData(deviceData);
+        
+        // Close modal and refresh display
+        document.querySelector('.fixed')?.remove();
+        initWearables();
+        
+        alert(`${deviceName} connected successfully!`);
     };
 
-    // Make available globally
+    // Initialize wearables module
+    const initWearables = () => {
+        renderDeviceStatus();
+        renderTodayStats();
+        renderSleepData();
+        renderRecentWorkouts();
+    };
+
+    // Public API
     window.FuelIQWearables = {
-        WearablesHub,
-        renderWearablesHub,
-        calculateAdjustedCalories,
-        getActivityLevel
+        init: initWearables,
+        showDeviceSetup: showDeviceSetup,
+        connectDevice: connectDevice,
+        getData: getWearableData,
+        isDemoMode: isDemoMode
     };
 
+    // Auto-initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initWearables);
+    } else {
+        initWearables();
+    }
+
+    console.log('✅ Enhanced Wearables Module with Demo Integration Loaded');
 })();
