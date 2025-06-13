@@ -858,8 +858,23 @@
       }
     }
 
-       // Convert and add items to cart
+     // Convert and add items to cart
+    let addedCount = 0;
+    const failedItems = [];
 
+    groceryList.forEach(item => {
+      const itemName = item.name || item.ingredient?.name || 'Unknown';
+      const product = findBestProductMatch(itemName);
+      if (product) {
+        const quantity = item.neededAmount || item.totalAmount || item.amount || 1;
+        window.addToCart(itemName.toLowerCase(), Math.ceil(quantity), false);
+        addedCount++;
+      } else {
+        failedItems.push(itemName);
+      }
+    });
+
+    updateCart();
     
     // Clear pending grocery list
     localStorage.removeItem('fueliq_pending_grocery_list');
