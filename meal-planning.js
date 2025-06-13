@@ -681,8 +681,6 @@
   <p class="text-gray-600 text-sm mt-3">Generate a plan automatically, browse recipes, or order groceries from your meal plan!</p>
 </div>
   
-  <p class="text-gray-600 text-sm mt-3">Generate a plan automatically, or browse recipes to build your own!</p>
-</div>
 
         <!-- Meal Plan Display -->
         <div id="meal-plan-display" class="hidden">
