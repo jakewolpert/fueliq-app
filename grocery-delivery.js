@@ -1195,12 +1195,23 @@ function importFromMealPlan() {
     if (updateUI) updateCart();
   };
 
-  window.updateCartQuantity = function(index, newQuantity) {
-    if (newQuantity <= 0) {
-      shoppingCart.splice(index, 1);
-    } else {
-      shoppingCart[index].quantity = newQuantity;
+ window.updateCartQuantity = function(index, newQuantity) {
+    if (index < 0 || index >= shoppingCart.length) {
+      console.warn('Invalid cart index:', index);
+      return;
     }
+    
+    if (newQuantity <= 0) {
+      // Remove item completely
+      const removedItem = shoppingCart[index];
+      shoppingCart.splice(index, 1);
+      console.log(`✅ Removed ${removedItem.product.name} from cart`);
+    } else {
+      // Update quantity
+      shoppingCart[index].quantity = newQuantity;
+      console.log(`✅ Updated ${shoppingCart[index].product.name} quantity to ${newQuantity}`);
+    }
+    
     updateCart();
   };
 
