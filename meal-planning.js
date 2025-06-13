@@ -1649,7 +1649,7 @@ window.setCurrentView('grocery');
         if (window.setCurrentView) {
 window.setCurrentView('grocery');
         } else {
-          const navigationEvent = new CustomEvent('navigateToTab', { detail: 'delivery' });
+const navigationEvent = new CustomEvent('navigateToTab', { detail: 'grocery' });
           window.dispatchEvent(navigationEvent);
         }
       } catch (e) {
