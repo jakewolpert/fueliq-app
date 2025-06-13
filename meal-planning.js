@@ -315,11 +315,106 @@
     return weekPlan;
   };
 
-  // Enhanced Shopping List Generation with Clear Quantities
+  // Enhanced Shopping List Generation with Smart Consolidation
   const generateShoppingList = (weekPlan) => {
     const pantryData = loadPantryData();
     const pantryItems = pantryData.items || [];
     const requiredIngredients = {};
+
+    console.log('📋 Generating smart shopping list with ingredient consolidation...');
+
+    // Step 1: Collect all ingredients from all meals
+    Object.entries(weekPlan).forEach(([day, dayPlan]) => {
+      ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+        const meal = dayPlan[mealType];
+        if (meal && meal.ingredients) {
+          meal.ingredients.forEach(ingredient => {
+            // Normalize ingredient name for better matching
+            const normalizedName = normalizeIngredientName(ingredient.name);
+            const key = normalizedName.toLowerCase();
+            
+            if (requiredIngredients[key]) {
+              // 🔄 CONSOLIDATE: Add to existing ingredient
+              const amount = parseFloat(ingredient.amount) || 1;
+              requiredIngredients[key].totalAmount += amount;
+              requiredIngredients[key].recipes.push(`${meal.name} (${day} ${mealType})`);
+              requiredIngredients[key].occasions.push({ 
+                day, 
+                mealType, 
+                meal: meal.name, 
+                amount: amount,
+                unit: ingredient.unit 
+              });
+              
+              // Track unit consistency
+              if (ingredient.unit && ingredient.unit !== requiredIngredients[key].unit) {
+                requiredIngredients[key].unitVariations = requiredIngredients[key].unitVariations || [];
+                if (!requiredIngredients[key].unitVariations.includes(ingredient.unit)) {
+                  requiredIngredients[key].unitVariations.push(ingredient.unit);
+                }
+              }
+            } else {
+              // 🆕 NEW: Create new ingredient entry
+              requiredIngredients[key] = {
+                name: ingredient.name, // Keep original capitalization
+                normalizedName: normalizedName,
+                category: ingredient.category,
+                unit: ingredient.unit || getDefaultUnit(ingredient.name, ingredient.category),
+                totalAmount: parseFloat(ingredient.amount) || 1,
+                recipes: [`${meal.name} (${day} ${mealType})`],
+                occasions: [{ 
+                  day, 
+                  mealType, 
+                  meal: meal.name, 
+                  amount: parseFloat(ingredient.amount) || 1,
+                  unit: ingredient.unit 
+                }],
+                estimatedCost: estimateIngredientCost(ingredient.name),
+                isConsolidated: false
+              };
+            }
+          });
+        }
+      });
+    });
+
+    // Step 2: Mark consolidated ingredients
+    Object.values(requiredIngredients).forEach(ingredient => {
+      if (ingredient.occasions.length > 1) {
+        ingredient.isConsolidated = true;
+        ingredient.consolidationSummary = `Used in ${ingredient.occasions.length} meals across ${new Set(ingredient.occasions.map(o => o.day)).size} days`;
+      }
+    });
+
+    // Step 3: Check against pantry and create final shopping list
+    const shoppingList = [];
+    Object.values(requiredIngredients).forEach(ingredient => {
+      const pantryMatch = findPantryMatch(ingredient, pantryItems);
+      
+      if (!pantryMatch || pantryMatch.quantity < ingredient.totalAmount) {
+        const neededAmount = pantryMatch ? 
+          Math.max(0, ingredient.totalAmount - pantryMatch.quantity) : 
+          ingredient.totalAmount;
+          
+        shoppingList.push({
+          ...ingredient,
+          neededAmount: neededAmount,
+          originalAmount: ingredient.totalAmount,
+          pantryAvailable: pantryMatch ? pantryMatch.quantity : 0,
+          hasPantryItem: !!pantryMatch,
+          consolidationInfo: ingredient.isConsolidated ? {
+            mealsCount: ingredient.occasions.length,
+            daysSpread: new Set(ingredient.occasions.map(o => o.day)).size,
+            summary: ingredient.consolidationSummary
+          } : null
+        });
+      }
+    });
+
+    console.log(`✅ Smart consolidation complete: ${Object.keys(requiredIngredients).length} unique ingredients, ${shoppingList.length} items needed`);
+    
+    return shoppingList;
+  };
 
     Object.entries(weekPlan).forEach(([day, dayPlan]) => {
       ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
