@@ -848,7 +848,84 @@
 
     if (updateUI) updateCart();
   }
+// Helper function to convert meal plan format
+  function convertMealPlanToGroceryList(mealPlan) {
+    const ingredientsList = {};
+    
+    Object.values(mealPlan).forEach(dayPlan => {
+      ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+        const meal = dayPlan[mealType];
+        if (meal && meal.ingredients) {
+          meal.ingredients.forEach(ingredient => {
+            const key = ingredient.name.toLowerCase();
+            if (ingredientsList[key]) {
+              ingredientsList[key].totalAmount += parseFloat(ingredient.amount) || 1;
+            } else {
+              ingredientsList[key] = {
+                name: ingredient.name,
+                totalAmount: parseFloat(ingredient.amount) || 1,
+                unit: ingredient.unit || 'item',
+                category: ingredient.category || 'other'
+              };
+            }
+          });
+        }
+      });
+    });
 
+    return Object.values(ingredientsList);
+  }
+
+  // ADD THE NEW HELPER FUNCTIONS HERE:
+  // FIXED: Smart quantity calculation to prevent crazy prices
+  function calculateSmartQuantity(rawQuantity, product, itemName) {
+    const qty = parseFloat(rawQuantity) || 1;
+    
+    // For pantry staples - usually buy one regardless of recipe amount
+    if (product.category === 'grains' || product.category === 'fats' || 
+        itemName.includes('oil') || itemName.includes('rice') || itemName.includes('quinoa')) {
+      return 1;
+    }
+    
+    // For fresh produce - reasonable amounts
+    if (product.category === 'vegetables') {
+      return Math.min(3, Math.max(1, Math.ceil(qty * 0.8))); // Cap at 3, reduce multiplier
+    }
+    
+    // For proteins - realistic portions
+    if (product.category === 'protein') {
+      return Math.min(2, Math.max(1, Math.ceil(qty))); // Cap at 2 lbs/packs
+    }
+    
+    // For dairy - moderate amounts
+    if (product.category === 'dairy') {
+      return Math.min(2, Math.max(1, Math.ceil(qty)));
+    }
+    
+    // Default: reasonable quantity with cap
+    return Math.min(3, Math.max(1, Math.ceil(qty)));
+  }
+
+  function getMaxQuantityForProduct(product) {
+    // Maximum quantities to prevent cart explosion
+    switch (product.category) {
+      case 'grains':
+      case 'fats':
+        return 2; // Max 2 bags/bottles of pantry items
+      case 'vegetables':
+        return 4; // Max 4 lbs/bunches of vegetables  
+      case 'protein':
+        return 3; // Max 3 lbs of protein
+      case 'dairy':
+        return 3; // Max 3 containers of dairy
+      default:
+        return 4; // Default max
+    }
+  }
+
+  // Import function with proper safeguards
+  function importFromMealPlan() {
+    // ... rest of existing function
   // Import function with proper safeguards
   function importFromMealPlan() {
     if (window.importInProgress) {
