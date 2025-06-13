@@ -831,467 +831,436 @@
   }
 
   // Local addToCart function
-  function addToCart(productKey, quantity = 1, updateUI = true) {
-    const product = PRODUCT_DATABASE[productKey];
-    if (!product || !product.prices[selectedService]) return;
+function addToCart(productKey, quantity = 1, updateUI = true) {
+  const product = PRODUCT_DATABASE[productKey];
+  if (!product || !product.prices[selectedService]) return;
 
-    const existingItem = shoppingCart.find(item => item.productKey === productKey);
-    if (existingItem) {
-      existingItem.quantity += quantity;
-    } else {
-      shoppingCart.push({
-        productKey,
-        product,
-        quantity
-      });
-    }
-
-    if (updateUI) updateCart();
-  }
-// Helper function to convert meal plan format
-  function convertMealPlanToGroceryList(mealPlan) {
-    const ingredientsList = {};
-    
-    Object.values(mealPlan).forEach(dayPlan => {
-      ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
-        const meal = dayPlan[mealType];
-        if (meal && meal.ingredients) {
-          meal.ingredients.forEach(ingredient => {
-            const key = ingredient.name.toLowerCase();
-            if (ingredientsList[key]) {
-              ingredientsList[key].totalAmount += parseFloat(ingredient.amount) || 1;
-            } else {
-              ingredientsList[key] = {
-                name: ingredient.name,
-                totalAmount: parseFloat(ingredient.amount) || 1,
-                unit: ingredient.unit || 'item',
-                category: ingredient.category || 'other'
-              };
-            }
-          });
-        }
-      });
+  const existingItem = shoppingCart.find(item => item.productKey === productKey);
+  if (existingItem) {
+    existingItem.quantity += quantity;
+  } else {
+    shoppingCart.push({
+      productKey,
+      product,
+      quantity
     });
-
-    return Object.values(ingredientsList);
   }
 
-  // ADD THE NEW HELPER FUNCTIONS HERE:
-  // FIXED: Smart quantity calculation to prevent crazy prices
-  function calculateSmartQuantity(rawQuantity, product, itemName) {
-    const qty = parseFloat(rawQuantity) || 1;
-    
-    // For pantry staples - usually buy one regardless of recipe amount
-    if (product.category === 'grains' || product.category === 'fats' || 
-        itemName.includes('oil') || itemName.includes('rice') || itemName.includes('quinoa')) {
-      return 1;
-    }
-    
-    // For fresh produce - reasonable amounts
-    if (product.category === 'vegetables') {
-      return Math.min(3, Math.max(1, Math.ceil(qty * 0.8))); // Cap at 3, reduce multiplier
-    }
-    
-    // For proteins - realistic portions
-    if (product.category === 'protein') {
-      return Math.min(2, Math.max(1, Math.ceil(qty))); // Cap at 2 lbs/packs
-    }
-    
-    // For dairy - moderate amounts
-    if (product.category === 'dairy') {
-      return Math.min(2, Math.max(1, Math.ceil(qty)));
-    }
-    
-    // Default: reasonable quantity with cap
-    return Math.min(3, Math.max(1, Math.ceil(qty)));
-  }
+  if (updateUI) updateCart();
+}
 
-  function getMaxQuantityForProduct(product) {
-    // Maximum quantities to prevent cart explosion
-    switch (product.category) {
-      case 'grains':
-      case 'fats':
-        return 2; // Max 2 bags/bottles of pantry items
-      case 'vegetables':
-        return 4; // Max 4 lbs/bunches of vegetables  
-      case 'protein':
-        return 3; // Max 3 lbs of protein
-      case 'dairy':
-        return 3; // Max 3 containers of dairy
-      default:
-        return 4; // Default max
-    }
+// FIXED: Smart quantity calculation to prevent crazy prices
+function calculateSmartQuantity(rawQuantity, product, itemName) {
+  const qty = parseFloat(rawQuantity) || 1;
+  
+  // For pantry staples - usually buy one regardless of recipe amount
+  if (product.category === 'grains' || product.category === 'fats' || 
+      itemName.includes('oil') || itemName.includes('rice') || itemName.includes('quinoa')) {
+    return 1;
   }
+  
+  // For fresh produce - reasonable amounts
+  if (product.category === 'vegetables') {
+    return Math.min(3, Math.max(1, Math.ceil(qty * 0.8))); // Cap at 3, reduce multiplier
+  }
+  
+  // For proteins - realistic portions
+  if (product.category === 'protein') {
+    return Math.min(2, Math.max(1, Math.ceil(qty))); // Cap at 2 lbs/packs
+  }
+  
+  // For dairy - moderate amounts
+  if (product.category === 'dairy') {
+    return Math.min(2, Math.max(1, Math.ceil(qty)));
+  }
+  
+  // Default: reasonable quantity with cap
+  return Math.min(3, Math.max(1, Math.ceil(qty)));
+}
 
-  // Import function with proper safeguards
-  function importFromMealPlan() {
-    // ... rest of existing function
-  // Import function with proper safeguards
-  function importFromMealPlan() {
-    if (window.importInProgress) {
-      console.log('⚠️ Import already in progress, skipping...');
-      return;
-    }
-    
-    window.importInProgress = true;
-    console.log('🔄 Starting import from meal plan...');
+function getMaxQuantityForProduct(product) {
+  // Maximum quantities to prevent cart explosion
+  switch (product.category) {
+    case 'grains':
+    case 'fats':
+      return 2; // Max 2 bags/bottles of pantry items
+    case 'vegetables':
+      return 4; // Max 4 lbs/bunches of vegetables  
+    case 'protein':
+      return 3; // Max 3 lbs of protein
+    case 'dairy':
+      return 3; // Max 3 containers of dairy
+    default:
+      return 4; // Default max
+  }
+}
+
+// Helper function to convert meal plan format
+function convertMealPlanToGroceryList(mealPlan) {
+  const ingredientsList = {};
+  
+  Object.values(mealPlan).forEach(dayPlan => {
+    ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+      const meal = dayPlan[mealType];
+      if (meal && meal.ingredients) {
+        meal.ingredients.forEach(ingredient => {
+          const key = ingredient.name.toLowerCase();
+          if (ingredientsList[key]) {
+            ingredientsList[key].totalAmount += parseFloat(ingredient.amount) || 1;
+          } else {
+            ingredientsList[key] = {
+              name: ingredient.name,
+              totalAmount: parseFloat(ingredient.amount) || 1,
+              unit: ingredient.unit || 'item',
+              category: ingredient.category || 'other'
+            };
+          }
+        });
+      }
+    });
+  });
+
+  return Object.values(ingredientsList);
+}
+
+// Import function with proper safeguards
+function importFromMealPlan() {
+  if (window.importInProgress) {
+    console.log('⚠️ Import already in progress, skipping...');
+    return;
+  }
+  
+  window.importInProgress = true;
+  console.log('🔄 Starting import from meal plan...');
+  
+  try {
+    let groceryList = null;
     
     try {
-      let groceryList = null;
-      
+      const pendingList = localStorage.getItem('fueliq_pending_grocery_list');
+      if (pendingList) {
+        groceryList = JSON.parse(pendingList);
+        console.log('📋 Found pending grocery list from meal planning:', groceryList);
+        localStorage.removeItem('fueliq_pending_grocery_list');
+      }
+    } catch (e) {
+      console.warn('Could not load pending grocery list:', e);
+    }
+
+    if (!groceryList && window.FuelIQIntegration) {
       try {
-        const pendingList = localStorage.getItem('fueliq_pending_grocery_list');
-        if (pendingList) {
-          groceryList = JSON.parse(pendingList);
-          console.log('📋 Found pending grocery list from meal planning:', groceryList);
-          localStorage.removeItem('fueliq_pending_grocery_list');
-        }
-      } catch (e) {
-        console.warn('Could not load pending grocery list:', e);
-      }
-
-      if (!groceryList && window.FuelIQIntegration) {
-        try {
-          const mealPlans = window.FuelIQIntegration.getSharedData('mealPlans');
-          
-          if (!mealPlans || Object.keys(mealPlans).length === 0) {
-            alert('❌ No meal plan found. Please create a meal plan first.');
-            return;
-          }
-          
-          const groceryListData = window.FuelIQIntegration.generateGroceryListFromMealPlan(mealPlans);
-          groceryList = Object.values(groceryListData.ingredients || {});
-          
-        } catch (e) {
-          console.error('Integration error:', e);
-          alert('❌ Error importing meal plan. Please try again.');
-          return;
-        }
-      }
-
-      if (!groceryList) {
-        try {
-          const mealPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
-          
-          if (Object.keys(mealPlan).length === 0) {
-            alert('❌ No meal plan found. Please create a meal plan first.');
-            return;
-          }
-          
-          groceryList = convertMealPlanToGroceryList(mealPlan);
-        } catch (e) {
+        const mealPlans = window.FuelIQIntegration.getSharedData('mealPlans');
+        
+        if (!mealPlans || Object.keys(mealPlans).length === 0) {
           alert('❌ No meal plan found. Please create a meal plan first.');
           return;
         }
-      }
-
-      if (!groceryList || groceryList.length === 0) {
-        alert('❌ No items found in meal plan to import.');
+        
+        const groceryListData = window.FuelIQIntegration.generateGroceryListFromMealPlan(mealPlans);
+        groceryList = Object.values(groceryListData.ingredients || {});
+        
+      } catch (e) {
+        console.error('Integration error:', e);
+        alert('❌ Error importing meal plan. Please try again.');
         return;
       }
-
-      let addedCount = 0;
-      const failedItems = [];
-
-     groceryList.forEach(item => {
-  const itemName = item.name || item.ingredient?.name || 'Unknown';
-  const product = findBestProductMatch(itemName);
-  if (product) {
-    const rawQuantity = item.neededAmount || item.totalAmount || item.amount || 1;
-    
-    // FIXED: Smart quantity calculation to prevent inflated prices
-    let smartQuantity = calculateSmartQuantity(rawQuantity, product, itemName);
-    
-    const existingItem = shoppingCart.find(cartItem => cartItem.productKey === itemName.toLowerCase());
-    if (existingItem) {
-      // FIXED: Don't just add - use smart merging
-      const combinedQuantity = existingItem.quantity + smartQuantity;
-      existingItem.quantity = Math.min(combinedQuantity, getMaxQuantityForProduct(product));
-    } else {
-      shoppingCart.push({
-        productKey: itemName.toLowerCase(),
-        product: product,
-        quantity: smartQuantity
-      });
     }
-    
-    addedCount++;
-  } else {
-    failedItems.push(itemName);
-  }
-});
 
-      updateCart();
-      
-      if (addedCount > 0) {
-        let message = `✅ Imported ${addedCount} items from meal plan!`;
-        if (failedItems.length > 0) {
-          message += `\n\n❌ Could not find matches for: ${failedItems.slice(0, 3).join(', ')}`;
-          if (failedItems.length > 3) message += ` and ${failedItems.length - 3} more`;
+    if (!groceryList) {
+      try {
+        const mealPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
+        
+        if (Object.keys(mealPlan).length === 0) {
+          alert('❌ No meal plan found. Please create a meal plan first.');
+          return;
         }
         
-        if (window.FuelIQIntegration && window.FuelIQIntegration.utils) {
-          window.FuelIQIntegration.utils.showSuccessMessage(message);
-        } else {
-          alert(message);
-        }
-        
-        console.log(`✅ Successfully imported ${addedCount} items`);
-      } else {
-        alert('❌ No compatible items found in meal plan.');
+        groceryList = convertMealPlanToGroceryList(mealPlan);
+      } catch (e) {
+        alert('❌ No meal plan found. Please create a meal plan first.');
+        return;
       }
-
-    } catch (error) {
-      console.error('❌ Error during import:', error);
-      alert('❌ Error importing meal plan. Please try again.');
-    } finally {
-      setTimeout(() => {
-        window.importInProgress = false;
-        console.log('🔓 Import process complete, flag cleared');
-      }, 1000);
     }
-  }
 
-  // Helper function to convert meal plan format
-  function convertMealPlanToGroceryList(mealPlan) {
-    const ingredientsList = {};
-    
-    Object.values(mealPlan).forEach(dayPlan => {
-      ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
-        const meal = dayPlan[mealType];
-        if (meal && meal.ingredients) {
-          meal.ingredients.forEach(ingredient => {
-            const key = ingredient.name.toLowerCase();
-            if (ingredientsList[key]) {
-              ingredientsList[key].totalAmount += parseFloat(ingredient.amount) || 1;
-            } else {
-              ingredientsList[key] = {
-                name: ingredient.name,
-                totalAmount: parseFloat(ingredient.amount) || 1,
-                unit: ingredient.unit || 'item',
-                category: ingredient.category || 'other'
-              };
-            }
+    if (!groceryList || groceryList.length === 0) {
+      alert('❌ No items found in meal plan to import.');
+      return;
+    }
+
+    let addedCount = 0;
+    const failedItems = [];
+
+    groceryList.forEach(item => {
+      const itemName = item.name || item.ingredient?.name || 'Unknown';
+      const product = findBestProductMatch(itemName);
+      if (product) {
+        const rawQuantity = item.neededAmount || item.totalAmount || item.amount || 1;
+        
+        // FIXED: Smart quantity calculation to prevent inflated prices
+        let smartQuantity = calculateSmartQuantity(rawQuantity, product, itemName);
+        
+        const existingItem = shoppingCart.find(cartItem => cartItem.productKey === itemName.toLowerCase());
+        if (existingItem) {
+          // FIXED: Don't just add - use smart merging
+          const combinedQuantity = existingItem.quantity + smartQuantity;
+          existingItem.quantity = Math.min(combinedQuantity, getMaxQuantityForProduct(product));
+        } else {
+          shoppingCart.push({
+            productKey: itemName.toLowerCase(),
+            product: product,
+            quantity: smartQuantity
           });
         }
-      });
+        
+        addedCount++;
+      } else {
+        failedItems.push(itemName);
+      }
     });
 
-    return Object.values(ingredientsList);
-  }
-
-  function processUploadedList() {
-    const textInput = document.getElementById('manualListEntry')?.value;
-    const fileInput = document.getElementById('fileUpload')?.files[0];
-
-    if (textInput) {
-      const items = textInput.split('\n').filter(item => item.trim());
-      let addedCount = 0;
-      
-      items.forEach(item => {
-        const product = findBestProductMatch(item.trim());
-        if (product) {
-          addToCart(item.trim().toLowerCase(), 1, false);
-          addedCount++;
-        }
-      });
-      
-      updateCart();
-      document.getElementById('uploadModal').classList.add('hidden');
-      alert(`✅ Added ${addedCount} items from your list!`);
-    } else if (fileInput) {
-      alert('📱 OCR processing would happen here in a real app. For now, please use text input.');
-    } else {
-      alert('Please enter a grocery list or upload a file.');
-    }
-  }
-
-  function showCheckout() {
-    const modal = document.getElementById('checkoutModal');
-    const content = document.getElementById('checkoutContent');
-    
-    if (!modal || !content) return;
-
-    const service = DELIVERY_SERVICES[selectedService];
-    const subtotal = shoppingCart.reduce((sum, item) => {
-      const price = item.product.prices[selectedService];
-      return sum + (price.price * item.quantity);
-    }, 0);
-    
-    const total = subtotal + service.deliveryFee;
-
-    content.innerHTML = `
-      <div class="p-8">
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-3xl font-bold text-gray-800">🚚 Checkout</h2>
-          <button onclick="document.getElementById('checkoutModal').classList.add('hidden')" 
-                  class="text-gray-500 hover:text-gray-700 text-3xl">&times;</button>
-        </div>
-        
-        <div class="space-y-6">
-          <div class="bg-gray-50 rounded-2xl p-6">
-            <h3 class="font-bold text-lg mb-4">📦 Delivery Service</h3>
-            <div class="flex items-center space-x-4">
-              <span class="text-3xl">${service.logo}</span>
-              <div>
-                <div class="font-bold">${service.name}</div>
-                <div class="text-sm text-gray-600">${service.deliveryTime} • $${service.deliveryFee} delivery</div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h3 class="font-bold text-lg mb-4">📍 Delivery Address</h3>
-            <input id="deliveryAddress" type="text" placeholder="Enter your delivery address" 
-                   value="${deliveryPreferences.address}"
-                   class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200">
-          </div>
-
-          <div>
-            <h3 class="font-bold text-lg mb-4">⏰ Delivery Time</h3>
-            <select id="timeSlot" class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200">
-              <option value="">Select a time slot</option>
-              <option value="asap">ASAP (${service.deliveryTime})</option>
-              <option value="morning">Tomorrow Morning (8am-12pm)</option>
-              <option value="afternoon">Tomorrow Afternoon (12pm-5pm)</option>
-              <option value="evening">Tomorrow Evening (5pm-9pm)</option>
-            </select>
-          </div>
-
-          <div>
-            <h3 class="font-bold text-lg mb-4">📝 Special Instructions</h3>
-            <textarea id="instructions" placeholder="Leave at door, ring doorbell, etc."
-                      class="w-full h-20 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 resize-none">${deliveryPreferences.instructions}</textarea>
-          </div>
-
-          <div class="bg-gray-50 rounded-2xl p-6">
-            <h3 class="font-bold text-lg mb-4">📋 Order Summary</h3>
-            <div class="space-y-2 mb-4">
-              ${shoppingCart.map(item => {
-                const price = item.product.prices[selectedService];
-                return `
-                  <div class="flex justify-between">
-                    <span>${item.product.name} x${item.quantity}</span>
-                    <span>$${(price.price * item.quantity).toFixed(2)}</span>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-            <div class="border-t pt-4 space-y-2">
-              <div class="flex justify-between">
-                <span>Subtotal:</span>
-                <span>$${subtotal.toFixed(2)}</span>
-              </div>
-              <div class="flex justify-between">
-                <span>Delivery Fee:</span>
-                <span>$${service.deliveryFee.toFixed(2)}</span>
-              </div>
-              <div class="flex justify-between font-bold text-lg border-t pt-2">
-                <span>Total:</span>
-                <span class="text-orange-600">$${total.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-
-          <button onclick="placeOrder()" 
-                  class="w-full px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl hover:from-green-600 hover:to-emerald-700 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200">
-            💳 Place Order - $${total.toFixed(2)}
-          </button>
-        </div>
-      </div>
-    `;
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-  }
-
-  // Global functions for event handlers
-  window.selectDeliveryService = function(serviceId) {
-    selectedService = serviceId;
-    renderServiceSelector();
-    renderProductGrid();
     updateCart();
-  };
-
-  window.addToCart = function(productKey, quantity = 1, updateUI = true) {
-    const product = PRODUCT_DATABASE[productKey];
-    if (!product || !product.prices[selectedService]) return;
-
-    const existingItem = shoppingCart.find(item => item.productKey === productKey);
-    if (existingItem) {
-      existingItem.quantity += quantity;
-    } else {
-      shoppingCart.push({
-        productKey,
-        product,
-        quantity
-      });
-    }
-
-    if (updateUI) updateCart();
-  };
-
-  window.updateCartQuantity = function(index, newQuantity) {
-    if (index < 0 || index >= shoppingCart.length) {
-      console.warn('Invalid cart index:', index);
-      return;
-    }
     
-    if (newQuantity <= 0) {
-      const removedItem = shoppingCart[index];
-      shoppingCart.splice(index, 1);
-      console.log(`✅ Removed ${removedItem.product.name} from cart`);
-    } else {
-      shoppingCart[index].quantity = newQuantity;
-      console.log(`✅ Updated ${shoppingCart[index].product.name} quantity to ${newQuantity}`);
-    }
-    
-    updateCart();
-  };
-
-  window.removeFromCart = function(index) {
-    if (index >= 0 && index < shoppingCart.length) {
-      const removedItem = shoppingCart[index];
-      shoppingCart.splice(index, 1);
-      updateCart();
-      console.log(`✅ Removed ${removedItem.product.name} from cart`);
-    }
-  };
-
-  window.placeOrder = function() {
-    const address = document.getElementById('deliveryAddress')?.value;
-    const timeSlot = document.getElementById('timeSlot')?.value;
-    const instructions = document.getElementById('instructions')?.value;
-
-    if (!address || !timeSlot) {
-      alert('Please fill in delivery address and time slot.');
-      return;
-    }
-
-    deliveryPreferences = { address, timeSlot, instructions };
-
-    const orderNumber = 'FIQ' + Math.random().toString(36).substr(2, 9).toUpperCase();
-    
-    if (window.FuelIQIntegration) {
-      window.FuelIQIntegration.updatePantryFromGrocery(
-        shoppingCart.map(item => ({
-          name: item.product.name,
-          category: item.product.category,
-          quantity: item.quantity,
-          organic: item.product.organic
-        })),
-        'grocery_delivery'
-      );
-      
-      if (window.FuelIQIntegration.utils) {
-        window.FuelIQIntegration.utils.showSuccessMessage('Order placed! Pantry updated automatically.');
+    if (addedCount > 0) {
+      let message = `✅ Imported ${addedCount} items from meal plan!`;
+      if (failedItems.length > 0) {
+        message += `\n\n❌ Could not find matches for: ${failedItems.slice(0, 3).join(', ')}`;
+        if (failedItems.length > 3) message += ` and ${failedItems.length - 3} more`;
       }
+      
+      if (window.FuelIQIntegration && window.FuelIQIntegration.utils) {
+        window.FuelIQIntegration.utils.showSuccessMessage(message);
+      } else {
+        alert(message);
+      }
+      
+      console.log(`✅ Successfully imported ${addedCount} items`);
     } else {
-      updatePantryWithPurchase();
+      alert('❌ No compatible items found in meal plan.');
     }
 
-    alert(`🎉 Order placed successfully!
+  } catch (error) {
+    console.error('❌ Error during import:', error);
+    alert('❌ Error importing meal plan. Please try again.');
+  } finally {
+    setTimeout(() => {
+      window.importInProgress = false;
+      console.log('🔓 Import process complete, flag cleared');
+    }, 1000);
+  }
+}
+
+function processUploadedList() {
+  const textInput = document.getElementById('manualListEntry')?.value;
+  const fileInput = document.getElementById('fileUpload')?.files[0];
+
+  if (textInput) {
+    const items = textInput.split('\n').filter(item => item.trim());
+    let addedCount = 0;
     
+    items.forEach(item => {
+      const product = findBestProductMatch(item.trim());
+      if (product) {
+        addToCart(item.trim().toLowerCase(), 1, false);
+        addedCount++;
+      }
+    });
+    
+    updateCart();
+    document.getElementById('uploadModal').classList.add('hidden');
+    alert(`✅ Added ${addedCount} items from your list!`);
+  } else if (fileInput) {
+    alert('📱 OCR processing would happen here in a real app. For now, please use text input.');
+  } else {
+    alert('Please enter a grocery list or upload a file.');
+  }
+}
+
+function showCheckout() {
+  const modal = document.getElementById('checkoutModal');
+  const content = document.getElementById('checkoutContent');
+  
+  if (!modal || !content) return;
+
+  const service = DELIVERY_SERVICES[selectedService];
+  const subtotal = shoppingCart.reduce((sum, item) => {
+    const price = item.product.prices[selectedService];
+    return sum + (price.price * item.quantity);
+  }, 0);
+  
+  const total = subtotal + service.deliveryFee;
+
+  content.innerHTML = `
+    <div class="p-8">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-bold text-gray-800">🚚 Checkout</h2>
+        <button onclick="document.getElementById('checkoutModal').classList.add('hidden')" 
+                class="text-gray-500 hover:text-gray-700 text-3xl">&times;</button>
+      </div>
+      
+      <div class="space-y-6">
+        <div class="bg-gray-50 rounded-2xl p-6">
+          <h3 class="font-bold text-lg mb-4">📦 Delivery Service</h3>
+          <div class="flex items-center space-x-4">
+            <span class="text-3xl">${service.logo}</span>
+            <div>
+              <div class="font-bold">${service.name}</div>
+              <div class="text-sm text-gray-600">${service.deliveryTime} • $${service.deliveryFee} delivery</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-lg mb-4">📍 Delivery Address</h3>
+          <input id="deliveryAddress" type="text" placeholder="Enter your delivery address" 
+                 value="${deliveryPreferences.address}"
+                 class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200">
+        </div>
+
+        <div>
+          <h3 class="font-bold text-lg mb-4">⏰ Delivery Time</h3>
+          <select id="timeSlot" class="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200">
+            <option value="">Select a time slot</option>
+            <option value="asap">ASAP (${service.deliveryTime})</option>
+            <option value="morning">Tomorrow Morning (8am-12pm)</option>
+            <option value="afternoon">Tomorrow Afternoon (12pm-5pm)</option>
+            <option value="evening">Tomorrow Evening (5pm-9pm)</option>
+          </select>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-lg mb-4">📝 Special Instructions</h3>
+          <textarea id="instructions" placeholder="Leave at door, ring doorbell, etc."
+                    class="w-full h-20 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 resize-none">${deliveryPreferences.instructions}</textarea>
+        </div>
+
+        <div class="bg-gray-50 rounded-2xl p-6">
+          <h3 class="font-bold text-lg mb-4">📋 Order Summary</h3>
+          <div class="space-y-2 mb-4">
+            ${shoppingCart.map(item => {
+              const price = item.product.prices[selectedService];
+              return `
+                <div class="flex justify-between">
+                  <span>${item.product.name} x${item.quantity}</span>
+                  <span>$${(price.price * item.quantity).toFixed(2)}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+          <div class="border-t pt-4 space-y-2">
+            <div class="flex justify-between">
+              <span>Subtotal:</span>
+              <span>$${subtotal.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Delivery Fee:</span>
+              <span>$${service.deliveryFee.toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between font-bold text-lg border-t pt-2">
+              <span>Total:</span>
+              <span class="text-orange-600">$${total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="placeOrder()" 
+                class="w-full px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl hover:from-green-600 hover:to-emerald-700 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200">
+          💳 Place Order - $${total.toFixed(2)}
+        </button>
+      </div>
+    </div>
+  `;
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+// Global functions for event handlers
+window.selectDeliveryService = function(serviceId) {
+  selectedService = serviceId;
+  renderServiceSelector();
+  renderProductGrid();
+  updateCart();
+};
+
+window.addToCart = function(productKey, quantity = 1, updateUI = true) {
+  const product = PRODUCT_DATABASE[productKey];
+  if (!product || !product.prices[selectedService]) return;
+
+  const existingItem = shoppingCart.find(item => item.productKey === productKey);
+  if (existingItem) {
+    existingItem.quantity += quantity;
+  } else {
+    shoppingCart.push({
+      productKey,
+      product,
+      quantity
+    });
+  }
+
+  if (updateUI) updateCart();
+};
+
+window.updateCartQuantity = function(index, newQuantity) {
+  if (index < 0 || index >= shoppingCart.length) {
+    console.warn('Invalid cart index:', index);
+    return;
+  }
+  
+  if (newQuantity <= 0) {
+    const removedItem = shoppingCart[index];
+    shoppingCart.splice(index, 1);
+    console.log(`✅ Removed ${removedItem.product.name} from cart`);
+  } else {
+    shoppingCart[index].quantity = newQuantity;
+    console.log(`✅ Updated ${shoppingCart[index].product.name} quantity to ${newQuantity}`);
+  }
+  
+  updateCart();
+};
+
+window.removeFromCart = function(index) {
+  if (index >= 0 && index < shoppingCart.length) {
+    const removedItem = shoppingCart[index];
+    shoppingCart.splice(index, 1);
+    updateCart();
+    console.log(`✅ Removed ${removedItem.product.name} from cart`);
+  }
+};
+
+window.placeOrder = function() {
+  const address = document.getElementById('deliveryAddress')?.value;
+  const timeSlot = document.getElementById('timeSlot')?.value;
+  const instructions = document.getElementById('instructions')?.value;
+
+  if (!address || !timeSlot) {
+    alert('Please fill in delivery address and time slot.');
+    return;
+  }
+
+  deliveryPreferences = { address, timeSlot, instructions };
+
+  const orderNumber = 'FIQ' + Math.random().toString(36).substr(2, 9).toUpperCase();
+  
+  if (window.FuelIQIntegration) {
+    window.FuelIQIntegration.updatePantryFromGrocery(
+      shoppingCart.map(item => ({
+        name: item.product.name,
+        category: item.product.category,
+        quantity: item.quantity,
+        organic: item.product.organic
+      })),
+      'grocery_delivery'
+    );
+    
+    if (window.FuelIQIntegration.utils) {
+      window.FuelIQIntegration.utils.showSuccessMessage('Order placed! Pantry updated automatically.');
+    }
+  } else {
+    updatePantryWithPurchase();
+  }
+
+  alert(`🎉 Order placed successfully!
+  
 Order #: ${orderNumber}
 Service: ${DELIVERY_SERVICES[selectedService].name}
 Delivery: ${timeSlot === 'asap' ? 'ASAP' : timeSlot}
@@ -1299,108 +1268,106 @@ Address: ${address}
 
 Items automatically added to your pantry!`);
 
-    shoppingCart = [];
-    updateCart();
-    document.getElementById('checkoutModal').classList.add('hidden');
-  };
+  shoppingCart = [];
+  updateCart();
+  document.getElementById('checkoutModal').classList.add('hidden');
+};
 
-  function updatePantryWithPurchase() {
-    try {
-      const pantryItems = JSON.parse(localStorage.getItem('fueliq_pantry') || '{"items": []}');
-      const items = pantryItems.items || [];
-      
-      shoppingCart.forEach(item => {
-        const existingItem = items.find(p => p.name === item.product.name);
-        if (existingItem) {
-          existingItem.quantity += item.quantity;
-        } else {
-          items.push({
-            name: item.product.name,
-            category: item.product.category,
-            quantity: item.quantity,
-            dateAdded: new Date().toISOString(),
-            source: 'grocery_delivery'
-          });
-        }
-      });
-      
-      localStorage.setItem('fueliq_pantry', JSON.stringify({ items }));
-    } catch (e) {
-      console.warn('Could not update pantry:', e);
-    }
-  }
-
-  function importGroceryList(groceryList) {
-    if (groceryList && groceryList.ingredients) {
-      Object.values(groceryList.ingredients).forEach(ingredient => {
-        const product = findBestProductMatch(ingredient.name);
-        if (product) {
-          addToCart(ingredient.name.toLowerCase(), 1, false);
-        }
-      });
-      updateCart();
-    }
-  }
-
-  function cleanup() {
-    shoppingCart = [];
-    selectedService = 'instacart';
-    deliveryPreferences = { address: '', timeSlot: '', instructions: '' };
+function updatePantryWithPurchase() {
+  try {
+    const pantryItems = JSON.parse(localStorage.getItem('fueliq_pantry') || '{"items": []}');
+    const items = pantryItems.items || [];
     
-    window.selectDeliveryService = null;
-    window.addToCart = null;
-    window.updateCartQuantity = null;
-    window.placeOrder = null;
-  }
-
-  window.FuelIQGroceryDelivery = {
-    renderGroceryDelivery: createGroceryDeliveryInterface,
-    cleanup: cleanup
-  };
-
-  // Integration event listener with safeguards
-  if (window.FuelIQIntegration) {
-    try {
-      window.FuelIQIntegration.off('groceryListGenerated');
-    } catch (e) {
-      // Ignore if off method doesn't exist
-    }
-    
-    window.FuelIQIntegration.on('groceryListGenerated', (data) => {
-      console.log('🛒 Integration event: Received grocery list from meal planning:', data);
-      
-      if (document.getElementById('serviceSelector') && !window.importInProgress && !window.integrationImportCompleted) {
-        console.log('🔄 Integration auto-import triggered');
-        window.integrationImportCompleted = true;
-        
-        setTimeout(() => {
-          importFromMealPlan();
-        }, 500);
+    shoppingCart.forEach(item => {
+      const existingItem = items.find(p => p.name === item.product.name);
+      if (existingItem) {
+        existingItem.quantity += item.quantity;
       } else {
-        console.log('⚠️ Skipping integration auto-import (conditions not met)');
+        items.push({
+          name: item.product.name,
+          category: item.product.category,
+          quantity: item.quantity,
+          dateAdded: new Date().toISOString(),
+          source: 'grocery_delivery'
+        });
       }
     });
     
-    console.log('🔗 Grocery Delivery connected to integration system');
+    localStorage.setItem('fueliq_pantry', JSON.stringify({ items }));
+  } catch (e) {
+    console.warn('Could not update pantry:', e);
   }
+}
 
-  // Cleanup function to reset flags
-  function resetImportFlags() {
-    window.importInProgress = false;
-    window.autoImportCompleted = false;
-    window.integrationImportCompleted = false;
-    console.log('🧹 Import flags reset');
+function importGroceryList(groceryList) {
+  if (groceryList && groceryList.ingredients) {
+    Object.values(groceryList.ingredients).forEach(ingredient => {
+      const product = findBestProductMatch(ingredient.name);
+      if (product) {
+        addToCart(ingredient.name.toLowerCase(), 1, false);
+      }
+    });
+    updateCart();
   }
+}
 
-  window.addEventListener('beforeunload', resetImportFlags);
+function cleanup() {
+  shoppingCart = [];
+  selectedService = 'instacart';
+  deliveryPreferences = { address: '', timeSlot: '', instructions: '' };
+  
+  window.selectDeliveryService = null;
+  window.addToCart = null;
+  window.updateCartQuantity = null;
+  window.placeOrder = null;
+}
 
-  setInterval(() => {
-    if (window.importInProgress) {
-      console.log('⚠️ Import seems stuck, resetting flags...');
-      resetImportFlags();
+window.FuelIQGroceryDelivery = {
+  renderGroceryDelivery: createGroceryDeliveryInterface,
+  cleanup: cleanup
+};
+
+// Integration event listener with safeguards
+if (window.FuelIQIntegration) {
+  try {
+    window.FuelIQIntegration.off('groceryListGenerated');
+  } catch (e) {
+    // Ignore if off method doesn't exist
+  }
+  
+  window.FuelIQIntegration.on('groceryListGenerated', (data) => {
+    console.log('🛒 Integration event: Received grocery list from meal planning:', data);
+    
+    if (document.getElementById('serviceSelector') && !window.importInProgress && !window.integrationImportCompleted) {
+      console.log('🔄 Integration auto-import triggered');
+      window.integrationImportCompleted = true;
+      
+      setTimeout(() => {
+        importFromMealPlan();
+      }, 500);
+    } else {
+      console.log('⚠️ Skipping integration auto-import (conditions not met)');
     }
-  }, 30000);
+  });
+  
+  console.log('🔗 Grocery Delivery connected to integration system');
+}
+
+// Cleanup function to reset flags
+function resetImportFlags() {
+  window.importInProgress = false;
+  window.autoImportCompleted = false;
+  window.integrationImportCompleted = false;
+  console.log('🧹 Import flags reset');
+}
+
+window.addEventListener('beforeunload', resetImportFlags);
+
+setInterval(() => {
+  if (window.importInProgress) {
+    console.log('⚠️ Import seems stuck, resetting flags...');
+    resetImportFlags();
+  }
+}, 30000);
 
 })();
-
-
