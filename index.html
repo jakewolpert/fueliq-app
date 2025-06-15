@@ -569,9 +569,9 @@ const cuisineOptions = [
                   e('span', { className: "text-4xl text-white" }, '⚡')
                 ),
                 e('h1', { 
-                  className: "text-4xl font-bold text-gradient mb-4", 
-                  style: {fontFamily: 'Georgia, Times, serif'} 
-                }, "Welcome to FuelIQ"),
+  className: "text-4xl font-bold text-gradient mb-4", 
+  style: {fontFamily: 'Georgia, Times, serif'} 
+}, userProfile.name ? `Welcome back, ${userProfile.name}!` : "Welcome to FuelIQ"),
                 e('p', { className: "text-xl text-gray-600 font-medium" }, "Your intelligent nutrition and wellness companion")
               ),
               
