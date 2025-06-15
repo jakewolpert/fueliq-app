@@ -899,26 +899,37 @@ function getMaxQuantityForProduct(product) {
 function convertMealPlanToGroceryList(mealPlan) {
   const ingredientsList = {};
   
-  Object.values(mealPlan).forEach(dayPlan => {
-    ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
-      const meal = dayPlan[mealType];
-      if (meal && meal.ingredients) {
-        meal.ingredients.forEach(ingredient => {
-          const key = ingredient.name.toLowerCase();
-          if (ingredientsList[key]) {
-            ingredientsList[key].totalAmount += parseFloat(ingredient.amount) || 1;
-          } else {
-            ingredientsList[key] = {
-              name: ingredient.name,
-              totalAmount: parseFloat(ingredient.amount) || 1,
-              unit: ingredient.unit || 'item',
-              category: ingredient.category || 'other'
-            };
-          }
-        });
-      }
+  try {
+    Object.values(mealPlan).forEach(dayPlan => {
+      if (!dayPlan) return;
+      
+      ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+        const meal = dayPlan[mealType];
+        if (meal && meal.ingredients && Array.isArray(meal.ingredients)) {
+          meal.ingredients.forEach(ingredient => {
+            if (!ingredient || !ingredient.name) return;
+            
+            const key = ingredient.name.toLowerCase();
+            const amount = parseFloat(ingredient.amount) || 1;
+            
+            if (ingredientsList[key]) {
+              ingredientsList[key].totalAmount += amount;
+            } else {
+              ingredientsList[key] = {
+                name: ingredient.name,
+                totalAmount: amount,
+                unit: ingredient.unit || 'item',
+                category: ingredient.category || 'other'
+              };
+            }
+          });
+        }
+      });
     });
-  });
+  } catch (e) {
+    console.error('Error converting meal plan:', e);
+    return [];
+  }
 
   return Object.values(ingredientsList);
 }
