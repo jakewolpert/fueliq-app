@@ -104,11 +104,12 @@
         if (window.FuelIQGroceryDelivery && window.FuelIQGroceryDelivery.cleanup) {
           window.FuelIQGroceryDelivery.cleanup();
         }
-        if (window.FuelIQWearables && window.FuelIQWearables.cleanup) {
-          window.FuelIQWearables.cleanup();
-        }
-        if (window.FuelIQWearables && window.FuelIQWearables.cleanup) {
+        if (window.FuelIQAnalytics && window.FuelIQAnalytics.cleanup) {
+  window.FuelIQAnalytics.cleanup();
+}
+if (window.FuelIQWearables && window.FuelIQWearables.cleanup) {
   window.FuelIQWearables.cleanup();
+}
 }
       };
 
