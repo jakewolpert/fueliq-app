@@ -692,8 +692,8 @@
 <button onclick="window.updateCartQuantity(${index}, ${item.quantity + 1})"                    class="w-8 h-8 bg-green-100 hover:bg-green-200 text-green-600 rounded-full flex items-center justify-center text-lg font-bold hover:scale-110 transition-all duration-200">+</button>
             <div class="ml-3 text-right">
               <div class="font-bold text-orange-600">$${itemTotal.toFixed(2)}</div>
-              <button onclick="removeFromCart(${index})" 
-                      class="text-xs text-red-500 hover:text-red-700 underline">Remove</button>
+<button onclick="window.removeFromCart(${index})"
+class="text-xs text-red-500 hover:text-red-700 underline">Remove</button>
             </div>
           </div>
         </div>
