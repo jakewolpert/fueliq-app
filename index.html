@@ -85,8 +85,7 @@
       // Enhanced cleanup function
       const forceCleanup = () => {
         // Clean all possible containers
-        ['meals-container', 'journey-container', 'pantry-container', 'planning-container', 'grocery-container', 'wearables-container'].forEach(id => {
-          clearContainer(id);
+['meals-container', 'journey-container', 'pantry-container', 'planning-container', 'grocery-container', 'analytics-container', 'wearables-container'].forEach(id => {          clearContainer(id);
         });
         
         // Clear any global event listeners that might be stuck
