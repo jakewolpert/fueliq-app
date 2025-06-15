@@ -388,11 +388,41 @@ useEffect(() => {
           setTimeout(tryRenderGrocery, 100);
         }
       }, [currentView]);
+// Enhanced analytics tab rendering
+useEffect(() => {
+  if (currentView === 'analytics') {
+    clearContainer('analytics-container');
+    
+    let retryCount = 0;
+    const maxRetries = 10;
+    
+    const tryRenderAnalytics = () => {
+      if (window.FuelIQAnalytics && window.FuelIQAnalytics.renderAnalyticsTab) {
+        try {
+          window.FuelIQAnalytics.renderAnalyticsTab('analytics-container');
+          console.log('✅ Analytics tab rendered successfully');
+        } catch (error) {
+          console.error('Error rendering analytics tab:', error);
+        }
+      } else {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Waiting for FuelIQAnalytics module... (${retryCount}/${maxRetries})`);
+          setTimeout(tryRenderAnalytics, 200);
+        } else {
+          console.warn('❌ FuelIQAnalytics module failed to load');
+        }
+      }
+    };
+    
+    setTimeout(tryRenderAnalytics, 100);
+  }
+}, [currentView]);
 
-      // Enhanced wearables tab rendering
-      useEffect(() => {
-        if (currentView === 'wearables') {
-          clearContainer('wearables-container');
+// Enhanced wearables tab rendering
+useEffect(() => {
+  if (currentView === 'wearables') {
+    clearContainer('wearables-container');
           
           let retryCount = 0;
           const maxRetries = 10;
