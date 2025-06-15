@@ -186,12 +186,6 @@ useEffect(() => {
     setGoals(calculateGoals(userProfile));
   }
 }, [userProfile]);
-      // Calculate goals when user profile changes
-      useEffect(() => {
-        if (userProfile.age && userProfile.weight && userProfile.height) {
-          setGoals(calculateGoals(userProfile));
-        }
-      }, [userProfile]);
 
       // Enhanced cleanup on view change
       useEffect(() => {
