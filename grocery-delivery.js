@@ -689,8 +689,7 @@
           <div class="flex items-center space-x-2">
 <button onclick="window.updateCartQuantity(${index}, ${item.quantity - 1})"                    class="w-8 h-8 bg-red-100 hover:bg-red-200 text-red-600 rounded-full flex items-center justify-center text-lg font-bold hover:scale-110 transition-all duration-200 ${item.quantity <= 1 ? 'hover:bg-red-500 hover:text-white' : ''}">−</button>
             <span class="font-medium text-lg min-w-[2rem] text-center">${item.quantity}</span>
-            <button onclick="updateCartQuantity(${index}, ${item.quantity + 1})" 
-                    class="w-8 h-8 bg-green-100 hover:bg-green-200 text-green-600 rounded-full flex items-center justify-center text-lg font-bold hover:scale-110 transition-all duration-200">+</button>
+<button onclick="window.updateCartQuantity(${index}, ${item.quantity + 1})"                    class="w-8 h-8 bg-green-100 hover:bg-green-200 text-green-600 rounded-full flex items-center justify-center text-lg font-bold hover:scale-110 transition-all duration-200">+</button>
             <div class="ml-3 text-right">
               <div class="font-bold text-orange-600">$${itemTotal.toFixed(2)}</div>
               <button onclick="removeFromCart(${index})" 
