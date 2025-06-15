@@ -162,7 +162,26 @@
           water: Math.round(weight * 0.67)
         };
       };
+// Load saved user profile on component mount
+useEffect(() => {
+  try {
+    const savedProfile = localStorage.getItem('fueliq_user_profile');
+    if (savedProfile) {
+      const parsedProfile = JSON.parse(savedProfile);
+      console.log('✅ Loaded saved user profile:', parsedProfile);
+      setUserProfile(parsedProfile);
+    }
+  } catch (e) {
+    console.warn('Could not load saved user profile:', e);
+  }
+}, []); // Empty dependency array means this runs once on mount
 
+// Calculate goals when user profile changes
+useEffect(() => {
+  if (userProfile.age && userProfile.weight && userProfile.height) {
+    setGoals(calculateGoals(userProfile));
+  }
+}, [userProfile]);
       // Calculate goals when user profile changes
       useEffect(() => {
         if (userProfile.age && userProfile.weight && userProfile.height) {
