@@ -1302,7 +1302,13 @@ const cuisineOptions = [
           e('div', { id: "grocery-container", className: "grocery-tab-content" })
         );
       }
-
+// Special handling for analytics tab
+if (currentView === 'analytics') {
+  return e('div', { className: "min-h-screen bg-gradient-card" },
+    e(Navigation),
+    e('div', { id: "analytics-container", className: "analytics-tab-content" })
+  );
+}
       // Special handling for wearables tab
       if (currentView === 'wearables') {
         return e('div', { className: "min-h-screen bg-gradient-card" },
