@@ -1092,13 +1092,73 @@ function calculateCoefficientOfVariation(values) {
     return stdDev / mean;
 }
 
-// ENHANCED JOURNAL WITH ACTIVITY TRACKING
+// ENHANCED JOURNAL WITH ACTIVITY TRACKING (Fixed)
 const EnhancedTodaysJournal = () => {
+    // Direct implementations to avoid scope issues
+    const getTodayKey = () => new Date().toISOString().split('T')[0];
+    
+    const loadTodayEntry = () => {
+        const key = `fueliq_journal_${getTodayKey()}`;
+        try {
+            return JSON.parse(localStorage.getItem(key) || '{}');
+        } catch (e) {
+            return {};
+        }
+    };
+    
+    const loadTodayActivity = () => {
+        const key = `fueliq_activity_${getTodayKey()}`;
+        try {
+            return JSON.parse(localStorage.getItem(key) || '{}');
+        } catch (e) {
+            return {};
+        }
+    };
+    
+    const checkWearableConnection = () => {
+        const mockConnected = localStorage.getItem('fueliq_wearable_connected') === 'true';
+        return mockConnected;
+    };
+    
     const today = loadTodayEntry();
     const wearableConnected = checkWearableConnection();
-    
-    // Get activity data
     const todayActivity = loadTodayActivity();
+
+    // Mood and energy options (local copies)
+    const moodOptions = [
+        { value: 1, label: '😢 Very Poor', emoji: '😢' },
+        { value: 2, label: '😔 Poor', emoji: '😔' },
+        { value: 3, label: '😐 Below Average', emoji: '😐' },
+        { value: 4, label: '🙂 Average', emoji: '🙂' },
+        { value: 5, label: '😊 Good', emoji: '😊' },
+        { value: 6, label: '😃 Very Good', emoji: '😃' },
+        { value: 7, label: '😄 Great', emoji: '😄' },
+        { value: 8, label: '🤩 Excellent', emoji: '🤩' },
+        { value: 9, label: '🥳 Amazing', emoji: '🥳' },
+        { value: 10, label: '🚀 Incredible', emoji: '🚀' }
+    ];
+
+    const energyOptions = [
+        { value: 1, label: '🔋 Exhausted', emoji: '🔋' },
+        { value: 2, label: '😴 Very Low', emoji: '😴' },
+        { value: 3, label: '🥱 Low', emoji: '🥱' },
+        { value: 4, label: '😐 Below Average', emoji: '😐' },
+        { value: 5, label: '🙂 Average', emoji: '🙂' },
+        { value: 6, label: '😊 Good', emoji: '😊' },
+        { value: 7, label: '⚡ High', emoji: '⚡' },
+        { value: 8, label: '🔥 Very High', emoji: '🔥' },
+        { value: 9, label: '💪 Energized', emoji: '💪' },
+        { value: 10, label: '🚀 Peak Energy', emoji: '🚀' }
+    ];
+
+    const stressOptions = [
+        { value: 1, label: '😌 Very Low', emoji: '😌' },
+        { value: 2, label: '🙂 Low', emoji: '🙂' },
+        { value: 3, label: '😐 Mild', emoji: '😐' },
+        { value: 4, label: '😕 Moderate', emoji: '😕' },
+        { value: 5, label: '😰 High', emoji: '😰' },
+        { value: 6, label: '😫 Very High', emoji: '😫' }
+    ];
 
     return `
       <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
