@@ -751,7 +751,13 @@
     // Personalized Analysis Component
     const PersonalizedAnalysis = ({ profile, onComplete }) => {
         const [isGenerating, setIsGenerating] = React.useState(false);
-        const [showAnalysis, setShowAnalysis] = React.useState(false);
+        // Initialize showAnalysis based on whether plan was already generated
+        const [showAnalysis, setShowAnalysis] = React.useState(profile.planGenerated || false);
+
+        // Update showAnalysis when profile.planGenerated changes
+        React.useEffect(() => {
+            setShowAnalysis(profile.planGenerated || false);
+        }, [profile.planGenerated]);
 
         const generatePersonalizedPlan = async () => {
             setIsGenerating(true);
