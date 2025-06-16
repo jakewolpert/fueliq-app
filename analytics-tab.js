@@ -925,8 +925,7 @@ function calculateCoefficientOfVariation(values) {
 // ENHANCED JOURNAL WITH ACTIVITY TRACKING
 const EnhancedTodaysJournal = () => {
     // Direct implementations to avoid scope issues
-    const getTodayKey = () => currentAnalyticsDate;
-    
+const getTodayKey = () => window.FuelIQAnalytics ? window.FuelIQAnalytics.getCurrentAnalyticsDateKey() : new Date().toISOString().split('T')[0];    
     const loadTodayEntry = () => {
         const key = `fueliq_journal_${getTodayKey()}`;
         try {
