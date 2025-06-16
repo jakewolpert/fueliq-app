@@ -1276,9 +1276,9 @@ const EnhancedTodaysJournal = () => {
     return `
       <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
         <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-          <span class="mr-3 text-2xl">📝</span>
-          Today's Wellness Journal
-        </h3>
+  <span class="mr-3 text-2xl">📊</span>
+  ${formatDateForDisplay(currentAnalyticsDate).includes('Today') ? 'Today\'s' : formatDateForDisplay(currentAnalyticsDate).split(' - ')[0] + '\'s'} Summary
+</h3>
         
         ${wearableConnected ? `
           <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl">
