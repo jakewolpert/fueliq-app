@@ -1,5 +1,5 @@
-// FuelIQ Meals Tab - JavaScript Module
-// Add this to your existing FuelIQ app structure
+// FuelIQ Meals Tab - Complete JavaScript Module
+// Enhanced with Barcode Scanner and AI Suggestions
 
 // USDA API Functions
 const searchFoods = async (query) => {
@@ -143,9 +143,6 @@ const extractNutrients = (foodData) => {
     };
 };
 
-// STEP 1: ADD THESE BARCODE FUNCTIONS AT THE TOP OF YOUR meals-tab.js FILE
-// (Add after your existing USDA API functions)
-
 // Barcode Lookup Functions
 const lookupBarcode = async (upc) => {
     try {
@@ -181,7 +178,7 @@ const lookupBarcode = async (upc) => {
     }
 };
 
-// STEP 2: ADD AI SUGGESTION COMPONENT
+// AI Suggestions Component
 const AISuggestions = ({ currentMeals, userGoals, currentDate }) => {
     const [suggestions, setSuggestions] = React.useState([]);
     const [isVisible, setIsVisible] = React.useState(true);
@@ -246,9 +243,7 @@ const AISuggestions = ({ currentMeals, userGoals, currentDate }) => {
 
         // Time-based suggestions
         if (isToday) {
-            const timeSuggestions = getTimeBased
-
-(timeOfDay, currentMeals);
+            const timeSuggestions = getTimeBasedSuggestions(timeOfDay, currentMeals);
             newSuggestions.push(...timeSuggestions);
         }
 
@@ -406,15 +401,12 @@ const AISuggestions = ({ currentMeals, userGoals, currentDate }) => {
         // These would trigger specific food suggestions or quick-add options
         switch (action) {
             case 'suggest-protein':
-                // Could open food search with protein filter
                 console.log('Suggesting protein foods...');
                 break;
             case 'suggest-lowfat':
-                // Could suggest lean protein options
                 console.log('Suggesting low-fat options...');
                 break;
             case 'plan-remaining':
-                // Could show meal planning for remaining meals
                 console.log('Planning remaining meals...');
                 break;
             default:
@@ -483,7 +475,7 @@ const AISuggestions = ({ currentMeals, userGoals, currentDate }) => {
     );
 };
 
-// STEP 3: ADD BARCODE SCANNER COMPONENT
+// Barcode Scanner Component
 const BarcodeScanner = ({ onBarcodeFound, onClose }) => {
     const [manualUPC, setManualUPC] = React.useState('');
     const [lookupLoading, setLookupLoading] = React.useState(false);
@@ -598,7 +590,7 @@ const BarcodeScanner = ({ onBarcodeFound, onClose }) => {
     );
 };
 
-// STEP 4: REPLACE YOUR EXISTING FoodSearch COMPONENT WITH THIS ENHANCED VERSION
+// Enhanced Food Search Component
 const EnhancedFoodSearch = ({ onAddFood, onClose }) => {
     const [activeTab, setActiveTab] = React.useState('search');
     const [query, setQuery] = React.useState('');
@@ -793,42 +785,6 @@ const EnhancedFoodSearch = ({ onAddFood, onClose }) => {
     );
 };
 
-// STEP 5: UPDATE YOUR MAIN MealsTab COMPONENT
-// Add this right after your existing dailyTotals calculation and before the return statement:
-
-// ADD THIS LINE to include AI suggestions in your main component:
-// (Insert this in your MealsTab component, right before the return statement)
-/*
-// Add AI Suggestions to your existing MealsTab component
-const aiSuggestionsElement = React.createElement(AISuggestions, {
-    currentMeals: meals,
-    userGoals: dailyGoals,
-    currentDate: currentDate
-});
-
-// Then in your return statement, add the AI suggestions after the header:
-// Replace your existing return with this structure:
-return React.createElement('div', { className: 'max-w-6xl mx-auto p-6' },
-    // Existing header...
-    React.createElement('div', { className: 'bg-orange-500 rounded-xl p-6 mb-6 text-white' }, 
-        // ... your existing header content
-    ),
-    
-    // ADD THIS: AI Suggestions
-    aiSuggestionsElement,
-    
-    // Existing progress bars...
-    React.createElement('div', { className: 'bg-white rounded-xl p-6 mb-6 shadow-lg' },
-        // ... your existing progress bars
-    ),
-    
-    // Existing meals grid...
-    React.createElement('div', { className: 'grid md:grid-cols-2 gap-6' },
-        // ... your existing meal sections, but update them to use EnhancedFoodSearch
-    )
-);
-*/
-
 // Food Item Component
 const FoodItem = ({ food, onRemove, onUpdateServing }) => {
     const [serving, setServing] = React.useState(food.servingSize);
@@ -941,7 +897,7 @@ const MealSection = ({ title, foods, onAddFood, onRemoveFood, onUpdateServing, i
                 )
             ),
 
-        showSearch && React.createElement(FoodSearch, {
+        showSearch && React.createElement(EnhancedFoodSearch, {
             onAddFood: (food) => {
                 onAddFood(food);
                 setShowSearch(false);
@@ -1072,6 +1028,13 @@ const MealsTab = () => {
             )
         ),
 
+        // AI Suggestions
+        React.createElement(AISuggestions, {
+            currentMeals: meals,
+            userGoals: dailyGoals,
+            currentDate: currentDate
+        }),
+
         // Progress Bars
         React.createElement('div', { className: 'bg-white rounded-xl p-6 mb-6 shadow-lg' },
             React.createElement('h2', { className: 'text-xl font-bold text-gray-800 mb-4' }, 'Daily Progress'),
@@ -1143,19 +1106,16 @@ const MealsTab = () => {
     );
 };
 
-// Export for integration with your existing app
-// Usage: Add this to your tab switching logic
-// if (activeTab === 'meals') {
-//     ReactDOM.render(React.createElement(MealsTab), document.getElementById('content'));
-// }
-
-// Or if you prefer a function to call:
+// Render function for integration
 const renderMealsTab = (containerId) => {
     ReactDOM.render(React.createElement(MealsTab), document.getElementById(containerId));
 };
 
-// Make available globally if needed
+// Export for integration with your existing app
 window.FuelIQMeals = {
     MealsTab,
-    renderMealsTab
+    renderMealsTab,
+    cleanup: () => {} // Add cleanup function for integration
 };
+
+console.log('✅ Enhanced FuelIQ Meals tab loaded with barcode scanner and AI suggestions');
