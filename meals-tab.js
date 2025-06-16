@@ -177,7 +177,383 @@ const lookupBarcode = async (upc) => {
         return null;
     }
 };
+// Enhanced Barcode Lookup with Multiple Sources
+const lookupBarcodeEnhanced = async (upc) => {
+    try {
+        console.log('🔍 Enhanced barcode lookup for:', upc);
+        
+        // Try Open Food Facts first (more reliable for branded products)
+        const openFoodResult = await lookupOpenFoodFacts(upc);
+        if (openFoodResult) {
+            return openFoodResult;
+        }
+        
+        // Try local enhanced database
+        const localResult = await lookupLocalEnhanced(upc);
+        if (localResult) {
+            return localResult;
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Enhanced barcode lookup failed:', error);
+        return null;
+    }
+};
 
+// Enhanced Open Food Facts lookup
+const lookupOpenFoodFacts = async (upc) => {
+    try {
+        const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${upc}.json`);
+        const data = await response.json();
+        
+        if (data.status === 1 && data.product) {
+            const product = data.product;
+            const nutriments = product.nutriments || {};
+            
+            return {
+                name: product.product_name || product.product_name_en || 'Unknown Product',
+                brand: product.brands || '',
+                upc: product.code || upc,
+                calories: parseNutrient(nutriments['energy-kcal_100g'] || nutriments['energy-kcal']) || 0,
+                protein: parseNutrient(nutriments.proteins_100g || nutriments.proteins) || 0,
+                carbs: parseNutrient(nutriments.carbohydrates_100g || nutriments.carbohydrates) || 0,
+                fat: parseNutrient(nutriments.fat_100g || nutriments.fat) || 0,
+                fiber: parseNutrient(nutriments.fiber_100g || nutriments.fiber) || 0,
+                sodium: parseNutrient(nutriments.sodium_100g || nutriments.sodium) || 0,
+                sugars: parseNutrient(nutriments.sugars_100g || nutriments.sugars) || 0,
+                imageUrl: product.image_url || '',
+                servingSize: 100,
+                source: 'Open Food Facts Enhanced',
+                categories: product.categories || '',
+                ingredients: product.ingredients_text || '',
+                nutritionGrade: product.nutrition_grades || ''
+            };
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Open Food Facts enhanced lookup failed:', error);
+        return null;
+    }
+};
+
+// Enhanced local database with popular branded products
+const lookupLocalEnhanced = async (upc) => {
+    const enhancedLocalProducts = {
+        // Vital Farms
+        '011110602787': {
+            name: 'Vital Farms Pasture-Raised Large Eggs',
+            brand: 'Vital Farms',
+            upc: '011110602787',
+            calories: 70,
+            protein: 6,
+            carbs: 0,
+            fat: 5,
+            fiber: 0,
+            sodium: 70,
+            sugar: 0,
+            servingSize: 50, // 1 large egg
+            source: 'Enhanced Local Database'
+        },
+        
+        // Eggland's Best
+        '071632004003': {
+            name: 'Eggland\'s Best Large Eggs',
+            brand: 'Eggland\'s Best',
+            upc: '071632004003',
+            calories: 70,
+            protein: 6,
+            carbs: 0,
+            fat: 4,
+            fiber: 0,
+            sodium: 70,
+            sugar: 0,
+            servingSize: 50,
+            source: 'Enhanced Local Database'
+        },
+        
+        // FAGE Greek Yogurt
+        '052776010023': {
+            name: 'FAGE Total 0% Greek Yogurt',
+            brand: 'FAGE',
+            upc: '052776010023',
+            calories: 90,
+            protein: 15,
+            carbs: 6,
+            fat: 0,
+            fiber: 0,
+            sodium: 55,
+            sugar: 6,
+            servingSize: 170,
+            source: 'Enhanced Local Database'
+        },
+        
+        // Chobani Greek Yogurt
+        '894700010045': {
+            name: 'Chobani Plain Non-Fat Greek Yogurt',
+            brand: 'Chobani',
+            upc: '894700010045',
+            calories: 100,
+            protein: 17,
+            carbs: 6,
+            fat: 0,
+            fiber: 0,
+            sodium: 65,
+            sugar: 4,
+            servingSize: 170,
+            source: 'Enhanced Local Database'
+        },
+        
+        // Quaker Oats
+        '030000010204': {
+            name: 'Quaker Old Fashioned Oats',
+            brand: 'Quaker',
+            upc: '030000010204',
+            calories: 150,
+            protein: 5,
+            carbs: 27,
+            fat: 3,
+            fiber: 4,
+            sodium: 0,
+            sugar: 1,
+            servingSize: 40,
+            source: 'Enhanced Local Database'
+        },
+        
+        // Blue Diamond Almonds
+        '041570070802': {
+            name: 'Blue Diamond Whole Natural Almonds',
+            brand: 'Blue Diamond',
+            upc: '041570070802',
+            calories: 170,
+            protein: 6,
+            carbs: 6,
+            fat: 15,
+            fiber: 4,
+            sodium: 0,
+            sugar: 1,
+            servingSize: 28,
+            source: 'Enhanced Local Database'
+        },
+        
+        // Organic Valley Milk
+        '023244020006': {
+            name: 'Organic Valley Whole Milk',
+            brand: 'Organic Valley',
+            upc: '023244020006',
+            calories: 150,
+            protein: 8,
+            carbs: 12,
+            fat: 8,
+            fiber: 0,
+            sodium: 120,
+            sugar: 12,
+            servingSize: 240,
+            source: 'Enhanced Local Database'
+        },
+        
+        // Kind Bars
+        '602652171017': {
+            name: 'KIND Dark Chocolate Nuts & Sea Salt',
+            brand: 'KIND',
+            upc: '602652171017',
+            calories: 200,
+            protein: 6,
+            carbs: 16,
+            fat: 16,
+            fiber: 7,
+            sodium: 125,
+            sugar: 5,
+            servingSize: 40,
+            source: 'Enhanced Local Database'
+        },
+        
+        // Starbucks Coffee
+        '762111188359': {
+            name: 'Starbucks Pike Place Roast Ground Coffee',
+            brand: 'Starbucks',
+            upc: '762111188359',
+            calories: 5,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+            fiber: 0,
+            sodium: 0,
+            sugar: 0,
+            servingSize: 6, // 1 cup brewed
+            source: 'Enhanced Local Database'
+        },
+        
+        // Clif Bar
+        '722252100016': {
+            name: 'CLIF Bar Chocolate Chip',
+            brand: 'CLIF',
+            upc: '722252100016',
+            calories: 250,
+            protein: 9,
+            carbs: 45,
+            fat: 5,
+            fiber: 4,
+            sodium: 150,
+            sugar: 21,
+            servingSize: 68,
+            source: 'Enhanced Local Database'
+        }
+    };
+    
+    const product = enhancedLocalProducts[upc];
+    if (product) {
+        console.log('✅ Found in enhanced local database:', product.name);
+        return product;
+    }
+    
+    return null;
+};
+
+// Enhanced food search for USDA + Open Food Facts
+const searchFoodsEnhanced = async (query) => {
+    if (!query || query.length < 2) return [];
+    
+    try {
+        console.log('🔍 Enhanced food search for:', query);
+        
+        // Search both USDA and Open Food Facts in parallel
+        const [usdaResults, openFoodResults] = await Promise.allSettled([
+            searchFoodsUSDA(query),
+            searchOpenFoodFactsByName(query)
+        ]);
+        
+        const allResults = [];
+        
+        // Add USDA results
+        if (usdaResults.status === 'fulfilled' && usdaResults.value) {
+            allResults.push(...usdaResults.value.map(food => ({
+                ...food,
+                source: 'USDA',
+                priority: 1
+            })));
+        }
+        
+        // Add Open Food Facts results
+        if (openFoodResults.status === 'fulfilled' && openFoodResults.value) {
+            allResults.push(...openFoodResults.value.map(food => ({
+                ...food,
+                source: 'Open Food Facts',
+                priority: 2
+            })));
+        }
+        
+        // Remove duplicates and sort by relevance
+        const uniqueResults = removeDuplicateFoods(allResults, query);
+        const sortedResults = sortFoodsByRelevance(uniqueResults, query);
+        
+        console.log(`✅ Found ${sortedResults.length} results from multiple sources`);
+        return sortedResults.slice(0, 15); // Limit to top 15 results
+        
+    } catch (error) {
+        console.error('Enhanced food search failed:', error);
+        // Fallback to original USDA search
+        return await searchFoods(query);
+    }
+};
+
+// USDA search (your existing function, renamed)
+const searchFoodsUSDA = async (query) => {
+    return await searchFoods(query); // Use your existing function
+};
+
+// Open Food Facts text search
+const searchOpenFoodFactsByName = async (query) => {
+    try {
+        const searchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=10`;
+        
+        const response = await fetch(searchUrl);
+        const data = await response.json();
+        
+        if (!data.products || data.products.length === 0) {
+            return [];
+        }
+        
+        return data.products.map(product => ({
+            fdcId: `off_${product.code}`,
+            description: cleanProductName(product.product_name || product.product_name_en || 'Unknown Product'),
+            brandOwner: product.brands || '',
+            dataType: 'Branded Food',
+            upc: product.code,
+            nutrients: {
+                calories: parseNutrient(product.nutriments?.energy_kcal),
+                protein: parseNutrient(product.nutriments?.proteins),
+                carbs: parseNutrient(product.nutriments?.carbohydrates),
+                fat: parseNutrient(product.nutriments?.fat),
+                fiber: parseNutrient(product.nutriments?.fiber)
+            }
+        })).filter(product => product.description !== 'Unknown Product');
+        
+    } catch (error) {
+        console.error('Open Food Facts text search failed:', error);
+        return [];
+    }
+};
+
+// Helper functions
+const parseNutrient = (value, defaultValue = 0) => {
+    const num = parseFloat(value);
+    return isNaN(num) ? defaultValue : Math.round(num * 10) / 10;
+};
+
+const cleanProductName = (name) => {
+    return name
+        .replace(/\s+/g, ' ')
+        .replace(/[^\w\s\-&'()]/g, '')
+        .trim()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+};
+
+const removeDuplicateFoods = (results, query) => {
+    const seen = new Set();
+    return results.filter(result => {
+        const key = result.description.toLowerCase().trim();
+        if (seen.has(key)) {
+            return false;
+        }
+        seen.add(key);
+        return true;
+    });
+};
+
+const sortFoodsByRelevance = (results, query) => {
+    const queryLower = query.toLowerCase();
+    
+    return results.map(result => {
+        let score = 0;
+        const descLower = result.description.toLowerCase();
+        const brandLower = (result.brandOwner || '').toLowerCase();
+        
+        // Exact match
+        if (descLower === queryLower) score += 100;
+        // Starts with query
+        else if (descLower.startsWith(queryLower)) score += 80;
+        // Contains query
+        else if (descLower.includes(queryLower)) score += 60;
+        
+        // Brand match
+        if (brandLower.includes(queryLower)) score += 40;
+        
+        // Branded product bonus
+        if (result.brandOwner && result.brandOwner.trim()) score += 20;
+        
+        // Complete nutrition data bonus
+        if (result.nutrients && Object.values(result.nutrients).some(v => v > 0)) score += 10;
+        
+        // Source priority
+        if (result.priority) score += (3 - result.priority) * 5;
+        
+        return { ...result, relevanceScore: score };
+    }).sort((a, b) => b.relevanceScore - a.relevanceScore);
+};
 // AI Suggestions Component
 const AISuggestions = ({ currentMeals, userGoals, currentDate }) => {
     const [suggestions, setSuggestions] = React.useState([]);
