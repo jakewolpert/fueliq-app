@@ -1321,10 +1321,11 @@ const FoodItem = ({ food, onRemove, onUpdateServing }) => {
                         0;
         
         console.log('🔍 Calorie lookup for', food.name, ':', {
-            food_calories: food.calories,
-            food_energy: food.energy,
-            final_calories: calories
-        });
+    food_calories: food.calories,
+    food_energy: food.energy,
+    final_calories: calories
+});
+console.log('🔍 FULL FOOD OBJECT:', food);
         
         return calories;
     };
