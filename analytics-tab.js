@@ -926,5 +926,732 @@ window.FuelIQAnalytics = (function() {
     cleanup
   };
 })();
+// STEP 2: ADD THIS CODE BEFORE THE FINAL console.log LINE IN analytics-tab.js
 
+// Advanced Historical Data Analysis
+const AdvancedHistoricalAnalysis = {
+    
+    // Get comprehensive historical data for any date range
+    getHistoricalData: (startDate, endDate) => {
+        const data = [];
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+            const dateStr = date.toISOString().split('T')[0];
+            
+            // Get meals data
+            const nutrition = getNutritionData(dateStr);
+            
+            // Get journal data
+            const journalKey = `fueliq_journal_${dateStr}`;
+            const journalData = JSON.parse(localStorage.getItem(journalKey) || '{}');
+            
+            // Get activity data (new)
+            const activityKey = `fueliq_activity_${dateStr}`;
+            const activityData = JSON.parse(localStorage.getItem(activityKey) || '{}');
+            
+            data.push({
+                date: dateStr,
+                dayOfWeek: date.toLocaleDateString('en-US', { weekday: 'long' }),
+                nutrition,
+                journal: journalData,
+                activity: activityData
+            });
+        }
+        
+        return data;
+    },
+
+    // Enhanced pattern analysis with activity correlation
+    generateHistoricalInsights: (days = 30) => {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        
+        const historicalData = AdvancedHistoricalAnalysis.getHistoricalData(startDate, endDate);
+        const insights = [];
+        const { goals } = getUserData();
+
+        // Activity & Nutrition Correlations
+        const activityInsights = analyzeActivityNutritionCorrelations(historicalData);
+        insights.push(...activityInsights);
+
+        // Weekly patterns
+        const weeklyPatterns = analyzeWeeklyPatterns(historicalData);
+        insights.push(...weeklyPatterns);
+
+        // Macro consistency
+        const macroConsistency = analyzeMacroConsistency(historicalData, goals);
+        insights.push(...macroConsistency);
+
+        // Mood correlations
+        const moodCorrelations = analyzeMoodNutritionCorrelations(historicalData);
+        insights.push(...moodCorrelations);
+
+        // Sleep patterns
+        const sleepPatterns = analyzeSleepEatingPatterns(historicalData);
+        insights.push(...sleepPatterns);
+
+        // Goal adherence trends
+        const goalTrends = analyzeGoalAdherenceTrends(historicalData, goals);
+        insights.push(...goalTrends);
+
+        return insights.slice(0, 8); // Limit to top insights
+    }
+};
+
+// NEW: Activity & Nutrition Correlation Analysis
+function analyzeActivityNutritionCorrelations(data) {
+    const insights = [];
+    const validDays = data.filter(d => d.nutrition.calories > 0 && d.activity.steps);
+    
+    if (validDays.length < 7) return insights;
+
+    // High activity vs eating patterns
+    const highActivityDays = validDays.filter(d => d.activity.steps >= 8000);
+    const lowActivityDays = validDays.filter(d => d.activity.steps < 5000);
+
+    if (highActivityDays.length >= 3 && lowActivityDays.length >= 3) {
+        const highActivityAvgCals = highActivityDays.reduce((sum, d) => sum + d.nutrition.calories, 0) / highActivityDays.length;
+        const lowActivityAvgCals = lowActivityDays.reduce((sum, d) => sum + d.nutrition.calories, 0) / lowActivityDays.length;
+        const calorieDifference = highActivityAvgCals - lowActivityAvgCals;
+
+        if (Math.abs(calorieDifference) > 200) {
+            insights.push({
+                type: 'activity-nutrition',
+                icon: '🏃‍♂️',
+                title: 'Activity & Appetite Pattern',
+                message: `You eat ${Math.abs(Math.round(calorieDifference))} ${calorieDifference > 0 ? 'more' : 'fewer'} calories on high-activity days. ${calorieDifference < 0 ? 'Consider fueling workouts better.' : 'Good job matching intake to activity!'}`,
+                priority: 'medium',
+                period: `${validDays.length}-day analysis`
+            });
+        }
+
+        // Protein intake on active days
+        const highActivityAvgProtein = highActivityDays.reduce((sum, d) => sum + d.nutrition.protein, 0) / highActivityDays.length;
+        const lowActivityAvgProtein = lowActivityDays.reduce((sum, d) => sum + d.nutrition.protein, 0) / lowActivityDays.length;
+        const proteinDifference = highActivityAvgProtein - lowActivityAvgProtein;
+
+        if (proteinDifference > 15) {
+            insights.push({
+                type: 'activity-nutrition',
+                icon: '💪',
+                title: 'Active Days Protein Boost',
+                message: `You consume ${Math.round(proteinDifference)}g more protein on active days. This supports recovery and muscle maintenance!`,
+                priority: 'low',
+                period: `${validDays.length}-day analysis`
+            });
+        } else if (proteinDifference < -10) {
+            insights.push({
+                type: 'activity-nutrition',
+                icon: '🥩',
+                title: 'Active Days Need More Protein',
+                message: `You eat ${Math.abs(Math.round(proteinDifference))}g less protein on active days. Increase protein to support recovery.`,
+                priority: 'medium',
+                period: `${validDays.length}-day analysis`
+            });
+        }
+    }
+
+    // Sleep quality and steps correlation
+    const sleepStepsData = validDays.filter(d => d.journal.sleep);
+    if (sleepStepsData.length >= 7) {
+        const goodSleepDays = sleepStepsData.filter(d => d.journal.sleep >= 7.5);
+        const poorSleepDays = sleepStepsData.filter(d => d.journal.sleep < 6.5);
+
+        if (goodSleepDays.length >= 3 && poorSleepDays.length >= 3) {
+            const goodSleepAvgSteps = goodSleepDays.reduce((sum, d) => sum + d.activity.steps, 0) / goodSleepDays.length;
+            const poorSleepAvgSteps = poorSleepDays.reduce((sum, d) => sum + d.activity.steps, 0) / poorSleepDays.length;
+            const stepsDifference = goodSleepAvgSteps - poorSleepAvgSteps;
+
+            if (stepsDifference > 1500) {
+                insights.push({
+                    type: 'sleep-activity',
+                    icon: '😴',
+                    title: 'Sleep & Activity Connection',
+                    message: `You average ${Math.round(stepsDifference)} more steps on good sleep days. Quality sleep supports higher activity levels.`,
+                    priority: 'medium',
+                    period: `${sleepStepsData.length}-day analysis`
+                });
+            }
+        }
+    }
+
+    return insights;
+}
+
+// Enhanced Weekly Patterns (includes activity)
+function analyzeWeeklyPatterns(data) {
+    const insights = [];
+    const weeklyData = {};
+    
+    // Group by day of week
+    data.forEach(day => {
+        if (!weeklyData[day.dayOfWeek]) {
+            weeklyData[day.dayOfWeek] = { nutrition: [], activity: [] };
+        }
+        weeklyData[day.dayOfWeek].nutrition.push(day.nutrition);
+        if (day.activity.steps) {
+            weeklyData[day.dayOfWeek].activity.push(day.activity);
+        }
+    });
+
+    // Analyze weekend activity patterns
+    const weekends = ['Saturday', 'Sunday'];
+    const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    
+    const weekendActivity = weekends
+        .filter(day => weeklyData[day] && weeklyData[day].activity.length > 0)
+        .flatMap(day => weeklyData[day].activity);
+    const weekdayActivity = weekdays
+        .filter(day => weeklyData[day] && weeklyData[day].activity.length > 0)
+        .flatMap(day => weeklyData[day].activity);
+
+    if (weekendActivity.length >= 2 && weekdayActivity.length >= 3) {
+        const weekendAvgSteps = weekendActivity.reduce((sum, d) => sum + d.steps, 0) / weekendActivity.length;
+        const weekdayAvgSteps = weekdayActivity.reduce((sum, d) => sum + d.steps, 0) / weekdayActivity.length;
+        const stepsDifference = weekendAvgSteps - weekdayAvgSteps;
+
+        if (stepsDifference < -3000) {
+            insights.push({
+                type: 'weekly-activity',
+                icon: '📅',
+                title: 'Weekend Activity Drop',
+                message: `You average ${Math.abs(Math.round(stepsDifference))} fewer steps on weekends. Plan active weekend activities to maintain consistency.`,
+                priority: 'medium',
+                period: 'Weekly pattern analysis'
+            });
+        } else if (stepsDifference > 2000) {
+            insights.push({
+                type: 'weekly-activity',
+                icon: '🎯',
+                title: 'Active Weekend Pattern',
+                message: `Great job! You're ${Math.round(stepsDifference)} steps more active on weekends. This helps offset weekday sedentary time.`,
+                priority: 'low',
+                period: 'Weekly pattern analysis'
+            });
+        }
+    }
+
+    return insights;
+}
+
+// Other analysis functions (macro consistency, mood correlations, etc.)
+function analyzeMacroConsistency(data, goals) {
+    const insights = [];
+    const validDays = data.filter(d => d.nutrition.calories > 0);
+    
+    if (validDays.length < 7) return insights;
+
+    const proteinValues = validDays.map(d => d.nutrition.protein);
+    const proteinCV = calculateCoefficientOfVariation(proteinValues);
+    
+    if (proteinCV > 0.4) {
+        insights.push({
+            type: 'consistency',
+            icon: '📊',
+            title: 'Inconsistent Protein Intake',
+            message: `Your protein varies significantly day-to-day (${Math.round(proteinCV * 100)}% variation). Consistent protein supports muscle maintenance.`,
+            priority: 'medium',
+            period: `${validDays.length}-day analysis`
+        });
+    }
+
+    return insights;
+}
+
+function analyzeMoodNutritionCorrelations(data) {
+    const insights = [];
+    const validDays = data.filter(d => d.journal.mood && d.nutrition.calories > 0);
+    
+    if (validDays.length < 10) return insights;
+
+    const highMoodDays = validDays.filter(d => d.journal.mood >= 7);
+    const lowMoodDays = validDays.filter(d => d.journal.mood <= 4);
+
+    if (highMoodDays.length >= 3 && lowMoodDays.length >= 3) {
+        const highMoodAvgProtein = highMoodDays.reduce((sum, d) => sum + d.nutrition.protein, 0) / highMoodDays.length;
+        const lowMoodAvgProtein = lowMoodDays.reduce((sum, d) => sum + d.nutrition.protein, 0) / lowMoodDays.length;
+        const proteinDifference = highMoodAvgProtein - lowMoodAvgProtein;
+        
+        if (proteinDifference > 20) {
+            insights.push({
+                type: 'mood-correlation',
+                icon: '🧠',
+                title: 'Mood-Protein Connection',
+                message: `You average ${Math.round(proteinDifference)}g more protein on high-mood days. Stable protein may help mood regulation.`,
+                priority: 'medium',
+                period: `${validDays.length}-day analysis`
+            });
+        }
+    }
+
+    return insights;
+}
+
+function analyzeSleepEatingPatterns(data) {
+    const insights = [];
+    const validDays = data.filter(d => d.journal.sleep && d.nutrition.calories > 0);
+    
+    if (validDays.length < 10) return insights;
+
+    const goodSleepDays = validDays.filter(d => d.journal.sleep >= 7.5);
+    const poorSleepDays = validDays.filter(d => d.journal.sleep < 6.5);
+
+    if (goodSleepDays.length >= 3 && poorSleepDays.length >= 3) {
+        // Analyze late eating patterns (using meal count as proxy)
+        const lateEatingDays = validDays.filter(d => d.nutrition.mealCount >= 4);
+        const poorSleepWithLateEating = poorSleepDays.filter(d => d.nutrition.mealCount >= 4).length;
+        
+        if (poorSleepWithLateEating / poorSleepDays.length > 0.6) {
+            insights.push({
+                type: 'sleep-eating',
+                icon: '🌙',
+                title: 'Late Eating & Sleep Quality',
+                message: `${Math.round(poorSleepWithLateEating / poorSleepDays.length * 100)}% of poor sleep days involved frequent meals. Try eating dinner 3+ hours before bed.`,
+                priority: 'high',
+                period: `${validDays.length}-day analysis`
+            });
+        }
+    }
+
+    return insights;
+}
+
+function analyzeGoalAdherenceTrends(data, goals) {
+    const insights = [];
+    const validDays = data.filter(d => d.nutrition.calories > 0);
+    
+    if (validDays.length < 14) return insights;
+
+    const midpoint = Math.floor(validDays.length / 2);
+    const firstHalf = validDays.slice(0, midpoint);
+    const secondHalf = validDays.slice(midpoint);
+
+    const firstHalfProteinAdherence = firstHalf.filter(d => d.nutrition.protein >= goals.protein * 0.9).length / firstHalf.length;
+    const secondHalfProteinAdherence = secondHalf.filter(d => d.nutrition.protein >= goals.protein * 0.9).length / secondHalf.length;
+    const proteinTrend = secondHalfProteinAdherence - firstHalfProteinAdherence;
+
+    if (proteinTrend > 0.2) {
+        insights.push({
+            type: 'goal-trend',
+            icon: '📈',
+            title: 'Improving Protein Consistency',
+            message: `Protein goal adherence improved by ${Math.round(proteinTrend * 100)}% recently. You're building better habits!`,
+            priority: 'low',
+            period: `${validDays.length}-day trend`
+        });
+    }
+
+    return insights;
+}
+
+function calculateCoefficientOfVariation(values) {
+    const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+    const stdDev = Math.sqrt(variance);
+    return stdDev / mean;
+}
+
+// ENHANCED JOURNAL WITH ACTIVITY TRACKING
+const EnhancedTodaysJournal = () => {
+    const today = loadTodayEntry();
+    const wearableConnected = checkWearableConnection();
+    
+    // Get activity data
+    const todayActivity = loadTodayActivity();
+
+    return `
+      <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
+        <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+          <span class="mr-3 text-2xl">📝</span>
+          Today's Wellness Journal
+        </h3>
+        
+        ${wearableConnected ? `
+          <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl">
+            <div class="flex items-center text-green-700">
+              <span class="mr-2 text-lg">⌚</span>
+              <span class="font-medium">Wearable Connected - Activity auto-synced</span>
+            </div>
+          </div>
+        ` : ''}
+        
+        <form id="enhanced-journal-form" class="space-y-6">
+          <!-- Journal Notes -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-3">How are you feeling today?</label>
+            <textarea
+              id="journal-notes"
+              rows="4"
+              class="w-full px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200 resize-none"
+              placeholder="Describe your mood, energy, challenges, wins, workouts, sleep quality..."
+            >${today.notes || ''}</textarea>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Sleep -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-3">
+                😴 Sleep ${wearableConnected ? '(Auto-synced)' : '(Hours)'}
+              </label>
+              ${wearableConnected ? `
+                <div class="px-4 py-3 bg-green-50 border-2 border-green-200 rounded-xl">
+                  <span class="font-bold text-green-700">${today.sleep || 8.2}h from device</span>
+                </div>
+              ` : `
+                <input
+                  type="number"
+                  id="sleep-input"
+                  step="0.5"
+                  min="0"
+                  max="24"
+                  value="${today.sleep || ''}"
+                  class="w-full px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-200"
+                  placeholder="8.0"
+                />
+              `}
+            </div>
+
+            <!-- Water -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-3">💧 Water (oz)</label>
+              <input
+                type="number"
+                id="water-input"
+                min="0"
+                max="200"
+                value="${today.water || ''}"
+                class="w-full px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-xl focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/20 transition-all duration-200"
+                placeholder="64"
+              />
+            </div>
+
+            <!-- Steps -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-3">
+                👟 Steps ${wearableConnected ? '(Auto-synced)' : ''}
+              </label>
+              ${wearableConnected ? `
+                <div class="px-4 py-3 bg-green-50 border-2 border-green-200 rounded-xl">
+                  <span class="font-bold text-green-700">${todayActivity.steps || 8453} from device</span>
+                </div>
+              ` : `
+                <input
+                  type="number"
+                  id="steps-input"
+                  min="0"
+                  max="50000"
+                  value="${todayActivity.steps || ''}"
+                  class="w-full px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-200"
+                  placeholder="8000"
+                />
+              `}
+            </div>
+
+            <!-- Calories Burned -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-3">
+                🔥 Calories Burned ${wearableConnected ? '(Auto-synced)' : ''}
+              </label>
+              ${wearableConnected ? `
+                <div class="px-4 py-3 bg-green-50 border-2 border-green-200 rounded-xl">
+                  <span class="font-bold text-green-700">${todayActivity.caloriesBurned || 2247} from device</span>
+                </div>
+              ` : `
+                <input
+                  type="number"
+                  id="calories-burned-input"
+                  min="0"
+                  max="8000"
+                  value="${todayActivity.caloriesBurned || ''}"
+                  class="w-full px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-xl focus:border-red-500 focus:ring-4 focus:ring-red-500/20 transition-all duration-200"
+                  placeholder="2000"
+                />
+              `}
+            </div>
+
+            <!-- Exercise Minutes (if no wearable) -->
+            ${!wearableConnected ? `
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-3">🏃‍♂️ Exercise Minutes</label>
+                <input
+                  type="number"
+                  id="exercise-minutes-input"
+                  min="0"
+                  max="480"
+                  value="${todayActivity.exerciseMinutes || ''}"
+                  class="w-full px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200"
+                  placeholder="30"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-3">💪 Exercise Type</label>
+                <select
+                  id="exercise-type"
+                  class="w-full px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all duration-200"
+                >
+                  <option value="">Select exercise...</option>
+                  <option value="cardio" ${todayActivity.exerciseType === 'cardio' ? 'selected' : ''}>Cardio</option>
+                  <option value="strength" ${todayActivity.exerciseType === 'strength' ? 'selected' : ''}>Strength Training</option>
+                  <option value="yoga" ${todayActivity.exerciseType === 'yoga' ? 'selected' : ''}>Yoga/Stretching</option>
+                  <option value="sports" ${todayActivity.exerciseType === 'sports' ? 'selected' : ''}>Sports</option>
+                  <option value="walking" ${todayActivity.exerciseType === 'walking' ? 'selected' : ''}>Walking/Hiking</option>
+                  <option value="other" ${todayActivity.exerciseType === 'other' ? 'selected' : ''}>Other</option>
+                </select>
+              </div>
+            ` : ''}
+
+            <!-- Stress Level -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-3">Stress Level</label>
+              <select
+                id="stress-level"
+                class="w-full px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/20 transition-all duration-200"
+              >
+                <option value="">Select stress level...</option>
+                ${stressOptions.map(option => `
+                  <option value="${option.value}" ${today.stress === option.value ? 'selected' : ''}>
+                    ${option.label}
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+
+            <!-- Mood -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-3">😊 Mood (1-10)</label>
+              <select
+                id="mood-rating"
+                class="w-full px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-500/20 transition-all duration-200"
+              >
+                <option value="">Select mood...</option>
+                ${moodOptions.map(option => `
+                  <option value="${option.value}" ${today.mood === option.value ? 'selected' : ''}>
+                    ${option.label}
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+
+            <!-- Energy -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-3">⚡ Energy (1-10)</label>
+              <select
+                id="energy-rating"
+                class="w-full px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-xl focus:border-yellow-500 focus:ring-4 focus:ring-yellow-500/20 transition-all duration-200"
+              >
+                <option value="">Select energy level...</option>
+                ${energyOptions.map(option => `
+                  <option value="${option.value}" ${today.energy === option.value ? 'selected' : ''}>
+                    ${option.label}
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+
+            <!-- Alcohol -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-3">🍷 Alcohol (drinks)</label>
+              <input
+                type="number"
+                id="alcohol-input"
+                min="0"
+                max="20"
+                step="0.5"
+                value="${today.alcohol || ''}"
+                class="w-full px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 transition-all duration-200"
+                placeholder="0"
+              />
+              <p class="text-xs text-gray-500 mt-1">1 drink = 12oz beer, 5oz wine, or 1.5oz spirits</p>
+            </div>
+          </div>
+
+          <!-- Save Button -->
+          <button
+            type="submit"
+            class="w-full px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl hover:from-green-600 hover:to-emerald-700 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center"
+          >
+            <span class="mr-2 text-xl">📝</span>
+            Save Wellness Entry
+          </button>
+        </form>
+      </div>
+    `;
+};
+
+// Activity data loading/saving functions
+function loadTodayActivity() {
+    const key = `fueliq_activity_${getTodayKey()}`;
+    try {
+        return JSON.parse(localStorage.getItem(key) || '{}');
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveActivityData(date, activity) {
+    const key = `fueliq_activity_${date}`;
+    try {
+        localStorage.setItem(key, JSON.stringify({
+            ...activity,
+            timestamp: new Date().toISOString(),
+            date: date
+        }));
+        return true;
+    } catch (e) {
+        console.error('Failed to save activity data:', e);
+        return false;
+    }
+}
+
+// Enhanced Historical Analytics Panel
+const HistoricalAnalyticsPanel = ({ days = 30 }) => {
+    const [insights, setInsights] = React.useState([]);
+    const [loading, setLoading] = React.useState(true);
+    const [selectedPeriod, setSelectedPeriod] = React.useState(30);
+
+    React.useEffect(() => {
+        generateInsights();
+    }, [selectedPeriod]);
+
+    const generateInsights = async () => {
+        setLoading(true);
+        try {
+            const historicalInsights = AdvancedHistoricalAnalysis.generateHistoricalInsights(selectedPeriod);
+            setInsights(historicalInsights);
+        } catch (error) {
+            console.error('Failed to generate historical insights:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return React.createElement('div', { className: 'bg-white rounded-xl p-6 shadow-lg border border-gray-100 mb-8' },
+        React.createElement('div', { className: 'flex justify-between items-center mb-6' },
+            React.createElement('h3', { className: 'text-xl font-bold text-gray-800 flex items-center gap-2' },
+                React.createElement('span', { className: 'text-2xl' }, '📊'),
+                'Historical Patterns & Trends'
+            ),
+            React.createElement('select', {
+                value: selectedPeriod,
+                onChange: (e) => setSelectedPeriod(Number(e.target.value)),
+                className: 'px-3 py-2 border border-gray-300 rounded-lg focus:border-purple-500'
+            },
+                React.createElement('option', { value: 7 }, 'Last 7 days'),
+                React.createElement('option', { value: 14 }, 'Last 2 weeks'),
+                React.createElement('option', { value: 30 }, 'Last 30 days'),
+                React.createElement('option', { value: 90 }, 'Last 3 months')
+            )
+        ),
+
+        loading ? 
+            React.createElement('div', { className: 'text-center py-8' },
+                React.createElement('div', { className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-2' }),
+                React.createElement('p', { className: 'text-gray-600' }, 'Analyzing your patterns...')
+            ) :
+            insights.length === 0 ?
+                React.createElement('div', { className: 'text-center py-8 text-gray-500' },
+                    React.createElement('div', { className: 'text-4xl mb-2' }, '📈'),
+                    React.createElement('p', null, `Not enough data for ${selectedPeriod}-day analysis`),
+                    React.createElement('p', { className: 'text-sm' }, 'Log more meals and journal entries to unlock insights!')
+                ) :
+                React.createElement('div', { className: 'space-y-4' },
+                    ...insights.map((insight, index) =>
+                        React.createElement('div', {
+                            key: index,
+                            className: `p-4 rounded-lg border-l-4 ${
+                                insight.priority === 'high' ? 'border-red-400 bg-red-50' :
+                                insight.priority === 'medium' ? 'border-yellow-400 bg-yellow-50' :
+                                'border-green-400 bg-green-50'
+                            }`
+                        },
+                            React.createElement('div', { className: 'flex items-start gap-3' },
+                                React.createElement('span', { className: 'text-2xl' }, insight.icon),
+                                React.createElement('div', { className: 'flex-1' },
+                                    React.createElement('h4', { 
+                                        className: `font-semibold mb-1 ${
+                                            insight.priority === 'high' ? 'text-red-700' :
+                                            insight.priority === 'medium' ? 'text-yellow-700' :
+                                            'text-green-700'
+                                        }`
+                                    }, insight.title),
+                                    React.createElement('p', { 
+                                        className: `text-sm mb-2 ${
+                                            insight.priority === 'high' ? 'text-red-600' :
+                                            insight.priority === 'medium' ? 'text-yellow-600' :
+                                            'text-green-600'
+                                        }`
+                                    }, insight.message),
+                                    React.createElement('span', { 
+                                        className: 'text-xs text-gray-500 bg-white px-2 py-1 rounded-full'
+                                    }, insight.period)
+                                )
+                            )
+                        )
+                    )
+                )
+    );
+};
+
+// UPDATED ENHANCED FORM HANDLER
+function setupEnhancedFormHandler() {
+    const form = document.getElementById('enhanced-journal-form');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const wearableConnected = checkWearableConnection();
+        
+        const formData = {
+            notes: document.getElementById('journal-notes').value,
+            water: parseInt(document.getElementById('water-input').value) || 0,
+            stress: parseInt(document.getElementById('stress-level').value) || 0,
+            mood: parseInt(document.getElementById('mood-rating').value) || 0,
+            energy: parseInt(document.getElementById('energy-rating').value) || 0,
+            alcohol: parseFloat(document.getElementById('alcohol-input').value) || 0
+        };
+
+        // Add sleep data
+        if (!wearableConnected) {
+            formData.sleep = parseFloat(document.getElementById('sleep-input').value) || 0;
+        } else {
+            formData.sleep = 8.2; // Mock data from wearable
+        }
+
+        // Add activity data
+        const activityData = {};
+        if (!wearableConnected) {
+            activityData.steps = parseInt(document.getElementById('steps-input').value) || 0;
+            activityData.caloriesBurned = parseInt(document.getElementById('calories-burned-input').value) || 0;
+            activityData.exerciseMinutes = parseInt(document.getElementById('exercise-minutes-input').value) || 0;
+            activityData.exerciseType = document.getElementById('exercise-type').value;
+        } else {
+            // Mock data from wearable
+            activityData.steps = 8453;
+            activityData.caloriesBurned = 2247;
+            activityData.exerciseMinutes = 45;
+            activityData.exerciseType = 'auto-detected';
+        }
+
+        // Save both journal and activity data
+        const saveSuccess = saveJournalEntry(formData) && saveActivityData(getTodayKey(), activityData);
+        
+        if (saveSuccess) {
+            // Show success message
+            const button = form.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="mr-2 text-xl">✅</span>Saved Successfully!';
+            button.className = button.className.replace('from-green-500 to-emerald-600', 'from-emerald-500 to-green-600');
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.className = button.className.replace('from-emerald-500 to-green-600', 'from-green-500 to-emerald-600');
+            }, 2000);
+        }
+    });
+}
 console.log('✅ Enhanced FuelIQ Analytics module loaded with AI insights');
