@@ -1094,7 +1094,7 @@ const EnhancedFoodSearch = ({ onAddFood, onClose }) => {
         const searchTimeout = setTimeout(async () => {
             if (query.length >= 2) {
                 setLoading(true);
-                const foods = await searchFoods(query);
+const foods = await searchFoodsEnhanced(query);                
                 setResults(foods);
                 setLoading(false);
             } else {
