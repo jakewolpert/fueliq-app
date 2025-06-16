@@ -2,119 +2,121 @@
 window.FuelIQAnalytics = (function() {
   let currentContainer = null;
   let wearableConnected = false; // This would be set by the wearables module
-// Date Navigation State
-let currentAnalyticsDate = new Date().toISOString().split('T')[0]; // Today by default
 
-// Enhanced Date-Aware Functions
-function getCurrentAnalyticsDateKey() {
-    return currentAnalyticsDate;
-}
+  // Date Navigation State
+  let currentAnalyticsDate = new Date().toISOString().split('T')[0]; // Today by default
 
-function formatDateForDisplay(dateStr) {
-    const date = new Date(dateStr + 'T00:00:00');
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-    
-    if (dateStr === today) {
-        return `Today - ${date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`;
-    } else if (dateStr === yesterdayStr) {
-        return `Yesterday - ${date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`;
-    } else {
-        return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
-    }
-}
+  // Enhanced Date-Aware Functions
+  function getCurrentAnalyticsDateKey() {
+      return currentAnalyticsDate;
+  }
 
-function navigateDate(direction) {
-    const currentDate = new Date(currentAnalyticsDate + 'T00:00:00');
-    currentDate.setDate(currentDate.getDate() + direction);
-    currentAnalyticsDate = currentDate.toISOString().split('T')[0];
-    
-    // Re-render the analytics tab
-    renderAnalyticsTab('analytics-container');
-}
+  function formatDateForDisplay(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      
+      if (dateStr === today) {
+          return `Today - ${date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`;
+      } else if (dateStr === yesterdayStr) {
+          return `Yesterday - ${date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`;
+      } else {
+          return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+      }
+  }
 
-function setSpecificDate(dateStr) {
-    currentAnalyticsDate = dateStr;
-    renderAnalyticsTab('analytics-container');
-}
+  function navigateDate(direction) {
+      const currentDate = new Date(currentAnalyticsDate + 'T00:00:00');
+      currentDate.setDate(currentDate.getDate() + direction);
+      currentAnalyticsDate = currentDate.toISOString().split('T')[0];
+      
+      // Re-render the analytics tab
+      renderAnalyticsTab('analytics-container');
+  }
 
-function hasDataForDate(dateStr) {
-    const journalKey = `fueliq_journal_${dateStr}`;
-    const mealsKey = `fueliq_meals_${dateStr}`;
-    const activityKey = `fueliq_activity_${dateStr}`;
-    
-    const hasJournal = localStorage.getItem(journalKey) && JSON.parse(localStorage.getItem(journalKey) || '{}').notes;
-    const hasMeals = localStorage.getItem(mealsKey);
-    const hasActivity = localStorage.getItem(activityKey);
-    
-    return hasJournal || hasMeals || hasActivity;
-}
+  function setSpecificDate(dateStr) {
+      currentAnalyticsDate = dateStr;
+      renderAnalyticsTab('analytics-container');
+  }
 
-function renderDateNavigation() {
-    const today = new Date().toISOString().split('T')[0];
-    const isToday = currentAnalyticsDate === today;
-    const canGoForward = currentAnalyticsDate < today;
-    
-    return `
-        <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 mb-6 border border-white/30">
-            <div class="flex items-center justify-between">
-                <button 
-                    onclick="navigateDate(-1)"
-                    class="flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-                >
-                    <span class="text-lg mr-2">←</span>
-                    Previous Day
-                </button>
-                
-                <div class="flex items-center space-x-4">
-                    <div class="text-center">
-                        <div class="text-lg font-bold text-gray-800">
-                            ${formatDateForDisplay(currentAnalyticsDate)}
-                        </div>
-                        <input 
-                            type="date" 
-                            id="date-picker"
-                            value="${currentAnalyticsDate}"
-                            max="${today}"
-                            onchange="setSpecificDate(this.value)"
-                            class="mt-2 px-3 py-1 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:outline-none"
-                        />
-                    </div>
-                    
-                    ${!isToday ? `
-                        <button 
-                            onclick="setSpecificDate('${today}')"
-                            class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm transition-all duration-200"
-                        >
-                            📅 Today
-                        </button>
-                    ` : ''}
-                </div>
-                
-                <button 
-                    onclick="navigateDate(1)"
-                    ${!canGoForward ? 'disabled' : ''}
-                    class="flex items-center px-4 py-2 ${canGoForward ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-300 cursor-not-allowed'} text-white rounded-xl transition-all duration-200 shadow-md ${canGoForward ? 'hover:shadow-lg transform hover:scale-105' : ''}"
-                >
-                    Next Day
-                    <span class="text-lg ml-2">→</span>
-                </button>
-            </div>
-            
-            <div class="mt-3 text-center">
-                <span class="text-xs px-3 py-1 rounded-full ${hasDataForDate(currentAnalyticsDate) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
-                    ${hasDataForDate(currentAnalyticsDate) ? '✅ Has logged data' : '📝 No data logged'}
-                </span>
-            </div>
-        </div>
-    `;
-}
+  function hasDataForDate(dateStr) {
+      const journalKey = `fueliq_journal_${dateStr}`;
+      const mealsKey = `fueliq_meals_${dateStr}`;
+      const activityKey = `fueliq_activity_${dateStr}`;
+      
+      const hasJournal = localStorage.getItem(journalKey) && JSON.parse(localStorage.getItem(journalKey) || '{}').notes;
+      const hasMeals = localStorage.getItem(mealsKey);
+      const hasActivity = localStorage.getItem(activityKey);
+      
+      return hasJournal || hasMeals || hasActivity;
+  }
 
-// Make navigation functions globally available
-window.navigateDate = navigateDate;
-window.setSpecificDate = setSpecificDate;
+  function renderDateNavigation() {
+      const today = new Date().toISOString().split('T')[0];
+      const isToday = currentAnalyticsDate === today;
+      const canGoForward = currentAnalyticsDate < today;
+      
+      return `
+          <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 mb-6 border border-white/30">
+              <div class="flex items-center justify-between">
+                  <button 
+                      onclick="navigateDate(-1)"
+                      class="flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+                  >
+                      <span class="text-lg mr-2">←</span>
+                      Previous Day
+                  </button>
+                  
+                  <div class="flex items-center space-x-4">
+                      <div class="text-center">
+                          <div class="text-lg font-bold text-gray-800">
+                              ${formatDateForDisplay(currentAnalyticsDate)}
+                          </div>
+                          <input 
+                              type="date" 
+                              id="date-picker"
+                              value="${currentAnalyticsDate}"
+                              max="${today}"
+                              onchange="setSpecificDate(this.value)"
+                              class="mt-2 px-3 py-1 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:outline-none"
+                          />
+                      </div>
+                      
+                      ${!isToday ? `
+                          <button 
+                              onclick="setSpecificDate('${today}')"
+                              class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm transition-all duration-200"
+                          >
+                              📅 Today
+                          </button>
+                      ` : ''}
+                  </div>
+                  
+                  <button 
+                      onclick="navigateDate(1)"
+                      ${!canGoForward ? 'disabled' : ''}
+                      class="flex items-center px-4 py-2 ${canGoForward ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-300 cursor-not-allowed'} text-white rounded-xl transition-all duration-200 shadow-md ${canGoForward ? 'hover:shadow-lg transform hover:scale-105' : ''}"
+                  >
+                      Next Day
+                      <span class="text-lg ml-2">→</span>
+                  </button>
+              </div>
+              
+              <div class="mt-3 text-center">
+                  <span class="text-xs px-3 py-1 rounded-full ${hasDataForDate(currentAnalyticsDate) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
+                      ${hasDataForDate(currentAnalyticsDate) ? '✅ Has logged data' : '📝 No data logged'}
+                  </span>
+              </div>
+          </div>
+      `;
+  }
+
+  // Make navigation functions globally available
+  window.navigateDate = navigateDate;
+  window.setSpecificDate = setSpecificDate;
+
   // Check if wearables are connected (mock detection for now)
   function checkWearableConnection() {
     // In real app, this would check actual device connections
@@ -178,6 +180,16 @@ window.setSpecificDate = setSpecificDate;
   }
 
   // Load today's journal entry
+  function loadTodayEntry() {
+    const key = `fueliq_journal_${getCurrentAnalyticsDateKey()}`;
+    try {
+        return JSON.parse(localStorage.getItem(key) || '{}');
+    } catch (e) {
+        return {};
+    }
+  }
+
+  // Save journal entry
   function saveJournalEntry(data) {
     const key = `fueliq_journal_${getCurrentAnalyticsDateKey()}`;
     try {
@@ -197,32 +209,10 @@ window.setSpecificDate = setSpecificDate;
         console.error('Failed to save journal entry:', e);
         return false;
     }
-}
-
-  // Save journal entry
-  function saveJournalEntry(data) {
-    const key = `fueliq_journal_${getTodayKey()}`;
-    try {
-      localStorage.setItem(key, JSON.stringify({
-        ...data,
-        timestamp: new Date().toISOString(),
-        date: getTodayKey()
-      }));
-      
-      // Refresh insights after saving
-      setTimeout(() => {
-        renderAIInsights();
-      }, 500);
-      
-      return true;
-    } catch (e) {
-      console.error('Failed to save journal entry:', e);
-      return false;
-    }
   }
 
   // Get nutrition data for any date
-  function getNutritionData(dateKey = getTodayKey()) {
+  function getNutritionData(dateKey = getCurrentAnalyticsDateKey()) {
     const key = `fueliq_meals_${dateKey}`;
     try {
       const data = JSON.parse(localStorage.getItem(key) || '{}');
@@ -247,7 +237,7 @@ window.setSpecificDate = setSpecificDate;
 
   // Get today's nutrition (wrapper for backwards compatibility)
   function getTodayNutrition() {
-    return getNutritionData();
+    return getNutritionData(getCurrentAnalyticsDateKey());
   }
 
   // Get user goals and profile
@@ -448,132 +438,6 @@ window.setSpecificDate = setSpecificDate;
       }
     }
 
-    // ADVANCED MACRO PATTERNS
-    if (validDays.length >= 3) {
-      // Protein timing analysis
-      const lowProteinDays = validDays.filter(d => d.nutrition.protein < (goals.protein * 0.8)).length;
-      if (lowProteinDays >= 3) {
-        insights.push({
-          type: 'warning',
-          icon: '🥩',
-          title: 'Protein: Consistency Issues',
-          message: `${lowProteinDays}/${validDays.length} days below 80% protein goal. Consistent daily protein intake is more important than total weekly protein for muscle maintenance.`,
-          priority: 'medium'
-        });
-      }
-
-      // Carb timing for training
-      if (profile.goal === 'muscle_gain' || profile.goal === 'recomp') {
-        const lowCarbDays = validDays.filter(d => d.nutrition.carbs < (goals.carbs * 0.7)).length;
-        if (lowCarbDays >= 3) {
-          insights.push({
-            type: 'suggestion',
-            icon: '🍞',
-            title: 'Performance: Carb Intake',
-            message: `${lowCarbDays} days with low carbs (<70% goal). Adequate carbs fuel workouts and support recovery, especially important for muscle building goals.`,
-            priority: 'medium'
-          });
-        }
-      }
-
-      // Fat intake for hormones
-      const lowFatDays = validDays.filter(d => d.nutrition.fat < (goals.fat * 0.6)).length;
-      if (lowFatDays >= 3) {
-        insights.push({
-          type: 'concern',
-          icon: '🥑',
-          title: 'Hormones: Low Fat Intake',
-          message: `${lowFatDays} days with very low fat (<60% goal). Inadequate fat intake can disrupt hormone production, including testosterone and growth hormone.`,
-          priority: 'medium'
-        });
-      }
-    }
-
-    // WATER INTAKE ENHANCED ANALYSIS
-    const waterLevels = historicalData.map(d => d.journal.water || 0).filter(w => w > 0);
-    if (waterLevels.length > 0) {
-      const avgWater = waterLevels.reduce((a, b) => a + b, 0) / waterLevels.length;
-      const weightLbs = parseFloat(profile.weight) || 150;
-      const waterNeed = Math.round(weightLbs * 0.67); // 2/3 of body weight in oz
-      
-      if (avgWater < waterNeed * 0.7) {
-        insights.push({
-          type: 'warning',
-          icon: '💧',
-          title: 'Hydration: Below Optimal',
-          message: `Average ${Math.round(avgWater)}oz vs recommended ${waterNeed}oz (based on ${weightLbs}lbs). Dehydration reduces performance, recovery, and can mask as hunger.`,
-          priority: 'high'
-        });
-      }
-
-      // Correlate dehydration with performance
-      const lowWaterDays = historicalData.filter(d => (d.journal.water || 0) < waterNeed * 0.6);
-      const lowEnergyOnLowWater = lowWaterDays.filter(d => (d.journal.energy || 0) <= 4).length;
-      
-      if (lowWaterDays.length >= 2 && lowEnergyOnLowWater >= 2) {
-        insights.push({
-          type: 'insight',
-          icon: '🧠',
-          title: 'Hydration: Energy Connection',
-          message: `${lowEnergyOnLowWater}/${lowWaterDays.length} low-water days also had low energy. Even 2% dehydration can reduce physical and mental performance by 10-15%.`,
-          priority: 'medium'
-        });
-      }
-    }
-
-    // ADVANCED MOOD & WELLNESS CORRELATIONS
-    const moodEnergyData = historicalData.filter(d => d.journal.mood && d.journal.energy);
-    if (moodEnergyData.length >= 3) {
-      // Correlate nutrition with mood/energy
-      const highNutritionDays = moodEnergyData.filter(d => d.nutrition.protein >= (goals.protein * 0.9) && d.nutrition.calories >= (goals.calories * 0.9));
-      const lowNutritionDays = moodEnergyData.filter(d => d.nutrition.protein < (goals.protein * 0.7) || d.nutrition.calories < (goals.calories * 0.7));
-      
-      if (highNutritionDays.length >= 2 && lowNutritionDays.length >= 2) {
-        const highNutritionMood = highNutritionDays.reduce((sum, d) => sum + d.journal.mood, 0) / highNutritionDays.length;
-        const lowNutritionMood = lowNutritionDays.reduce((sum, d) => sum + d.journal.mood, 0) / lowNutritionDays.length;
-        
-        if (highNutritionMood - lowNutritionMood > 1) {
-          insights.push({
-            type: 'insight',
-            icon: '🧠',
-            title: 'Nutrition: Mood Connection',
-            message: `Mood averages ${highNutritionMood.toFixed(1)}/10 on well-fed days vs ${lowNutritionMood.toFixed(1)}/10 on under-fed days. Consistent nutrition stabilizes mood and energy.`,
-            priority: 'medium'
-          });
-        }
-      }
-    }
-
-    // CROSS-CORRELATION PATTERNS (Enhanced)
-    const journalEntries = historicalData.filter(d => d.journal.notes && d.journal.notes.toLowerCase().includes('headache'));
-    if (journalEntries.length >= 2) {
-      const headacheDays = journalEntries.map(d => ({
-        date: d.date,
-        water: d.journal.water || 0,
-        sleep: d.journal.sleep || 0,
-        stress: d.journal.stress || 0,
-        calories: d.nutrition.calories || 0,
-        alcohol: d.journal.alcohol || 0
-      }));
-      
-      const factors = [];
-      if (headacheDays.filter(d => d.water < 40).length >= 2) factors.push('low water');
-      if (headacheDays.filter(d => d.sleep < 7).length >= 2) factors.push('poor sleep');
-      if (headacheDays.filter(d => d.stress >= 4).length >= 2) factors.push('high stress');
-      if (headacheDays.filter(d => d.calories < goals.calories * 0.7).length >= 2) factors.push('undereating');
-      if (headacheDays.filter(d => d.alcohol > 0).length >= 2) factors.push('alcohol consumption');
-      
-      if (factors.length > 0) {
-        insights.push({
-          type: 'insight',
-          icon: '🧠',
-          title: 'Headache Pattern Analysis',
-          message: `Headaches mentioned ${journalEntries.length}x recently. Common factors: ${factors.join(', ')}. These often work together - address multiple factors for best results.`,
-          priority: 'high'
-        });
-      }
-    }
-
     // POSITIVE REINFORCEMENT
     if (todayJournal.mood >= 7 && todayJournal.energy >= 7 && todayNutrition.protein >= goals.protein * 0.9) {
       insights.push({
@@ -651,15 +515,18 @@ window.setSpecificDate = setSpecificDate;
     `;
   }
 
-  const nutrition = getNutritionData(currentAnalyticsDate);
+  // Render Today's Summary with Enhanced Macros
+  function renderTodaysSummary() {
+    const nutrition = getNutritionData(currentAnalyticsDate);
     const journal = loadTodayEntry();
     const { goals, profile } = getUserData();
 
     return `
-     <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-  <span class="mr-3 text-2xl">📝</span>
-  Wellness Journal
-</h3>
+      <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
+        <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+          <span class="mr-3 text-2xl">📊</span>
+          Summary
+        </h3>
         
         <div class="space-y-4">
           <!-- Goal Display -->
@@ -772,9 +639,10 @@ window.setSpecificDate = setSpecificDate;
   }
 
   // Render Today's Journal (Enhanced with Activity Tracking)
-function renderTodaysJournal() {
-  return EnhancedTodaysJournal();
-}
+  function renderTodaysJournal() {
+    return EnhancedTodaysJournal();
+  }
+
   // Setup form handler
   function setupFormHandler() {
     const form = document.getElementById('journal-form');
@@ -823,50 +691,51 @@ function renderTodaysJournal() {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-   container.innerHTML = `
-  <div class="max-w-7xl mx-auto p-6">
-    ${renderDateNavigation()}
-    <!-- NEW: Historical Analytics Panel -->
-    <div id="historical-analytics-container" class="mb-8">
-      <!-- Will be populated by React component -->
-    </div>
-    
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-      <!-- Today's Journal -->
-      <div id="journal-container">
-        ${renderTodaysJournal()}
+    container.innerHTML = `
+      <div class="max-w-7xl mx-auto p-6">
+        ${renderDateNavigation()}
+        <!-- NEW: Historical Analytics Panel -->
+        <div id="historical-analytics-container" class="mb-8">
+          <!-- Will be populated by React component -->
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <!-- Today's Journal -->
+          <div id="journal-container">
+            ${renderTodaysJournal()}
+          </div>
+          
+          <!-- Today's Summary -->
+          <div id="summary-container">
+            ${renderTodaysSummary()}
+          </div>
+        </div>
+        
+        <!-- AI Insights -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
+          <div id="ai-insights-container">
+            <!-- AI insights will be rendered here -->
+          </div>
+        </div>
       </div>
-      
-      <!-- Today's Summary -->
-      <div id="summary-container">
-        ${renderTodaysSummary()}
-      </div>
-    </div>
-    
-    <!-- AI Insights -->
-    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
-      <div id="ai-insights-container">
-        <!-- AI insights will be rendered here -->
-      </div>
-    </div>
-  </div>
-`;
+    `;
+
     // Setup event handlers
-setupEnhancedFormHandler();
+    setupEnhancedFormHandler();
 
-// Render Historical Analytics Panel
-setTimeout(() => {
-  const historicalContainer = document.getElementById('historical-analytics-container');
-  if (historicalContainer && window.React && window.ReactDOM) {
-    const HistoricalPanel = React.createElement(HistoricalAnalyticsPanel, { days: 30 });
-    ReactDOM.render(HistoricalPanel, historicalContainer);
-  }
-}, 100);
+    // Render Historical Analytics Panel
+    setTimeout(() => {
+      const historicalContainer = document.getElementById('historical-analytics-container');
+      if (historicalContainer && window.React && window.ReactDOM) {
+        const HistoricalPanel = React.createElement(HistoricalAnalyticsPanel, { days: 30 });
+        ReactDOM.render(HistoricalPanel, historicalContainer);
+      }
+    }, 100);
 
-// Render AI insights
-setTimeout(() => {
-  renderAIInsights();
-}, 200);
+    // Render AI insights
+    setTimeout(() => {
+      renderAIInsights();
+    }, 200);
   }
 
   // Cleanup function
@@ -886,7 +755,6 @@ setTimeout(() => {
     cleanup
   };
 })();
-// STEP 2: ADD THIS CODE BEFORE THE FINAL console.log LINE IN analytics-tab.js
 
 // Advanced Historical Data Analysis
 const AdvancedHistoricalAnalysis = {
@@ -961,7 +829,7 @@ const AdvancedHistoricalAnalysis = {
     }
 };
 
-// NEW: Activity & Nutrition Correlation Analysis
+// Activity & Nutrition Correlation Analysis
 function analyzeActivityNutritionCorrelations(data) {
     const insights = [];
     const validDays = data.filter(d => d.nutrition.calories > 0 && d.activity.steps);
@@ -987,61 +855,12 @@ function analyzeActivityNutritionCorrelations(data) {
                 period: `${validDays.length}-day analysis`
             });
         }
-
-        // Protein intake on active days
-        const highActivityAvgProtein = highActivityDays.reduce((sum, d) => sum + d.nutrition.protein, 0) / highActivityDays.length;
-        const lowActivityAvgProtein = lowActivityDays.reduce((sum, d) => sum + d.nutrition.protein, 0) / lowActivityDays.length;
-        const proteinDifference = highActivityAvgProtein - lowActivityAvgProtein;
-
-        if (proteinDifference > 15) {
-            insights.push({
-                type: 'activity-nutrition',
-                icon: '💪',
-                title: 'Active Days Protein Boost',
-                message: `You consume ${Math.round(proteinDifference)}g more protein on active days. This supports recovery and muscle maintenance!`,
-                priority: 'low',
-                period: `${validDays.length}-day analysis`
-            });
-        } else if (proteinDifference < -10) {
-            insights.push({
-                type: 'activity-nutrition',
-                icon: '🥩',
-                title: 'Active Days Need More Protein',
-                message: `You eat ${Math.abs(Math.round(proteinDifference))}g less protein on active days. Increase protein to support recovery.`,
-                priority: 'medium',
-                period: `${validDays.length}-day analysis`
-            });
-        }
-    }
-
-    // Sleep quality and steps correlation
-    const sleepStepsData = validDays.filter(d => d.journal.sleep);
-    if (sleepStepsData.length >= 7) {
-        const goodSleepDays = sleepStepsData.filter(d => d.journal.sleep >= 7.5);
-        const poorSleepDays = sleepStepsData.filter(d => d.journal.sleep < 6.5);
-
-        if (goodSleepDays.length >= 3 && poorSleepDays.length >= 3) {
-            const goodSleepAvgSteps = goodSleepDays.reduce((sum, d) => sum + d.activity.steps, 0) / goodSleepDays.length;
-            const poorSleepAvgSteps = poorSleepDays.reduce((sum, d) => sum + d.activity.steps, 0) / poorSleepDays.length;
-            const stepsDifference = goodSleepAvgSteps - poorSleepAvgSteps;
-
-            if (stepsDifference > 1500) {
-                insights.push({
-                    type: 'sleep-activity',
-                    icon: '😴',
-                    title: 'Sleep & Activity Connection',
-                    message: `You average ${Math.round(stepsDifference)} more steps on good sleep days. Quality sleep supports higher activity levels.`,
-                    priority: 'medium',
-                    period: `${sleepStepsData.length}-day analysis`
-                });
-            }
-        }
     }
 
     return insights;
 }
 
-// Enhanced Weekly Patterns (includes activity)
+// Enhanced Weekly Patterns
 function analyzeWeeklyPatterns(data) {
     const insights = [];
     const weeklyData = {};
@@ -1057,47 +876,10 @@ function analyzeWeeklyPatterns(data) {
         }
     });
 
-    // Analyze weekend activity patterns
-    const weekends = ['Saturday', 'Sunday'];
-    const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-    
-    const weekendActivity = weekends
-        .filter(day => weeklyData[day] && weeklyData[day].activity.length > 0)
-        .flatMap(day => weeklyData[day].activity);
-    const weekdayActivity = weekdays
-        .filter(day => weeklyData[day] && weeklyData[day].activity.length > 0)
-        .flatMap(day => weeklyData[day].activity);
-
-    if (weekendActivity.length >= 2 && weekdayActivity.length >= 3) {
-        const weekendAvgSteps = weekendActivity.reduce((sum, d) => sum + d.steps, 0) / weekendActivity.length;
-        const weekdayAvgSteps = weekdayActivity.reduce((sum, d) => sum + d.steps, 0) / weekdayActivity.length;
-        const stepsDifference = weekendAvgSteps - weekdayAvgSteps;
-
-        if (stepsDifference < -3000) {
-            insights.push({
-                type: 'weekly-activity',
-                icon: '📅',
-                title: 'Weekend Activity Drop',
-                message: `You average ${Math.abs(Math.round(stepsDifference))} fewer steps on weekends. Plan active weekend activities to maintain consistency.`,
-                priority: 'medium',
-                period: 'Weekly pattern analysis'
-            });
-        } else if (stepsDifference > 2000) {
-            insights.push({
-                type: 'weekly-activity',
-                icon: '🎯',
-                title: 'Active Weekend Pattern',
-                message: `Great job! You're ${Math.round(stepsDifference)} steps more active on weekends. This helps offset weekday sedentary time.`,
-                priority: 'low',
-                period: 'Weekly pattern analysis'
-            });
-        }
-    }
-
     return insights;
 }
 
-// Other analysis functions (macro consistency, mood correlations, etc.)
+// Macro consistency analysis
 function analyzeMacroConsistency(data, goals) {
     const insights = [];
     const validDays = data.filter(d => d.nutrition.calories > 0);
@@ -1122,89 +904,15 @@ function analyzeMacroConsistency(data, goals) {
 }
 
 function analyzeMoodNutritionCorrelations(data) {
-    const insights = [];
-    const validDays = data.filter(d => d.journal.mood && d.nutrition.calories > 0);
-    
-    if (validDays.length < 10) return insights;
-
-    const highMoodDays = validDays.filter(d => d.journal.mood >= 7);
-    const lowMoodDays = validDays.filter(d => d.journal.mood <= 4);
-
-    if (highMoodDays.length >= 3 && lowMoodDays.length >= 3) {
-        const highMoodAvgProtein = highMoodDays.reduce((sum, d) => sum + d.nutrition.protein, 0) / highMoodDays.length;
-        const lowMoodAvgProtein = lowMoodDays.reduce((sum, d) => sum + d.nutrition.protein, 0) / lowMoodDays.length;
-        const proteinDifference = highMoodAvgProtein - lowMoodAvgProtein;
-        
-        if (proteinDifference > 20) {
-            insights.push({
-                type: 'mood-correlation',
-                icon: '🧠',
-                title: 'Mood-Protein Connection',
-                message: `You average ${Math.round(proteinDifference)}g more protein on high-mood days. Stable protein may help mood regulation.`,
-                priority: 'medium',
-                period: `${validDays.length}-day analysis`
-            });
-        }
-    }
-
-    return insights;
+    return [];
 }
 
 function analyzeSleepEatingPatterns(data) {
-    const insights = [];
-    const validDays = data.filter(d => d.journal.sleep && d.nutrition.calories > 0);
-    
-    if (validDays.length < 10) return insights;
-
-    const goodSleepDays = validDays.filter(d => d.journal.sleep >= 7.5);
-    const poorSleepDays = validDays.filter(d => d.journal.sleep < 6.5);
-
-    if (goodSleepDays.length >= 3 && poorSleepDays.length >= 3) {
-        // Analyze late eating patterns (using meal count as proxy)
-        const lateEatingDays = validDays.filter(d => d.nutrition.mealCount >= 4);
-        const poorSleepWithLateEating = poorSleepDays.filter(d => d.nutrition.mealCount >= 4).length;
-        
-        if (poorSleepWithLateEating / poorSleepDays.length > 0.6) {
-            insights.push({
-                type: 'sleep-eating',
-                icon: '🌙',
-                title: 'Late Eating & Sleep Quality',
-                message: `${Math.round(poorSleepWithLateEating / poorSleepDays.length * 100)}% of poor sleep days involved frequent meals. Try eating dinner 3+ hours before bed.`,
-                priority: 'high',
-                period: `${validDays.length}-day analysis`
-            });
-        }
-    }
-
-    return insights;
+    return [];
 }
 
 function analyzeGoalAdherenceTrends(data, goals) {
-    const insights = [];
-    const validDays = data.filter(d => d.nutrition.calories > 0);
-    
-    if (validDays.length < 14) return insights;
-
-    const midpoint = Math.floor(validDays.length / 2);
-    const firstHalf = validDays.slice(0, midpoint);
-    const secondHalf = validDays.slice(midpoint);
-
-    const firstHalfProteinAdherence = firstHalf.filter(d => d.nutrition.protein >= goals.protein * 0.9).length / firstHalf.length;
-    const secondHalfProteinAdherence = secondHalf.filter(d => d.nutrition.protein >= goals.protein * 0.9).length / secondHalf.length;
-    const proteinTrend = secondHalfProteinAdherence - firstHalfProteinAdherence;
-
-    if (proteinTrend > 0.2) {
-        insights.push({
-            type: 'goal-trend',
-            icon: '📈',
-            title: 'Improving Protein Consistency',
-            message: `Protein goal adherence improved by ${Math.round(proteinTrend * 100)}% recently. You're building better habits!`,
-            priority: 'low',
-            period: `${validDays.length}-day trend`
-        });
-    }
-
-    return insights;
+    return [];
 }
 
 function calculateCoefficientOfVariation(values) {
@@ -1214,26 +922,10 @@ function calculateCoefficientOfVariation(values) {
     return stdDev / mean;
 }
 
-// ENHANCED JOURNAL WITH ACTIVITY TRACKING (Fixed)
+// ENHANCED JOURNAL WITH ACTIVITY TRACKING
 const EnhancedTodaysJournal = () => {
     // Direct implementations to avoid scope issues
     const getTodayKey = () => currentAnalyticsDate;
-    
-    const formatDateForDisplay = (dateStr) => {
-        const date = new Date(dateStr + 'T00:00:00');
-        const today = new Date().toISOString().split('T')[0];
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-        
-        if (dateStr === today) {
-            return "Today";
-        } else if (dateStr === yesterdayStr) {
-            return "Yesterday";
-        } else {
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        }
-    };
     
     const loadTodayEntry = () => {
         const key = `fueliq_journal_${getTodayKey()}`;
@@ -1301,9 +993,9 @@ const EnhancedTodaysJournal = () => {
     return `
       <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
         <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-  <span class="mr-3 text-2xl">📊</span>
-  ${formatDateForDisplay(currentAnalyticsDate).includes('Today') ? 'Today\'s' : formatDateForDisplay(currentAnalyticsDate).split(' - ')[0] + '\'s'} Summary
-</h3>
+          <span class="mr-3 text-2xl">📝</span>
+          Wellness Journal
+        </h3>
         
         ${wearableConnected ? `
           <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl">
@@ -1520,7 +1212,7 @@ const EnhancedTodaysJournal = () => {
 
 // Activity data loading/saving functions
 function loadTodayActivity() {
-    const key = `fueliq_activity_${getTodayKey()}`;
+    const key = `fueliq_activity_${getCurrentAnalyticsDateKey()}`;
     try {
         return JSON.parse(localStorage.getItem(key) || '{}');
     } catch (e) {
@@ -1632,7 +1324,7 @@ const HistoricalAnalyticsPanel = ({ days = 30 }) => {
     );
 };
 
-// UPDATED ENHANCED FORM HANDLER
+// Enhanced form handler
 function setupEnhancedFormHandler() {
     const form = document.getElementById('enhanced-journal-form');
     if (!form) return;
@@ -1674,7 +1366,7 @@ function setupEnhancedFormHandler() {
         }
 
         // Save both journal and activity data
-        const saveSuccess = saveJournalEntry(formData) && saveActivityData(getTodayKey(), activityData);
+        const saveSuccess = saveJournalEntry(formData) && saveActivityData(getCurrentAnalyticsDateKey(), activityData);
         
         if (saveSuccess) {
             // Show success message
@@ -1685,9 +1377,13 @@ function setupEnhancedFormHandler() {
             
             setTimeout(() => {
                 button.innerHTML = originalText;
-                button.className = button.className.replace('from-emerald-500 to-green-600', 'from-green-500 to-emerald-600');
+                button.className = button.className.replace('from-emerald-5000 to-green-600', 'from-green-500 to-emerald-600');
+                
+                // Re-render to show updated data status
+                renderAnalyticsTab('analytics-container');
             }, 2000);
         }
     });
 }
+
 console.log('✅ Enhanced FuelIQ Analytics module loaded with AI insights');
