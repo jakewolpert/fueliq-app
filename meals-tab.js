@@ -1331,7 +1331,8 @@ const FoodItem = ({ food, onRemove, onUpdateServing }) => {
                 value: serving,
                 onChange: (e) => handleServingChange(Number(e.target.value)),
                 className: 'w-20 p-1 border border-gray-300 rounded text-sm',
-                min: '1'
+                min: '0.1',
+                step: '0.1'
             }),
             React.createElement('span', { className: 'text-sm text-gray-600' }, 'servings')
         ),
