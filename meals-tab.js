@@ -1309,26 +1309,45 @@ const foods = await searchFoodsEnhanced(query);
 // Food Item Component - CORRECTED VERSION
 const FoodItem = ({ food, onRemove, onUpdateServing }) => {
     // Helper function to get calories from multiple possible fields
-    const getCalories = (food) => {
-        const calories = food.calories || 
-                        food.energy || 
-                        food.kcal || 
-                        food.energy_kcal || 
-                        (food.nutrients && food.nutrients.calories) ||
-                        (food.nutrients && food.nutrients.energy) ||
-                        (food.nutriments && food.nutriments['energy-kcal']) ||
-                        (food.nutriments && food.nutriments.energy_kcal) ||
-                        0;
+    // Enhanced getCalories function with macro-based calculation
+const getCalories = (food) => {
+    // First, try to get calories from various possible fields
+    let calories = food.calories || 
+                  food.energy || 
+                  food.kcal || 
+                  food.energy_kcal || 
+                  (food.nutrients && food.nutrients.calories) ||
+                  (food.nutrients && food.nutrients.energy) ||
+                  (food.nutriments && food.nutriments['energy-kcal']) ||
+                  (food.nutriments && food.nutriments.energy_kcal) ||
+                  0;
+    
+    // If no calorie data found, calculate from macros
+    if (calories === 0 && (food.protein || food.carbs || food.fat)) {
+        const protein = food.protein || 0;
+        const carbs = food.carbs || 0;
+        const fat = food.fat || 0;
         
-        console.log('🔍 Calorie lookup for', food.name, ':', {
-    food_calories: food.calories,
-    food_energy: food.energy,
-    final_calories: calories
-});
-console.log('🔍 FULL FOOD OBJECT:', food);
+        // Standard calorie calculation: Protein=4cal/g, Carbs=4cal/g, Fat=9cal/g
+        calories = (protein * 4) + (carbs * 4) + (fat * 9);
         
-        return calories;
-    };
+        console.log('🔢 Calculated calories from macros:', {
+            protein: `${protein}g × 4 = ${protein * 4} cal`,
+            carbs: `${carbs}g × 4 = ${carbs * 4} cal`, 
+            fat: `${fat}g × 9 = ${fat * 9} cal`,
+            total: `${calories} calories`
+        });
+    }
+    
+    console.log('🔍 Calorie lookup for', food.name, ':', {
+        food_calories: food.calories,
+        food_energy: food.energy,
+        final_calories: calories,
+        calculated: calories > (food.calories || 0)
+    });
+    
+    return calories;
+};
 
     const [serving, setServing] = React.useState(1);
     
