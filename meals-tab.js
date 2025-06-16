@@ -1106,37 +1106,67 @@ const foods = await searchFoodsEnhanced(query);
     }, [query]);
 
     const handleAddFood = async (food, servingSize = 100) => {
-        // If it's a barcode scanned item, use it directly
-        if (food.upc) {
-            const updatedRecent = [food, ...recentFoods.filter(f => f.fdcId !== food.fdcId)];
-            setRecentFoods(updatedRecent);
-            saveRecentFoods(updatedRecent);
-            onAddFood(food);
-            onClose();
-            return;
-        }
-
-        // Otherwise, use existing USDA lookup logic
-        const details = await getFoodDetails(food.fdcId);
-        if (details) {
-            const nutrients = extractNutrients(details);
-            const foodItem = {
+    // If it's a barcode scanned item or enhanced search result, use it directly
+    if (food.upc || food.source || (food.nutrients && typeof food.nutrients === 'object')) {
+        // Handle enhanced food items (barcode, Open Food Facts, etc.)
+        let foodItem;
+        
+        if (food.nutrients) {
+            // Enhanced search result with nutrients object
+            foodItem = {
                 id: Date.now(),
                 fdcId: food.fdcId,
-                name: food.description,
+                name: food.description || food.name,
                 servingSize: servingSize,
-                ...nutrients
+                calories: food.nutrients.calories || 0,
+                protein: food.nutrients.protein || 0,
+                carbs: food.nutrients.carbs || 0,
+                fat: food.nutrients.fat || 0,
+                fiber: food.nutrients.fiber || 0
             };
-            
-            const updatedRecent = [foodItem, ...recentFoods.filter(f => f.fdcId !== food.fdcId)];
-            setRecentFoods(updatedRecent);
-            saveRecentFoods(updatedRecent);
-            
-            onAddFood(foodItem);
-            onClose();
+        } else {
+            // Barcode scanned item with direct nutrition values
+            foodItem = {
+                id: Date.now(),
+                fdcId: food.fdcId || food.upc,
+                name: food.name || food.description,
+                servingSize: servingSize,
+                calories: food.calories || 0,
+                protein: food.protein || 0,
+                carbs: food.carbs || 0,
+                fat: food.fat || 0,
+                fiber: food.fiber || 0
+            };
         }
-    };
+        
+        const updatedRecent = [foodItem, ...recentFoods.filter(f => f.fdcId !== foodItem.fdcId)];
+        setRecentFoods(updatedRecent);
+        saveRecentFoods(updatedRecent);
+        onAddFood(foodItem);
+        onClose();
+        return;
+    }
 
+    // Otherwise, use existing USDA lookup logic for original USDA results
+    const details = await getFoodDetails(food.fdcId);
+    if (details) {
+        const nutrients = extractNutrients(details);
+        const foodItem = {
+            id: Date.now(),
+            fdcId: food.fdcId,
+            name: food.description,
+            servingSize: servingSize,
+            ...nutrients
+        };
+        
+        const updatedRecent = [foodItem, ...recentFoods.filter(f => f.fdcId !== food.fdcId)];
+        setRecentFoods(updatedRecent);
+        saveRecentFoods(updatedRecent);
+        
+        onAddFood(foodItem);
+        onClose();
+    }
+};
     const handleBarcodeFound = (foodItem) => {
         setShowBarcodeScanner(false);
         handleAddFood(foodItem);
