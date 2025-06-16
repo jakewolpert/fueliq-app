@@ -285,37 +285,36 @@ useEffect(() => {
         }
       }, [currentView]);
 
-      // Enhanced journey tab rendering
-      useEffect(() => {
-        if (currentView === 'journey') {
-          clearContainer('journey-container');
-          
-          let retryCount = 0;
-          const maxRetries = 10;
-          
-          const tryRenderJourney = () => {
-            if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.renderWeightJourney) {
-              try {
-                window.FuelIQWeightJourney.renderWeightJourney('journey-container');
-                console.log('✅ Journey tab rendered successfully');
-              } catch (error) {
-                console.error('Error rendering journey tab:', error);
-              }
-            } else {
-              retryCount++;
-              if (retryCount < maxRetries) {
-                console.log(`⏳ Waiting for FuelIQWeightJourney module... (${retryCount}/${maxRetries})`);
-                setTimeout(tryRenderJourney, 200);
-              } else {
-                console.warn('❌ FuelIQWeightJourney module failed to load');
-              }
-            }
-          };
-          
-          setTimeout(tryRenderJourney, 100);
+      // Enhanced profile tab rendering
+useEffect(() => {
+  if (currentView === 'profile') {
+    clearContainer('profile-container');
+    
+    let retryCount = 0;
+    const maxRetries = 10;
+    
+    const tryRenderProfile = () => {
+      if (window.FuelIQProfile && window.FuelIQProfile.renderProfileTab) {
+        try {
+          window.FuelIQProfile.renderProfileTab('profile-container');
+          console.log('✅ Profile tab rendered successfully');
+        } catch (error) {
+          console.error('Error rendering profile tab:', error);
         }
-      }, [currentView]);
-
+      } else {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Waiting for FuelIQProfile module... (${retryCount}/${maxRetries})`);
+          setTimeout(tryRenderProfile, 200);
+        } else {
+          console.warn('❌ FuelIQProfile module failed to load');
+        }
+      }
+    };
+    
+    setTimeout(tryRenderProfile, 100);
+  }
+}, [currentView]);
       // Enhanced pantry tab rendering
       useEffect(() => {
         if (currentView === 'pantry') {
