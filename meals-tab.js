@@ -1492,11 +1492,11 @@ const loadUserGoals = () => {
 
     const userGoals = loadUserGoals();
     const dailyGoals = {
-        calories: userGoals.dailyCalories || 2000,
-        protein: userGoals.protein || 150,
-        carbs: userGoals.carbs || 250,
-        fat: userGoals.fat || 67
-    };
+    calories: userGoals.calories || 2000,
+    protein: userGoals.protein || 150,
+    carbs: userGoals.carbs || 250,
+    fat: userGoals.fat || 67
+};
 
     React.useEffect(() => {
         const dateStr = formatDate(currentDate);
