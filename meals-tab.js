@@ -1434,13 +1434,46 @@ const MealsTab = () => {
     const [meals, setMeals] = React.useState(loadMealData(formatDate(currentDate)));
 
     // Load user goals safely from localStorage (fallback to defaults)
-    const loadUserGoals = () => {
-        const defaultGoals = {
-            dailyCalories: 2000,
-            protein: 150,
-            carbs: 250,
-            fat: 67
-        };
+const loadUserGoals = () => {
+    const defaultGoals = {
+        calories: 2000,
+        protein: 150,
+        carbs: 250,
+        fat: 67
+    };
+
+    if (isLocalStorageAvailable()) {
+        try {
+            // Try multiple possible keys and formats
+            let data = localStorage.getItem('fueliq_user_goals');
+            if (!data) {
+                data = localStorage.getItem('fueliq_user_profile');
+            }
+            
+            if (data) {
+                const parsed = JSON.parse(data);
+                
+                // Handle different possible formats
+                const goals = {
+                    calories: parsed.calories || parsed.dailyCalories || defaultGoals.calories,
+                    protein: parsed.protein || defaultGoals.protein,
+                    carbs: parsed.carbs || parsed.carbohydrates || defaultGoals.carbs,
+                    fat: parsed.fat || defaultGoals.fat
+                };
+                
+                console.log('✅ Loaded user goals:', goals);
+                return goals;
+            }
+            
+            return defaultGoals;
+        } catch (e) {
+            console.warn('Failed to load user goals from localStorage:', e);
+            return defaultGoals;
+        }
+    } else {
+        return defaultGoals;
+    }
+};
 
         if (isLocalStorageAvailable()) {
             try {
