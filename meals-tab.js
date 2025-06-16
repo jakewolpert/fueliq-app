@@ -1308,8 +1308,7 @@ const foods = await searchFoodsEnhanced(query);
 
 // Food Item Component
 const FoodItem = ({ food, onRemove, onUpdateServing }) => {
-    const [serving, setServing] = React.useState(food.servingSize);
-
+const [serving, setServing] = React.useState(1);
     const handleServingChange = (newServing) => {
         setServing(newServing);
         onUpdateServing(food.id, newServing);
