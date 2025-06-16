@@ -47,7 +47,19 @@
 
     function FuelIQ() {
       const [currentView, setCurrentView] = useState('profile');
-  
+      const [currentView, setCurrentView] = useState('profile');
+    
+    // Expose navigation globally for other tabs
+    useEffect(() => {
+      window.setCurrentView = setCurrentView;
+      console.log('✅ Navigation exposed globally');
+      
+      return () => {
+        window.setCurrentView = null;
+      };
+    }, [setCurrentView]);
+    
+    const [userProfile, setUserProfile] = useState({
   const [userProfile, setUserProfile] = useState({
     name: '',
     age: '',
