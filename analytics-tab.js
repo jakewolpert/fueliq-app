@@ -639,28 +639,7 @@ window.setSpecificDate = setSpecificDate;
     `;
   }
 
-  // Render Today's Summary with Enhanced Macros
-  function renderTodaysSummary() {
-    const formatDateForDisplay = (dateStr) => {
-        const date = new Date(dateStr + 'T00:00:00');
-        const today = new Date().toISOString().split('T')[0];
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-        
-        if (dateStr === today) {
-            return "Today";
-        } else if (dateStr === yesterdayStr) {
-            return "Yesterday";
-        } else {
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        }
-    };
-    
-    const nutrition = getNutritionData(currentAnalyticsDate);
-    // ... rest of your existing function
-  function renderTodaysSummary() {
-const nutrition = getNutritionData(currentAnalyticsDate);
+  const nutrition = getNutritionData(currentAnalyticsDate);
     const journal = loadTodayEntry();
     const { goals, profile } = getUserData();
 
