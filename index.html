@@ -969,10 +969,10 @@ useEffect(() => {
     }
   } catch (e) {
     console.warn('Could not save user profile:', e);
-  }
-  setCurrentView('dashboard');
 }
-                disabled: !goals.calories,
+  setCurrentView('dashboard');
+},  // ← ADD THIS COMMA!
+disabled: !goals.calories,
                 className: "w-full px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl hover:from-orange-600 hover:to-red-700 disabled:from-gray-300 disabled:to-gray-400 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center"
               },
                 "Continue to Dashboard ",
