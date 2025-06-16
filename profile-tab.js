@@ -20,27 +20,84 @@
     const memoryStorage = {};
 
     const saveProfileData = (data) => {
-        const key = 'fueliq_unified_profile';
-        const dataStr = JSON.stringify(data);
-        
-        if (isLocalStorageAvailable()) {
-            try {
-                localStorage.setItem(key, dataStr);
-                // Also save to unified data manager
-                if (window.UnifiedDataManager) {
-                    window.UnifiedDataManager.setUserProfile(data.personal);
-                    window.UnifiedDataManager.setGoals(data.goals);
+        // Use your existing FuelIQDataManager instead of separate storage
+        if (window.FuelIQDataManager) {
+            // Save profile data
+            if (data.personal) {
+                window.FuelIQDataManager.setProfile(data.personal);
+            }
+            
+            // Save goals data
+            if (data.goals) {
+                window.FuelIQDataManager.setGoals(data.goals);
+            }
+            
+            console.log('✅ Profile data saved via FuelIQDataManager');
+        } else {
+            // Fallback to local storage
+            const key = 'fueliq_unified_profile';
+            const dataStr = JSON.stringify(data);
+            
+            if (isLocalStorageAvailable()) {
+                try {
+                    localStorage.setItem(key, dataStr);
+                } catch (e) {
+                    console.warn('localStorage failed, using memory storage:', e);
+                    memoryStorage[key] = dataStr;
                 }
-            } catch (e) {
-                console.warn('localStorage failed, using memory storage:', e);
+            } else {
                 memoryStorage[key] = dataStr;
             }
-        } else {
-            memoryStorage[key] = dataStr;
         }
     };
 
     const loadProfileData = () => {
+        // Use your existing FuelIQDataManager first
+        if (window.FuelIQDataManager) {
+            const profile = window.FuelIQDataManager.getProfile();
+            const goals = window.FuelIQDataManager.getGoals();
+            
+            console.log('✅ Loading profile from FuelIQDataManager:', { profile, goals });
+            
+            return {
+                personal: {
+                    name: profile.name || '',
+                    birthday: profile.age ? calculateBirthday(profile.age) : '',
+                    height: profile.height || '',
+                    gender: profile.gender || 'male'
+                },
+                current: {
+                    weight: profile.weight || '',
+                    activityLevel: profile.activityLevel || 'moderate',
+                    lastWeightEntry: null
+                },
+                goals: {
+                    primaryGoal: profile.goal || 'fat_loss',
+                    targetWeight: '',
+                    targetDate: '',
+                    calories: goals.calories || 2000,
+                    protein: goals.protein || 150,
+                    carbs: goals.carbs || 250,
+                    fat: goals.fat || 67
+                },
+                dietary: {
+                    restrictions: profile.dietaryRestrictions || [],
+                    allergies: profile.allergies || [],
+                    healthConcerns: profile.healthConcerns || []
+                },
+                preferences: {
+                    foodsILove: profile.foodsILove || [],
+                    foodsIAvoid: profile.foodsIAvoid || [],
+                    cuisines: profile.cuisinePreferences || [],
+                    antiBloutPreference: profile.antiBloutPreference || false
+                },
+                weightHistory: [],
+                planGenerated: false,
+                planGeneratedDate: null
+            };
+        }
+        
+        // Fallback to old method
         const key = 'fueliq_unified_profile';
         let data = null;
         
@@ -57,16 +114,6 @@
         
         if (data) {
             return JSON.parse(data);
-        }
-
-        // Try to migrate from old format
-        const oldProfile = localStorage.getItem('fueliq_user_profile');
-        const oldWeightData = localStorage.getItem('fueliq_weight_journey');
-        
-        if (oldProfile || oldWeightData) {
-            const migrated = migrateOldData(oldProfile, oldWeightData);
-            saveProfileData(migrated);
-            return migrated;
         }
 
         // Default data structure
