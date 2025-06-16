@@ -730,12 +730,21 @@ function renderTodaysJournal() {
   </div>
 `;
     // Setup event handlers
-    setupFormHandler();
-    
-    // Render AI insights
-    setTimeout(() => {
-      renderAIInsights();
-    }, 100);
+setupEnhancedFormHandler();
+
+// Render Historical Analytics Panel
+setTimeout(() => {
+  const historicalContainer = document.getElementById('historical-analytics-container');
+  if (historicalContainer && window.React && window.ReactDOM) {
+    const HistoricalPanel = React.createElement(HistoricalAnalyticsPanel, { days: 30 });
+    ReactDOM.render(HistoricalPanel, historicalContainer);
+  }
+}, 100);
+
+// Render AI insights
+setTimeout(() => {
+  renderAIInsights();
+}, 200);
   }
 
   // Cleanup function
