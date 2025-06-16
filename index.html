@@ -168,20 +168,42 @@
         };
       };
 
-      // Load saved user profile on component mount
-      useEffect(() => {
-        try {
-          const savedProfile = localStorage.getItem('fueliq_user_profile');
-          if (savedProfile) {
-            const parsedProfile = JSON.parse(savedProfile);
-            console.log('✅ Loaded saved user profile:', parsedProfile);
-            setUserProfile(parsedProfile);
-          }
-        } catch (e) {
-          console.warn('Could not load saved user profile:', e);
+      // Load saved user profile when returning to setup page
+useEffect(() => {
+  if (currentView === 'setup') {
+    console.log('🔄 Setup page activated - loading saved data...');
+    
+    try {
+      // Try unified data manager first (if available)
+      if (window.UnifiedDataManager) {
+        const savedProfile = window.UnifiedDataManager.getUserProfile();
+        const savedGoals = window.UnifiedDataManager.getGoals();
+        
+        if (savedProfile) {
+          console.log('✅ Loaded profile from unified data manager:', savedProfile);
+          setUserProfile(savedProfile);
         }
-      }, []); // Empty dependency array means this runs once on mount
-
+        
+        if (savedGoals) {
+          console.log('✅ Loaded goals from unified data manager:', savedGoals);
+          setGoals(savedGoals);
+        }
+      } else {
+        // Fallback to localStorage
+        const savedProfile = localStorage.getItem('fueliq_user_profile');
+        if (savedProfile) {
+          const parsedProfile = JSON.parse(savedProfile);
+          console.log('✅ Loaded profile from localStorage:', parsedProfile);
+          setUserProfile(parsedProfile);
+        } else {
+          console.log('ℹ️ No saved profile found - showing empty form');
+        }
+      }
+    } catch (e) {
+      console.warn('❌ Error loading saved data:', e);
+    }
+  }
+}, [currentView]); // Key change: depend on currentView
       // Calculate goals when user profile changes
       useEffect(() => {
         if (userProfile.age && userProfile.weight && userProfile.height) {
