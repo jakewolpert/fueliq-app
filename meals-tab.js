@@ -1306,10 +1306,9 @@ const foods = await searchFoodsEnhanced(query);
     );
 };
 
-// Food Item Component
+// Food Item Component - CORRECTED VERSION
 const FoodItem = ({ food, onRemove, onUpdateServing }) => {
-    const FoodItem = ({ food, onRemove, onUpdateServing }) => {
-    // ADD THIS HELPER FUNCTION HERE ↓
+    // Helper function to get calories from multiple possible fields
     const getCalories = (food) => {
         const calories = food.calories || 
                         food.energy || 
@@ -1329,16 +1328,15 @@ const FoodItem = ({ food, onRemove, onUpdateServing }) => {
         
         return calories;
     };
-    // ADD ABOVE THIS LINE ↑
+
+    const [serving, setServing] = React.useState(1);
     
-const [serving, setServing] = React.useState(1);
-const [serving, setServing] = React.useState(1);
     const handleServingChange = (newServing) => {
         setServing(newServing);
         onUpdateServing(food.id, newServing);
     };
 
-const multiplier = (serving * (food.servingSize || 100)) / 100;
+    const multiplier = (serving * (food.servingSize || 100)) / 100;
 
     return React.createElement('div', { className: 'bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow' },
         React.createElement('div', { className: 'flex justify-between items-start mb-2' },
@@ -1362,7 +1360,8 @@ const multiplier = (serving * (food.servingSize || 100)) / 100;
         React.createElement('div', { className: 'grid grid-cols-2 gap-4 text-sm' },
             React.createElement('div', null,
                 React.createElement('span', { className: 'text-gray-600' }, 'Calories: '),
-React.createElement('span', { className: 'font-semibold' }, Math.round(getCalories(food) * multiplier))            ),
+                React.createElement('span', { className: 'font-semibold' }, Math.round(getCalories(food) * multiplier))
+            ),
             React.createElement('div', null,
                 React.createElement('span', { className: 'text-gray-600' }, 'Protein: '),
                 React.createElement('span', { className: 'font-semibold' }, `${Math.round(food.protein * multiplier)}g`)
