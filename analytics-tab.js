@@ -816,6 +816,7 @@ function renderTodaysJournal() {
 
    container.innerHTML = `
   <div class="max-w-7xl mx-auto p-6">
+    ${renderDateNavigation()}
     <!-- NEW: Historical Analytics Panel -->
     <div id="historical-analytics-container" class="mb-8">
       <!-- Will be populated by React component -->
