@@ -644,9 +644,9 @@ window.setSpecificDate = setSpecificDate;
     const { goals, profile } = getUserData();
 
     return `
-      <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-  <span class="mr-3 text-2xl">📊</span>
-  Summary
+     <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+  <span class="mr-3 text-2xl">📝</span>
+  Wellness Journal
 </h3>
         
         <div class="space-y-4">
