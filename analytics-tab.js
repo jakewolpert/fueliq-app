@@ -641,7 +641,7 @@ window.setSpecificDate = setSpecificDate;
 
   // Render Today's Summary with Enhanced Macros
   function renderTodaysSummary() {
-    const nutrition = getTodayNutrition();
+const nutrition = getNutritionData(currentAnalyticsDate);
     const journal = loadTodayEntry();
     const { goals, profile } = getUserData();
 
