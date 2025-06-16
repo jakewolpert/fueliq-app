@@ -702,29 +702,33 @@ function renderTodaysJournal() {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    container.innerHTML = `
-      <div class="max-w-7xl mx-auto p-6">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <!-- Today's Journal -->
-          <div id="journal-container">
-            ${renderTodaysJournal()}
-          </div>
-          
-          <!-- Today's Summary -->
-          <div id="summary-container">
-            ${renderTodaysSummary()}
-          </div>
-        </div>
-        
-        <!-- AI Insights -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
-          <div id="ai-insights-container">
-            <!-- AI insights will be rendered here -->
-          </div>
-        </div>
+   container.innerHTML = `
+  <div class="max-w-7xl mx-auto p-6">
+    <!-- NEW: Historical Analytics Panel -->
+    <div id="historical-analytics-container" class="mb-8">
+      <!-- Will be populated by React component -->
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <!-- Today's Journal -->
+      <div id="journal-container">
+        ${renderTodaysJournal()}
       </div>
-    `;
-
+      
+      <!-- Today's Summary -->
+      <div id="summary-container">
+        ${renderTodaysSummary()}
+      </div>
+    </div>
+    
+    <!-- AI Insights -->
+    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
+      <div id="ai-insights-container">
+        <!-- AI insights will be rendered here -->
+      </div>
+    </div>
+  </div>
+`;
     // Setup event handlers
     setupFormHandler();
     
