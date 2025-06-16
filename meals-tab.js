@@ -1475,21 +1475,6 @@ const loadUserGoals = () => {
     }
 };
 
-        if (isLocalStorageAvailable()) {
-            try {
-                const data = localStorage.getItem('fueliq_user_goals');
-                return data ? { ...defaultGoals, ...JSON.parse(data) } : defaultGoals;
-            } catch (e) {
-                console.warn('Failed to load user goals from localStorage:', e);
-                const memData = memoryStorage['fueliq_user_goals'];
-                return memData ? { ...defaultGoals, ...JSON.parse(memData) } : defaultGoals;
-            }
-        } else {
-            const memData = memoryStorage['fueliq_user_goals'];
-            return memData ? { ...defaultGoals, ...JSON.parse(memData) } : defaultGoals;
-        }
-    };
-
     const userGoals = loadUserGoals();
     const dailyGoals = {
     calories: userGoals.calories || 2000,
