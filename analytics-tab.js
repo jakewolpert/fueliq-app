@@ -750,10 +750,11 @@ window.FuelIQAnalytics = (function() {
   }
 
   // Public API
-  return {
-    renderAnalyticsTab,
-    cleanup
-  };
+return {
+  renderAnalyticsTab,
+  cleanup,
+  getCurrentAnalyticsDateKey
+};
 })();
 
 // Advanced Historical Data Analysis
