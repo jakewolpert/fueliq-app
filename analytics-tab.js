@@ -648,9 +648,9 @@ window.setSpecificDate = setSpecificDate;
     return `
       <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
         <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-          <span class="mr-3 text-2xl">📊</span>
-          Today's Summary
-        </h3>
+  <span class="mr-3 text-2xl">📝</span>
+  ${formatDateForDisplay(currentAnalyticsDate).includes('Today') ? 'Today\'s' : formatDateForDisplay(currentAnalyticsDate).split(' - ')[0] + '\'s'} Wellness Journal
+</h3>
         
         <div class="space-y-4">
           <!-- Goal Display -->
