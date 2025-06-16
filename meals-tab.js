@@ -1308,6 +1308,30 @@ const foods = await searchFoodsEnhanced(query);
 
 // Food Item Component
 const FoodItem = ({ food, onRemove, onUpdateServing }) => {
+    const FoodItem = ({ food, onRemove, onUpdateServing }) => {
+    // ADD THIS HELPER FUNCTION HERE ↓
+    const getCalories = (food) => {
+        const calories = food.calories || 
+                        food.energy || 
+                        food.kcal || 
+                        food.energy_kcal || 
+                        (food.nutrients && food.nutrients.calories) ||
+                        (food.nutrients && food.nutrients.energy) ||
+                        (food.nutriments && food.nutriments['energy-kcal']) ||
+                        (food.nutriments && food.nutriments.energy_kcal) ||
+                        0;
+        
+        console.log('🔍 Calorie lookup for', food.name, ':', {
+            food_calories: food.calories,
+            food_energy: food.energy,
+            final_calories: calories
+        });
+        
+        return calories;
+    };
+    // ADD ABOVE THIS LINE ↑
+    
+const [serving, setServing] = React.useState(1);
 const [serving, setServing] = React.useState(1);
     const handleServingChange = (newServing) => {
         setServing(newServing);
