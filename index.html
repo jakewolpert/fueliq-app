@@ -956,14 +956,22 @@ useEffect(() => {
               // Continue button
               e('button', {
                 onClick: () => {
-                  // Save user profile to localStorage for other modules
-                  try {
-                    localStorage.setItem('fueliq_user_profile', JSON.stringify(userProfile));
-                  } catch (e) {
-                    console.warn('Could not save user profile:', e);
-                  }
-                  setCurrentView('dashboard');
-                },
+  try {
+    // Save to unified data manager if available
+    if (window.UnifiedDataManager) {
+      window.UnifiedDataManager.setUserProfile(userProfile);
+      window.UnifiedDataManager.setGoals(goals);
+      console.log('✅ Saved to unified data manager');
+    } else {
+      // Fallback to localStorage
+      localStorage.setItem('fueliq_user_profile', JSON.stringify(userProfile));
+      console.log('✅ Saved to localStorage');
+    }
+  } catch (e) {
+    console.warn('Could not save user profile:', e);
+  }
+  setCurrentView('dashboard');
+}
                 disabled: !goals.calories,
                 className: "w-full px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl hover:from-orange-600 hover:to-red-700 disabled:from-gray-300 disabled:to-gray-400 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center"
               },
