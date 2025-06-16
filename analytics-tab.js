@@ -62,7 +62,7 @@ window.FuelIQAnalytics = (function() {
           <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 mb-6 border border-white/30">
               <div class="flex items-center justify-between">
                   <button 
-                      onclick="navigateDate(-1)"
+                      onclick="window.FuelIQAnalytics.navigateDate(-1)"
                       class="flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
                   >
                       <span class="text-lg mr-2">←</span>
@@ -79,14 +79,14 @@ window.FuelIQAnalytics = (function() {
                               id="date-picker"
                               value="${currentAnalyticsDate}"
                               max="${today}"
-                              onchange="setSpecificDate(this.value)"
+                              onchange="window.FuelIQAnalytics.setSpecificDate(this.value)"
                               class="mt-2 px-3 py-1 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:outline-none"
                           />
                       </div>
                       
                       ${!isToday ? `
                           <button 
-                              onclick="setSpecificDate('${today}')"
+                              onclick="window.FuelIQAnalytics.setSpecificDate('${today}')"
                               class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm transition-all duration-200"
                           >
                               📅 Today
@@ -95,7 +95,7 @@ window.FuelIQAnalytics = (function() {
                   </div>
                   
                   <button 
-                      onclick="navigateDate(1)"
+                      onclick="window.FuelIQAnalytics.navigateDate(1)"
                       ${!canGoForward ? 'disabled' : ''}
                       class="flex items-center px-4 py-2 ${canGoForward ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-300 cursor-not-allowed'} text-white rounded-xl transition-all duration-200 shadow-md ${canGoForward ? 'hover:shadow-lg transform hover:scale-105' : ''}"
                   >
@@ -112,10 +112,6 @@ window.FuelIQAnalytics = (function() {
           </div>
       `;
   }
-
-  // Make navigation functions globally available
-  window.navigateDate = navigateDate;
-  window.setSpecificDate = setSpecificDate;
 
   // Check if wearables are connected (mock detection for now)
   function checkWearableConnection() {
@@ -174,11 +170,6 @@ window.FuelIQAnalytics = (function() {
     { value: 6, label: '😫 Very High', emoji: '😫' }
   ];
 
-  // Get today's date key
-  function getTodayKey() {
-    return new Date().toISOString().split('T')[0];
-  }
-
   // Load today's journal entry
   function loadTodayEntry() {
     const key = `fueliq_journal_${getCurrentAnalyticsDateKey()}`;
@@ -189,7 +180,7 @@ window.FuelIQAnalytics = (function() {
     }
   }
 
-  // Save journal entry
+  // Enhanced save functions with better error handling
   function saveJournalEntry(data) {
     const key = `fueliq_journal_${getCurrentAnalyticsDateKey()}`;
     try {
@@ -199,6 +190,8 @@ window.FuelIQAnalytics = (function() {
             date: getCurrentAnalyticsDateKey()
         }));
         
+        console.log('✅ Journal entry saved successfully');
+        
         // Refresh insights after saving
         setTimeout(() => {
             renderAIInsights();
@@ -206,7 +199,25 @@ window.FuelIQAnalytics = (function() {
         
         return true;
     } catch (e) {
-        console.error('Failed to save journal entry:', e);
+        console.error('❌ Failed to save journal entry:', e);
+        alert('Failed to save journal entry. Please try again.');
+        return false;
+    }
+  }
+
+  function saveActivityData(date, activity) {
+    const key = `fueliq_activity_${date}`;
+    try {
+        localStorage.setItem(key, JSON.stringify({
+            ...activity,
+            timestamp: new Date().toISOString(),
+            date: date
+        }));
+        
+        console.log('✅ Activity data saved successfully');
+        return true;
+    } catch (e) {
+        console.error('❌ Failed to save activity data:', e);
         return false;
     }
   }
@@ -515,6 +526,16 @@ window.FuelIQAnalytics = (function() {
     `;
   }
 
+  // Activity data loading function
+  function loadTodayActivity() {
+    const key = `fueliq_activity_${getCurrentAnalyticsDateKey()}`;
+    try {
+        return JSON.parse(localStorage.getItem(key) || '{}');
+    } catch (e) {
+        return {};
+    }
+  }
+
   // Render Today's Summary with Enhanced Macros
   function renderTodaysSummary() {
     const nutrition = getNutritionData(currentAnalyticsDate);
@@ -638,357 +659,11 @@ window.FuelIQAnalytics = (function() {
     `;
   }
 
-  // Render Today's Journal (Enhanced with Activity Tracking)
+  // Enhanced Today's Journal
   function renderTodaysJournal() {
-    return EnhancedTodaysJournal();
-  }
-
-  // Setup form handler
-  function setupFormHandler() {
-    const form = document.getElementById('journal-form');
-    if (!form) return;
-
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      const formData = {
-        notes: document.getElementById('journal-notes').value,
-        water: parseInt(document.getElementById('water-input').value) || 0,
-        stress: parseInt(document.getElementById('stress-level').value) || 0,
-        mood: parseInt(document.getElementById('mood-rating').value) || 0,
-        energy: parseInt(document.getElementById('energy-rating').value) || 0,
-        alcohol: parseFloat(document.getElementById('alcohol-input').value) || 0
-      };
-
-      // Add sleep data
-      if (!wearableConnected) {
-        formData.sleep = parseFloat(document.getElementById('sleep-input').value) || 0;
-        formData.activityType = document.getElementById('activity-type').value;
-        formData.strain = parseInt(document.getElementById('strain-input').value) || 0;
-      } else {
-        // In real app, this would come from the wearable
-        formData.sleep = 8.2; // Mock data
-      }
-
-      if (saveJournalEntry(formData)) {
-        // Show success message
-        const button = form.querySelector('button[type="submit"]');
-        const originalText = button.innerHTML;
-        button.innerHTML = '<span class="mr-2 text-xl">✅</span>Saved Successfully!';
-        button.className = button.className.replace('from-green-500 to-emerald-600', 'from-emerald-500 to-green-600');
-        
-        setTimeout(() => {
-          button.innerHTML = originalText;
-          button.className = button.className.replace('from-emerald-500 to-green-600', 'from-green-500 to-emerald-600');
-        }, 2000);
-      }
-    });
-  }
-
-  // Main render function
-  function renderAnalyticsTab(containerId) {
-    currentContainer = containerId;
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    container.innerHTML = `
-      <div class="max-w-7xl mx-auto p-6">
-        ${renderDateNavigation()}
-        <!-- NEW: Historical Analytics Panel -->
-        <div id="historical-analytics-container" class="mb-8">
-          <!-- Will be populated by React component -->
-        </div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <!-- Today's Journal -->
-          <div id="journal-container">
-            ${renderTodaysJournal()}
-          </div>
-          
-          <!-- Today's Summary -->
-          <div id="summary-container">
-            ${renderTodaysSummary()}
-          </div>
-        </div>
-        
-        <!-- AI Insights -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
-          <div id="ai-insights-container">
-            <!-- AI insights will be rendered here -->
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Setup event handlers
-    setupEnhancedFormHandler();
-
-    // Render Historical Analytics Panel
-    setTimeout(() => {
-      const historicalContainer = document.getElementById('historical-analytics-container');
-      if (historicalContainer && window.React && window.ReactDOM) {
-        const HistoricalPanel = React.createElement(HistoricalAnalyticsPanel, { days: 30 });
-        ReactDOM.render(HistoricalPanel, historicalContainer);
-      }
-    }, 100);
-
-    // Render AI insights
-    setTimeout(() => {
-      renderAIInsights();
-    }, 200);
-  }
-
-  // Cleanup function
-  function cleanup() {
-    if (currentContainer) {
-      const container = document.getElementById(currentContainer);
-      if (container) {
-        container.innerHTML = '';
-      }
-    }
-    currentContainer = null;
-  }
-
-  // Public API
-return {
-  renderAnalyticsTab,
-  cleanup,
-  getCurrentAnalyticsDateKey
-};
-})();
-
-// Advanced Historical Data Analysis
-const AdvancedHistoricalAnalysis = {
-    
-    // Get comprehensive historical data for any date range
-    getHistoricalData: (startDate, endDate) => {
-        const data = [];
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        
-        for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-            const dateStr = date.toISOString().split('T')[0];
-            
-            // Get meals data
-            const nutrition = getNutritionData(dateStr);
-            
-            // Get journal data
-            const journalKey = `fueliq_journal_${dateStr}`;
-            const journalData = JSON.parse(localStorage.getItem(journalKey) || '{}');
-            
-            // Get activity data (new)
-            const activityKey = `fueliq_activity_${dateStr}`;
-            const activityData = JSON.parse(localStorage.getItem(activityKey) || '{}');
-            
-            data.push({
-                date: dateStr,
-                dayOfWeek: date.toLocaleDateString('en-US', { weekday: 'long' }),
-                nutrition,
-                journal: journalData,
-                activity: activityData
-            });
-        }
-        
-        return data;
-    },
-
-    // Enhanced pattern analysis with activity correlation
-    generateHistoricalInsights: (days = 30) => {
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - days);
-        
-        const historicalData = AdvancedHistoricalAnalysis.getHistoricalData(startDate, endDate);
-        const insights = [];
-        const { goals } = getUserData();
-
-        // Activity & Nutrition Correlations
-        const activityInsights = analyzeActivityNutritionCorrelations(historicalData);
-        insights.push(...activityInsights);
-
-        // Weekly patterns
-        const weeklyPatterns = analyzeWeeklyPatterns(historicalData);
-        insights.push(...weeklyPatterns);
-
-        // Macro consistency
-        const macroConsistency = analyzeMacroConsistency(historicalData, goals);
-        insights.push(...macroConsistency);
-
-        // Mood correlations
-        const moodCorrelations = analyzeMoodNutritionCorrelations(historicalData);
-        insights.push(...moodCorrelations);
-
-        // Sleep patterns
-        const sleepPatterns = analyzeSleepEatingPatterns(historicalData);
-        insights.push(...sleepPatterns);
-
-        // Goal adherence trends
-        const goalTrends = analyzeGoalAdherenceTrends(historicalData, goals);
-        insights.push(...goalTrends);
-
-        return insights.slice(0, 8); // Limit to top insights
-    }
-};
-
-// Activity & Nutrition Correlation Analysis
-function analyzeActivityNutritionCorrelations(data) {
-    const insights = [];
-    const validDays = data.filter(d => d.nutrition.calories > 0 && d.activity.steps);
-    
-    if (validDays.length < 7) return insights;
-
-    // High activity vs eating patterns
-    const highActivityDays = validDays.filter(d => d.activity.steps >= 8000);
-    const lowActivityDays = validDays.filter(d => d.activity.steps < 5000);
-
-    if (highActivityDays.length >= 3 && lowActivityDays.length >= 3) {
-        const highActivityAvgCals = highActivityDays.reduce((sum, d) => sum + d.nutrition.calories, 0) / highActivityDays.length;
-        const lowActivityAvgCals = lowActivityDays.reduce((sum, d) => sum + d.nutrition.calories, 0) / lowActivityDays.length;
-        const calorieDifference = highActivityAvgCals - lowActivityAvgCals;
-
-        if (Math.abs(calorieDifference) > 200) {
-            insights.push({
-                type: 'activity-nutrition',
-                icon: '🏃‍♂️',
-                title: 'Activity & Appetite Pattern',
-                message: `You eat ${Math.abs(Math.round(calorieDifference))} ${calorieDifference > 0 ? 'more' : 'fewer'} calories on high-activity days. ${calorieDifference < 0 ? 'Consider fueling workouts better.' : 'Good job matching intake to activity!'}`,
-                priority: 'medium',
-                period: `${validDays.length}-day analysis`
-            });
-        }
-    }
-
-    return insights;
-}
-
-// Enhanced Weekly Patterns
-function analyzeWeeklyPatterns(data) {
-    const insights = [];
-    const weeklyData = {};
-    
-    // Group by day of week
-    data.forEach(day => {
-        if (!weeklyData[day.dayOfWeek]) {
-            weeklyData[day.dayOfWeek] = { nutrition: [], activity: [] };
-        }
-        weeklyData[day.dayOfWeek].nutrition.push(day.nutrition);
-        if (day.activity.steps) {
-            weeklyData[day.dayOfWeek].activity.push(day.activity);
-        }
-    });
-
-    return insights;
-}
-
-// Macro consistency analysis
-function analyzeMacroConsistency(data, goals) {
-    const insights = [];
-    const validDays = data.filter(d => d.nutrition.calories > 0);
-    
-    if (validDays.length < 7) return insights;
-
-    const proteinValues = validDays.map(d => d.nutrition.protein);
-    const proteinCV = calculateCoefficientOfVariation(proteinValues);
-    
-    if (proteinCV > 0.4) {
-        insights.push({
-            type: 'consistency',
-            icon: '📊',
-            title: 'Inconsistent Protein Intake',
-            message: `Your protein varies significantly day-to-day (${Math.round(proteinCV * 100)}% variation). Consistent protein supports muscle maintenance.`,
-            priority: 'medium',
-            period: `${validDays.length}-day analysis`
-        });
-    }
-
-    return insights;
-}
-
-function analyzeMoodNutritionCorrelations(data) {
-    return [];
-}
-
-function analyzeSleepEatingPatterns(data) {
-    return [];
-}
-
-function analyzeGoalAdherenceTrends(data, goals) {
-    return [];
-}
-
-function calculateCoefficientOfVariation(values) {
-    const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
-    const stdDev = Math.sqrt(variance);
-    return stdDev / mean;
-}
-
-// ENHANCED JOURNAL WITH ACTIVITY TRACKING
-const EnhancedTodaysJournal = () => {
-    // Direct implementations to avoid scope issues
-const getTodayKey = () => window.FuelIQAnalytics ? window.FuelIQAnalytics.getCurrentAnalyticsDateKey() : new Date().toISOString().split('T')[0];    
-    const loadTodayEntry = () => {
-        const key = `fueliq_journal_${getTodayKey()}`;
-        try {
-            return JSON.parse(localStorage.getItem(key) || '{}');
-        } catch (e) {
-            return {};
-        }
-    };
-    
-    const loadTodayActivity = () => {
-        const key = `fueliq_activity_${getTodayKey()}`;
-        try {
-            return JSON.parse(localStorage.getItem(key) || '{}');
-        } catch (e) {
-            return {};
-        }
-    };
-    
-    const checkWearableConnection = () => {
-        const mockConnected = localStorage.getItem('fueliq_wearable_connected') === 'true';
-        return mockConnected;
-    };
-    
     const today = loadTodayEntry();
     const wearableConnected = checkWearableConnection();
     const todayActivity = loadTodayActivity();
-
-    // Mood and energy options (local copies)
-    const moodOptions = [
-        { value: 1, label: '😢 Very Poor', emoji: '😢' },
-        { value: 2, label: '😔 Poor', emoji: '😔' },
-        { value: 3, label: '😐 Below Average', emoji: '😐' },
-        { value: 4, label: '🙂 Average', emoji: '🙂' },
-        { value: 5, label: '😊 Good', emoji: '😊' },
-        { value: 6, label: '😃 Very Good', emoji: '😃' },
-        { value: 7, label: '😄 Great', emoji: '😄' },
-        { value: 8, label: '🤩 Excellent', emoji: '🤩' },
-        { value: 9, label: '🥳 Amazing', emoji: '🥳' },
-        { value: 10, label: '🚀 Incredible', emoji: '🚀' }
-    ];
-
-    const energyOptions = [
-        { value: 1, label: '🔋 Exhausted', emoji: '🔋' },
-        { value: 2, label: '😴 Very Low', emoji: '😴' },
-        { value: 3, label: '🥱 Low', emoji: '🥱' },
-        { value: 4, label: '😐 Below Average', emoji: '😐' },
-        { value: 5, label: '🙂 Average', emoji: '🙂' },
-        { value: 6, label: '😊 Good', emoji: '😊' },
-        { value: 7, label: '⚡ High', emoji: '⚡' },
-        { value: 8, label: '🔥 Very High', emoji: '🔥' },
-        { value: 9, label: '💪 Energized', emoji: '💪' },
-        { value: 10, label: '🚀 Peak Energy', emoji: '🚀' }
-    ];
-
-    const stressOptions = [
-        { value: 1, label: '😌 Very Low', emoji: '😌' },
-        { value: 2, label: '🙂 Low', emoji: '🙂' },
-        { value: 3, label: '😐 Mild', emoji: '😐' },
-        { value: 4, label: '😕 Moderate', emoji: '😕' },
-        { value: 5, label: '😰 High', emoji: '😰' },
-        { value: 6, label: '😫 Very High', emoji: '😫' }
-    ];
 
     return `
       <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
@@ -1208,182 +883,174 @@ const getTodayKey = () => window.FuelIQAnalytics ? window.FuelIQAnalytics.getCur
         </form>
       </div>
     `;
-};
+  }
 
-// Activity data loading/saving functions
-function loadTodayActivity() {
-    const key = `fueliq_activity_${getCurrentAnalyticsDateKey()}`;
-    try {
-        return JSON.parse(localStorage.getItem(key) || '{}');
-    } catch (e) {
-        return {};
-    }
-}
-
-function saveActivityData(date, activity) {
-    const key = `fueliq_activity_${date}`;
-    try {
-        localStorage.setItem(key, JSON.stringify({
-            ...activity,
-            timestamp: new Date().toISOString(),
-            date: date
-        }));
-        return true;
-    } catch (e) {
-        console.error('Failed to save activity data:', e);
-        return false;
-    }
-}
-
-// Enhanced Historical Analytics Panel
-const HistoricalAnalyticsPanel = ({ days = 30 }) => {
-    const [insights, setInsights] = React.useState([]);
-    const [loading, setLoading] = React.useState(true);
-    const [selectedPeriod, setSelectedPeriod] = React.useState(30);
-
-    React.useEffect(() => {
-        generateInsights();
-    }, [selectedPeriod]);
-
-    const generateInsights = async () => {
-        setLoading(true);
-        try {
-            const historicalInsights = AdvancedHistoricalAnalysis.generateHistoricalInsights(selectedPeriod);
-            setInsights(historicalInsights);
-        } catch (error) {
-            console.error('Failed to generate historical insights:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return React.createElement('div', { className: 'bg-white rounded-xl p-6 shadow-lg border border-gray-100 mb-8' },
-        React.createElement('div', { className: 'flex justify-between items-center mb-6' },
-            React.createElement('h3', { className: 'text-xl font-bold text-gray-800 flex items-center gap-2' },
-                React.createElement('span', { className: 'text-2xl' }, '📊'),
-                'Historical Patterns & Trends'
-            ),
-            React.createElement('select', {
-                value: selectedPeriod,
-                onChange: (e) => setSelectedPeriod(Number(e.target.value)),
-                className: 'px-3 py-2 border border-gray-300 rounded-lg focus:border-purple-500'
-            },
-                React.createElement('option', { value: 7 }, 'Last 7 days'),
-                React.createElement('option', { value: 14 }, 'Last 2 weeks'),
-                React.createElement('option', { value: 30 }, 'Last 30 days'),
-                React.createElement('option', { value: 90 }, 'Last 3 months')
-            )
-        ),
-
-        loading ? 
-            React.createElement('div', { className: 'text-center py-8' },
-                React.createElement('div', { className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-2' }),
-                React.createElement('p', { className: 'text-gray-600' }, 'Analyzing your patterns...')
-            ) :
-            insights.length === 0 ?
-                React.createElement('div', { className: 'text-center py-8 text-gray-500' },
-                    React.createElement('div', { className: 'text-4xl mb-2' }, '📈'),
-                    React.createElement('p', null, `Not enough data for ${selectedPeriod}-day analysis`),
-                    React.createElement('p', { className: 'text-sm' }, 'Log more meals and journal entries to unlock insights!')
-                ) :
-                React.createElement('div', { className: 'space-y-4' },
-                    ...insights.map((insight, index) =>
-                        React.createElement('div', {
-                            key: index,
-                            className: `p-4 rounded-lg border-l-4 ${
-                                insight.priority === 'high' ? 'border-red-400 bg-red-50' :
-                                insight.priority === 'medium' ? 'border-yellow-400 bg-yellow-50' :
-                                'border-green-400 bg-green-50'
-                            }`
-                        },
-                            React.createElement('div', { className: 'flex items-start gap-3' },
-                                React.createElement('span', { className: 'text-2xl' }, insight.icon),
-                                React.createElement('div', { className: 'flex-1' },
-                                    React.createElement('h4', { 
-                                        className: `font-semibold mb-1 ${
-                                            insight.priority === 'high' ? 'text-red-700' :
-                                            insight.priority === 'medium' ? 'text-yellow-700' :
-                                            'text-green-700'
-                                        }`
-                                    }, insight.title),
-                                    React.createElement('p', { 
-                                        className: `text-sm mb-2 ${
-                                            insight.priority === 'high' ? 'text-red-600' :
-                                            insight.priority === 'medium' ? 'text-yellow-600' :
-                                            'text-green-600'
-                                        }`
-                                    }, insight.message),
-                                    React.createElement('span', { 
-                                        className: 'text-xs text-gray-500 bg-white px-2 py-1 rounded-full'
-                                    }, insight.period)
-                                )
-                            )
-                        )
-                    )
-                )
-    );
-};
-
-// Enhanced form handler
-function setupEnhancedFormHandler() {
+  // Enhanced form handler with proper timing and error handling
+  function setupEnhancedFormHandler() {
+    console.log('🔧 Setting up enhanced form handler...');
+    
     const form = document.getElementById('enhanced-journal-form');
-    if (!form) return;
+    if (!form) {
+        console.warn('❌ Enhanced journal form not found');
+        return;
+    }
+    
+    console.log('✅ Found enhanced journal form');
 
-    form.addEventListener('submit', function(e) {
+    // Remove any existing event listeners
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+
+    newForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        console.log('📝 Form submitted');
         
-        const wearableConnected = checkWearableConnection();
-        
-        const formData = {
-            notes: document.getElementById('journal-notes').value,
-            water: parseInt(document.getElementById('water-input').value) || 0,
-            stress: parseInt(document.getElementById('stress-level').value) || 0,
-            mood: parseInt(document.getElementById('mood-rating').value) || 0,
-            energy: parseInt(document.getElementById('energy-rating').value) || 0,
-            alcohol: parseFloat(document.getElementById('alcohol-input').value) || 0
-        };
-
-        // Add sleep data
-        if (!wearableConnected) {
-            formData.sleep = parseFloat(document.getElementById('sleep-input').value) || 0;
-        } else {
-            formData.sleep = 8.2; // Mock data from wearable
-        }
-
-        // Add activity data
-        const activityData = {};
-        if (!wearableConnected) {
-            activityData.steps = parseInt(document.getElementById('steps-input').value) || 0;
-            activityData.caloriesBurned = parseInt(document.getElementById('calories-burned-input').value) || 0;
-            activityData.exerciseMinutes = parseInt(document.getElementById('exercise-minutes-input').value) || 0;
-            activityData.exerciseType = document.getElementById('exercise-type').value;
-        } else {
-            // Mock data from wearable
-            activityData.steps = 8453;
-            activityData.caloriesBurned = 2247;
-            activityData.exerciseMinutes = 45;
-            activityData.exerciseType = 'auto-detected';
-        }
-
-        // Save both journal and activity data
-        const saveSuccess = saveJournalEntry(formData) && saveActivityData(getCurrentAnalyticsDateKey(), activityData);
-        
-        if (saveSuccess) {
-            // Show success message
-            const button = form.querySelector('button[type="submit"]');
-            const originalText = button.innerHTML;
-            button.innerHTML = '<span class="mr-2 text-xl">✅</span>Saved Successfully!';
-            button.className = button.className.replace('from-green-500 to-emerald-600', 'from-emerald-500 to-green-600');
+        try {
+            const wearableConnected = checkWearableConnection();
             
-            setTimeout(() => {
-                button.innerHTML = originalText;
-                button.className = button.className.replace('from-emerald-5000 to-green-600', 'from-green-500 to-emerald-600');
+            const formData = {
+                notes: document.getElementById('journal-notes').value || '',
+                water: parseInt(document.getElementById('water-input').value) || 0,
+                stress: parseInt(document.getElementById('stress-level').value) || 0,
+                mood: parseInt(document.getElementById('mood-rating').value) || 0,
+                energy: parseInt(document.getElementById('energy-rating').value) || 0,
+                alcohol: parseFloat(document.getElementById('alcohol-input').value) || 0
+            };
+
+            console.log('📊 Form data collected:', formData);
+
+            // Add sleep data
+            if (!wearableConnected) {
+                const sleepInput = document.getElementById('sleep-input');
+                formData.sleep = sleepInput ? (parseFloat(sleepInput.value) || 0) : 0;
+            } else {
+                formData.sleep = 8.2; // Mock data from wearable
+            }
+
+            // Add activity data
+            const activityData = {};
+            if (!wearableConnected) {
+                const stepsInput = document.getElementById('steps-input');
+                const caloriesInput = document.getElementById('calories-burned-input');
+                const exerciseMinutesInput = document.getElementById('exercise-minutes-input');
+                const exerciseTypeInput = document.getElementById('exercise-type');
                 
-                // Re-render to show updated data status
-                renderAnalyticsTab('analytics-container');
-            }, 2000);
+                activityData.steps = stepsInput ? (parseInt(stepsInput.value) || 0) : 0;
+                activityData.caloriesBurned = caloriesInput ? (parseInt(caloriesInput.value) || 0) : 0;
+                activityData.exerciseMinutes = exerciseMinutesInput ? (parseInt(exerciseMinutesInput.value) || 0) : 0;
+                activityData.exerciseType = exerciseTypeInput ? exerciseTypeInput.value : '';
+            } else {
+                // Mock data from wearable
+                activityData.steps = 8453;
+                activityData.caloriesBurned = 2247;
+                activityData.exerciseMinutes = 45;
+                activityData.exerciseType = 'auto-detected';
+            }
+
+            console.log('🏃 Activity data collected:', activityData);
+
+            // Save both journal and activity data
+            const journalSaved = saveJournalEntry(formData);
+            const activitySaved = saveActivityData(getCurrentAnalyticsDateKey(), activityData);
+            
+            if (journalSaved && activitySaved) {
+                // Show success message
+                const button = newForm.querySelector('button[type="submit"]');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<span class="mr-2 text-xl">✅</span>Saved Successfully!';
+                button.className = button.className.replace('from-green-500 to-emerald-600', 'from-emerald-500 to-green-600');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.className = button.className.replace('from-emerald-500 to-green-600', 'from-green-500 to-emerald-600');
+                    
+                    // Re-render to show updated data
+                    console.log('🔄 Re-rendering analytics tab...');
+                    renderAnalyticsTab('analytics-container');
+                }, 2000);
+            } else {
+                alert('Failed to save some data. Please try again.');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error in form submission:', error);
+            alert('An error occurred while saving. Please try again.');
         }
     });
-}
+    
+    console.log('✅ Enhanced form handler setup complete');
+  }
+
+  // Main render function
+  function renderAnalyticsTab(containerId) {
+    currentContainer = containerId;
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="max-w-7xl mx-auto p-6">
+        ${renderDateNavigation()}
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <!-- Today's Journal -->
+          <div id="journal-container">
+            ${renderTodaysJournal()}
+          </div>
+          
+          <!-- Today's Summary -->
+          <div id="summary-container">
+            ${renderTodaysSummary()}
+          </div>
+        </div>
+        
+        <!-- AI Insights -->
+        <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20">
+          <div id="ai-insights-container">
+            <!-- AI insights will be rendered here -->
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Setup event handlers with proper timing
+    setTimeout(() => {
+      setupEnhancedFormHandler();
+    }, 100);
+
+    // Render AI insights with delay
+    setTimeout(() => {
+      renderAIInsights();
+    }, 300);
+  }
+
+  // Cleanup function
+  function cleanup() {
+    if (currentContainer) {
+      const container = document.getElementById(currentContainer);
+      if (container) {
+        container.innerHTML = '';
+      }
+    }
+    currentContainer = null;
+  }
+
+  // Public API - expose navigation functions globally
+  window.FuelIQAnalytics = {
+    renderAnalyticsTab,
+    cleanup,
+    getCurrentAnalyticsDateKey,
+    navigateDate,
+    setSpecificDate
+  };
+
+  // Public API
+  return {
+    renderAnalyticsTab,
+    cleanup,
+    getCurrentAnalyticsDateKey,
+    navigateDate,
+    setSpecificDate
+  };
+})();
 
 console.log('✅ Enhanced FuelIQ Analytics module loaded with AI insights');
