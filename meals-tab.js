@@ -1333,7 +1333,7 @@ const FoodItem = ({ food, onRemove, onUpdateServing }) => {
                 className: 'w-20 p-1 border border-gray-300 rounded text-sm',
                 min: '1'
             }),
-            React.createElement('span', { className: 'text-sm text-gray-600' }, 'grams')
+            React.createElement('span', { className: 'text-sm text-gray-600' }, 'servings')
         ),
         React.createElement('div', { className: 'grid grid-cols-2 gap-4 text-sm' },
             React.createElement('div', null,
