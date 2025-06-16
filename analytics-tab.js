@@ -2,7 +2,119 @@
 window.FuelIQAnalytics = (function() {
   let currentContainer = null;
   let wearableConnected = false; // This would be set by the wearables module
+// Date Navigation State
+let currentAnalyticsDate = new Date().toISOString().split('T')[0]; // Today by default
 
+// Enhanced Date-Aware Functions
+function getCurrentAnalyticsDateKey() {
+    return currentAnalyticsDate;
+}
+
+function formatDateForDisplay(dateStr) {
+    const date = new Date(dateStr + 'T00:00:00');
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    if (dateStr === today) {
+        return `Today - ${date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`;
+    } else if (dateStr === yesterdayStr) {
+        return `Yesterday - ${date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`;
+    } else {
+        return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+    }
+}
+
+function navigateDate(direction) {
+    const currentDate = new Date(currentAnalyticsDate + 'T00:00:00');
+    currentDate.setDate(currentDate.getDate() + direction);
+    currentAnalyticsDate = currentDate.toISOString().split('T')[0];
+    
+    // Re-render the analytics tab
+    renderAnalyticsTab('analytics-container');
+}
+
+function setSpecificDate(dateStr) {
+    currentAnalyticsDate = dateStr;
+    renderAnalyticsTab('analytics-container');
+}
+
+function hasDataForDate(dateStr) {
+    const journalKey = `fueliq_journal_${dateStr}`;
+    const mealsKey = `fueliq_meals_${dateStr}`;
+    const activityKey = `fueliq_activity_${dateStr}`;
+    
+    const hasJournal = localStorage.getItem(journalKey) && JSON.parse(localStorage.getItem(journalKey) || '{}').notes;
+    const hasMeals = localStorage.getItem(mealsKey);
+    const hasActivity = localStorage.getItem(activityKey);
+    
+    return hasJournal || hasMeals || hasActivity;
+}
+
+function renderDateNavigation() {
+    const today = new Date().toISOString().split('T')[0];
+    const isToday = currentAnalyticsDate === today;
+    const canGoForward = currentAnalyticsDate < today;
+    
+    return `
+        <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 mb-6 border border-white/30">
+            <div class="flex items-center justify-between">
+                <button 
+                    onclick="navigateDate(-1)"
+                    class="flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+                >
+                    <span class="text-lg mr-2">←</span>
+                    Previous Day
+                </button>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="text-center">
+                        <div class="text-lg font-bold text-gray-800">
+                            ${formatDateForDisplay(currentAnalyticsDate)}
+                        </div>
+                        <input 
+                            type="date" 
+                            id="date-picker"
+                            value="${currentAnalyticsDate}"
+                            max="${today}"
+                            onchange="setSpecificDate(this.value)"
+                            class="mt-2 px-3 py-1 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:outline-none"
+                        />
+                    </div>
+                    
+                    ${!isToday ? `
+                        <button 
+                            onclick="setSpecificDate('${today}')"
+                            class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm transition-all duration-200"
+                        >
+                            📅 Today
+                        </button>
+                    ` : ''}
+                </div>
+                
+                <button 
+                    onclick="navigateDate(1)"
+                    ${!canGoForward ? 'disabled' : ''}
+                    class="flex items-center px-4 py-2 ${canGoForward ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-300 cursor-not-allowed'} text-white rounded-xl transition-all duration-200 shadow-md ${canGoForward ? 'hover:shadow-lg transform hover:scale-105' : ''}"
+                >
+                    Next Day
+                    <span class="text-lg ml-2">→</span>
+                </button>
+            </div>
+            
+            <div class="mt-3 text-center">
+                <span class="text-xs px-3 py-1 rounded-full ${hasDataForDate(currentAnalyticsDate) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
+                    ${hasDataForDate(currentAnalyticsDate) ? '✅ Has logged data' : '📝 No data logged'}
+                </span>
+            </div>
+        </div>
+    `;
+}
+
+// Make navigation functions globally available
+window.navigateDate = navigateDate;
+window.setSpecificDate = setSpecificDate;
   // Check if wearables are connected (mock detection for now)
   function checkWearableConnection() {
     // In real app, this would check actual device connections
