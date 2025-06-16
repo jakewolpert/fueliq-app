@@ -1314,7 +1314,7 @@ const [serving, setServing] = React.useState(1);
         onUpdateServing(food.id, newServing);
     };
 
-    const multiplier = serving / 100;
+const multiplier = (serving * (food.servingSize || 100)) / 100;
 
     return React.createElement('div', { className: 'bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow' },
         React.createElement('div', { className: 'flex justify-between items-start mb-2' },
