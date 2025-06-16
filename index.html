@@ -236,23 +236,41 @@ useEffect(() => {
         forceCleanup();
       }, [currentView]);
 
-      // Goals sync for meals tab
-      useEffect(() => {
-        if (currentView === 'meals' && goals.calories) {
-          const userGoalsData = {
-            dailyCalories: goals.calories,
-            protein: goals.protein,
-            carbs: goals.carbs,
-            fat: goals.fat
-          };
-          
-          try {
-            localStorage.setItem('fueliq_user_goals', JSON.stringify(userGoalsData));
-          } catch (e) {
-            console.warn('localStorage not available:', e);
-          }
-        }
-      }, [currentView, goals]);
+      // Goals sync for meals tab - UPDATED VERSION
+useEffect(() => {
+  if (currentView === 'meals') {
+    // Ensure goals are available using your data manager
+    let userGoalsData;
+    
+    if (window.FuelIQDataManager) {
+      const goals = window.FuelIQDataManager.getGoals();
+      userGoalsData = {
+        dailyCalories: goals.calories,
+        calories: goals.calories, // Both formats for compatibility
+        protein: goals.protein,
+        carbs: goals.carbs,
+        fat: goals.fat
+      };
+    } else if (goals.calories) {
+      userGoalsData = {
+        dailyCalories: goals.calories,
+        calories: goals.calories,
+        protein: goals.protein,
+        carbs: goals.carbs,
+        fat: goals.fat
+      };
+    }
+    
+    if (userGoalsData) {
+      try {
+        localStorage.setItem('fueliq_user_goals', JSON.stringify(userGoalsData));
+        console.log('✅ Goals synchronized for meals tab:', userGoalsData);
+      } catch (e) {
+        console.warn('localStorage not available:', e);
+      }
+    }
+  }
+}, [currentView, goals]);
 
       // Enhanced meals tab rendering
       useEffect(() => {
