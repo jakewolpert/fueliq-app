@@ -1362,8 +1362,7 @@ const multiplier = (serving * (food.servingSize || 100)) / 100;
         React.createElement('div', { className: 'grid grid-cols-2 gap-4 text-sm' },
             React.createElement('div', null,
                 React.createElement('span', { className: 'text-gray-600' }, 'Calories: '),
-                React.createElement('span', { className: 'font-semibold' }, Math.round(food.calories * multiplier))
-            ),
+React.createElement('span', { className: 'font-semibold' }, Math.round(getCalories(food) * multiplier))            ),
             React.createElement('div', null,
                 React.createElement('span', { className: 'text-gray-600' }, 'Protein: '),
                 React.createElement('span', { className: 'font-semibold' }, `${Math.round(food.protein * multiplier)}g`)
