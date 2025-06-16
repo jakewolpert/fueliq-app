@@ -1208,7 +1208,23 @@ function calculateCoefficientOfVariation(values) {
 // ENHANCED JOURNAL WITH ACTIVITY TRACKING (Fixed)
 const EnhancedTodaysJournal = () => {
     // Direct implementations to avoid scope issues
-    const getTodayKey = () => new Date().toISOString().split('T')[0];
+    const getTodayKey = () => currentAnalyticsDate;
+    
+    const formatDateForDisplay = (dateStr) => {
+        const date = new Date(dateStr + 'T00:00:00');
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        if (dateStr === today) {
+            return "Today";
+        } else if (dateStr === yesterdayStr) {
+            return "Yesterday";
+        } else {
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+    };
     
     const loadTodayEntry = () => {
         const key = `fueliq_journal_${getTodayKey()}`;
