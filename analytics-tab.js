@@ -178,14 +178,26 @@ window.setSpecificDate = setSpecificDate;
   }
 
   // Load today's journal entry
-  function loadTodayEntry() {
-    const key = `fueliq_journal_${getTodayKey()}`;
+  function saveJournalEntry(data) {
+    const key = `fueliq_journal_${getCurrentAnalyticsDateKey()}`;
     try {
-      return JSON.parse(localStorage.getItem(key) || '{}');
+        localStorage.setItem(key, JSON.stringify({
+            ...data,
+            timestamp: new Date().toISOString(),
+            date: getCurrentAnalyticsDateKey()
+        }));
+        
+        // Refresh insights after saving
+        setTimeout(() => {
+            renderAIInsights();
+        }, 500);
+        
+        return true;
     } catch (e) {
-      return {};
+        console.error('Failed to save journal entry:', e);
+        return false;
     }
-  }
+}
 
   // Save journal entry
   function saveJournalEntry(data) {
