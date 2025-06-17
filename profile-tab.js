@@ -937,23 +937,35 @@
                 React.createElement('div', { className: 'flex gap-3 mt-6' },
                     React.createElement('button', {
                         onClick: () => {
-                            // Use your app's direct navigation method
-                            if (window.setCurrentView) {
-                                window.setCurrentView('meals');
-                            } else if (window.dispatchEvent) {
-                                window.dispatchEvent(new CustomEvent('navigateToTab', { detail: 'meals' }));
-                            }
+                            // Visual feedback for navigation
+                            const button = event.target;
+                            button.innerHTML = '🍽️ Loading Meals...';
+                            button.disabled = true;
+                            
+                            setTimeout(() => {
+                                if (window.setCurrentView) {
+                                    window.setCurrentView('meals');
+                                } else if (window.dispatchEvent) {
+                                    window.dispatchEvent(new CustomEvent('navigateToTab', { detail: 'meals' }));
+                                }
+                            }, 300);
                         },
                         className: 'flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200'
                     }, '🍽️ Start Tracking Meals'),
                     React.createElement('button', {
                         onClick: () => {
-                            // Use your app's direct navigation method
-                            if (window.setCurrentView) {
-                                window.setCurrentView('dashboard');
-                            } else if (window.dispatchEvent) {
-                                window.dispatchEvent(new CustomEvent('navigateToTab', { detail: 'dashboard' }));
-                            }
+                            // Visual feedback for navigation
+                            const button = event.target;
+                            button.innerHTML = '📊 Loading Dashboard...';
+                            button.disabled = true;
+                            
+                            setTimeout(() => {
+                                if (window.setCurrentView) {
+                                    window.setCurrentView('dashboard');
+                                } else if (window.dispatchEvent) {
+                                    window.dispatchEvent(new CustomEvent('navigateToTab', { detail: 'dashboard' }));
+                                }
+                            }, 300);
                         },
                         className: 'flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200'
                     }, '📊 View Dashboard')
