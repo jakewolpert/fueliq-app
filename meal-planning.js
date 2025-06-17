@@ -102,7 +102,7 @@ const PLANNING_FALLBACK_FOODS = {
 };
 
 // Enhanced Barcode API (Open Food Facts)
-const lookupBarcode = async (barcode) => {
+const lookupBarcodeForPlanning = async (barcode) => {
     try {
         const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
         const data = await response.json();
