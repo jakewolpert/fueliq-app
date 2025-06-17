@@ -670,17 +670,27 @@ useEffect(() => {
           e(Navigation),
           e('div', { className: "max-w-7xl mx-auto p-6" },
             
-            // Welcome Header
-            e('div', { className: "bg-gradient-to-r from-orange-500 to-red-600 rounded-3xl shadow-2xl p-6 mb-8 text-white" },
-              e('div', { className: "text-center" },
-                e('h1', { 
-                  className: "text-4xl font-bold mb-2", 
-                  style: {fontFamily: 'Georgia, Times, serif'} 
-                }, '🔥 FuelIQ Dashboard'),
-                e('p', { className: "text-xl opacity-90" }, today),
-                e('p', { className: "text-2xl font-semibold opacity-95" }, currentTime)
-              )
-            ),
+            // Welcome Header - ENHANCED
+e('div', { className: "bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-3xl shadow-2xl p-8 mb-8 text-white relative overflow-hidden" },
+  // Background pattern
+  e('div', { className: "absolute inset-0 opacity-10" },
+    e('div', { className: "absolute top-0 left-0 w-full h-full", style: { backgroundImage: 'radial-gradient(circle at 20% 50%, white 2px, transparent 2px), radial-gradient(circle at 80% 20%, white 2px, transparent 2px)', backgroundSize: '30px 30px' } })
+  ),
+  
+  e('div', { className: "text-center relative z-10" },
+    // Large dashboard icon
+    e('div', { className: "w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm" },
+      e('span', { className: "text-4xl" }, '📊')
+    ),
+    e('h1', { 
+      className: "text-5xl font-bold mb-3", 
+      style: {fontFamily: 'Georgia, Times, serif'} 
+    }, 'Dashboard'),
+    e('p', { className: "text-xl opacity-90 mb-2" }, today),
+    e('p', { className: "text-lg font-semibold opacity-95" }, currentTime),
+    e('div', { className: "mt-4 text-sm opacity-80" }, '📈 Your nutrition overview at a glance')
+  )
+),
 
             // Main Metrics Grid
             e('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" },
