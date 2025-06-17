@@ -628,10 +628,10 @@ useEffect(() => {
                     onClick: () => handleNavClick(id),
                     disabled: isNavigating,
                     className: `flex items-center space-x-2 px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all duration-200 ${
-                      currentView === id
-                        ? 'bg-white text-orange-600 shadow-lg'
-                        : 'text-white/80 hover:text-white hover:bg-white/10'
-                    } ${isNavigating ? 'opacity-50 cursor-not-allowed' : ''}`
+  currentView === id
+    ? (id === 'dashboard' ? 'bg-blue-500 text-white shadow-lg' : 'bg-white text-orange-600 shadow-lg')
+    : 'text-white/80 hover:text-white hover:bg-white/10'
+} ${isNavigating ? 'opacity-50 cursor-not-allowed' : ''}`
                   },
                     e('span', { className: "text-lg" }, icon),
                     e('span', { className: "hidden md:inline" }, label)
