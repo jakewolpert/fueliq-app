@@ -93,21 +93,32 @@ useEffect(() => {
       const [meals, setMeals] = useState([]);
 
       // Enhanced container cleanup function
-      const clearContainer = (containerId) => {
-        const container = document.getElementById(containerId);
-        if (container) {
-          // Remove all children
-          while (container.firstChild) {
-            container.removeChild(container.firstChild);
-          }
-          // Clear any inline styles
-          container.style.cssText = '';
-          // Reset classes to default
-          container.className = container.className.split(' ').filter(cls => 
-            cls.includes('tab-content') || cls.includes('container')
-          ).join(' ');
-        }
-      };
+     const clearContainer = (containerId) => {
+  const container = document.getElementById(containerId);
+  if (container) {
+    try {
+      // Safer React-compatible cleanup
+      if (window.ReactDOM && window.ReactDOM.unmountComponentAtNode) {
+        window.ReactDOM.unmountComponentAtNode(container);
+      }
+      
+      // Simple innerHTML clear (React-safe)
+      container.innerHTML = '';
+      
+      // Clear any inline styles
+      container.style.cssText = '';
+      
+      // Reset classes to default
+      container.className = 'meals-tab-content';
+      
+      console.log(`✅ Container ${containerId} cleared successfully`);
+    } catch (e) {
+      console.warn(`⚠️ Error clearing container ${containerId}:`, e);
+      // Fallback: just clear innerHTML
+      container.innerHTML = '';
+    }
+  }
+};
 
       // Enhanced cleanup function
       const forceCleanup = () => {
