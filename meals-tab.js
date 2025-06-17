@@ -949,3 +949,54 @@ console.log('✅ Habbt Nutrition tab loaded - Complete rebranded version with be
 })();
 
 console.log('🍽️ Habbt Nutrition module fully loaded with enhanced compatibility');
+// Enhanced Habbt Compatibility Layer
+(function() {
+    console.log('🔧 Creating enhanced nutrition compatibility...');
+    
+    function waitForDependencies() {
+        return typeof React !== 'undefined' && typeof ReactDOM !== 'undefined';
+    }
+    
+    function createNutritionCompatibility() {
+        if (!waitForDependencies()) {
+            console.warn('❌ React dependencies not ready for nutrition module');
+            return false;
+        }
+        
+        if (typeof renderNutritionTab === 'function') {
+            console.log('✅ renderNutritionTab function available');
+            
+            window.renderMealsTab = renderNutritionTab;
+            window.renderHabbtNutrition = renderNutritionTab;
+            window.renderHabbtMeals = renderNutritionTab;
+            
+            console.log('✅ All nutrition render functions created');
+            return true;
+        } else {
+            console.error('❌ renderNutritionTab function not found');
+            return false;
+        }
+    }
+    
+    if (!createNutritionCompatibility()) {
+        let attempts = 0;
+        const maxAttempts = 30;
+        
+        const interval = setInterval(() => {
+            attempts++;
+            console.log(`🔄 Nutrition compatibility attempt ${attempts}/30...`);
+            
+            if (createNutritionCompatibility() || attempts >= maxAttempts) {
+                clearInterval(interval);
+                
+                if (attempts >= maxAttempts) {
+                    console.error('❌ Nutrition compatibility failed after 30 attempts');
+                } else {
+                    console.log('✅ Nutrition compatibility setup complete!');
+                }
+            }
+        }, 100);
+    }
+})();
+
+console.log('🍽️ Habbt Nutrition module fully loaded with enhanced compatibility');
