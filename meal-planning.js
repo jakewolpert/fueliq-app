@@ -367,15 +367,15 @@ const FoodSearchComponent = ({ onAddFood, mealType }) => {
 const results = await searchFoodsForPlanning(query);
             
             if (results.length === 0) {
-                const fallbackKeys = Object.keys(FALLBACK_FOODS).filter(key => 
-                    key.toLowerCase().includes(query.toLowerCase())
+const fallbackKeys = Object.keys(PLANNING_FALLBACK_FOODS).filter(key =>
+    key.toLowerCase().includes(query.toLowerCase())
                 );
                 
                 const fallbackResults = fallbackKeys.map(key => ({
                     fdcId: `fallback_${key}`,
                     description: key.charAt(0).toUpperCase() + key.slice(1),
                     brandOwner: 'Habbt Database',
-                    nutrients: FALLBACK_FOODS[key],
+                    nutrients: PLANNING_FALLBACK_FOODS[key],
                     dataType: 'Fallback',
                     source: 'fallback'
                 }));
