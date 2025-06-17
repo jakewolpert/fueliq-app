@@ -1052,9 +1052,44 @@ window.FuelIQAnalytics = (function() {
     setSpecificDate
   };
 })();
-// Habbt Compatibility - ADD THIS TO THE END
-window.HabbtAnalytics = window.FuelIQAnalytics;
-if (window.FuelIQAnalytics && window.FuelIQAnalytics.renderAnalyticsTab) {
-    window.renderAnalyticsTab = window.FuelIQAnalytics.renderAnalyticsTab;
-}
+// Habbt Analytics Compatibility - Enhanced Version
+(function() {
+    console.log('🔧 Setting up HabbtAnalytics compatibility...');
+    
+    function createCompatibility() {
+        if (window.FuelIQAnalytics && typeof window.FuelIQAnalytics.renderAnalyticsTab === 'function') {
+            window.HabbtAnalytics = window.FuelIQAnalytics;
+            window.renderAnalyticsTab = window.FuelIQAnalytics.renderAnalyticsTab;
+            window.renderHabbtAnalytics = window.FuelIQAnalytics.renderAnalyticsTab;
+            
+            console.log('✅ HabbtAnalytics compatibility created successfully');
+            console.log('✅ Available functions:', Object.keys(window.HabbtAnalytics));
+            return true;
+        }
+        return false;
+    }
+    
+    // Try immediate setup
+    if (!createCompatibility()) {
+        // If not ready, wait a bit
+        let attempts = 0;
+        const maxAttempts = 20;
+        
+        const interval = setInterval(() => {
+            attempts++;
+            console.log(`🔄 Attempt ${attempts}: Waiting for FuelIQAnalytics...`);
+            
+            if (createCompatibility() || attempts >= maxAttempts) {
+                clearInterval(interval);
+                
+                if (attempts >= maxAttempts) {
+                    console.error('❌ Failed to create HabbtAnalytics compatibility after 20 attempts');
+                } else {
+                    console.log('✅ HabbtAnalytics compatibility setup complete');
+                }
+            }
+        }, 100);
+    }
+})();
+
 console.log('✅ Enhanced FuelIQ Analytics module loaded with AI insights');
