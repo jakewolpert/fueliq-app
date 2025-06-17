@@ -1012,7 +1012,7 @@
         const [isFirstTime, setIsFirstTime] = React.useState(!profile.personal.name);
         const [planGenerated, setPlanGenerated] = React.useState(profile.planGenerated || false);
 
-        // Auto-save profile changes
+        // Auto-save profile changes with proper data manager integration
         React.useEffect(() => {
             if (profile.personal.name) { // Only save if there's actual data
                 const updatedProfile = {
@@ -1020,9 +1020,43 @@
                     goals: calculateGoals(profile)
                 };
                 setProfile(updatedProfile);
-                saveProfileData(updatedProfile);
+                
+                // Save using FuelIQDataManager for consistency
+                if (window.FuelIQDataManager) {
+                    // Convert profile structure to match data manager format
+                    const managerProfile = {
+                        name: profile.personal.name,
+                        age: calculateAge(profile.personal.birthday),
+                        weight: profile.current.weight,
+                        height: profile.personal.height,
+                        gender: profile.personal.gender,
+                        activityLevel: profile.current.activityLevel,
+                        goal: profile.goals.primaryGoal,
+                        dietaryRestrictions: profile.dietary.restrictions,
+                        allergies: profile.dietary.allergies,
+                        healthConcerns: profile.dietary.healthConcerns,
+                        foodsILove: profile.preferences.foodsILove,
+                        foodsIAvoid: profile.preferences.foodsIAvoid,
+                        cuisinePreferences: profile.preferences.cuisines
+                    };
+                    
+                    const goals = {
+                        calories: updatedProfile.goals.calories,
+                        protein: updatedProfile.goals.protein,
+                        carbs: updatedProfile.goals.carbs,
+                        fat: updatedProfile.goals.fat
+                    };
+                    
+                    window.FuelIQDataManager.setProfile(managerProfile);
+                    window.FuelIQDataManager.setGoals(goals);
+                    
+                    console.log('✅ Profile data synchronized with FuelIQDataManager');
+                } else {
+                    // Fallback to local storage
+                    saveProfileData(updatedProfile);
+                }
             }
-        }, [profile.personal, profile.current, profile.goals.primaryGoal, profile.goals.targetWeight]);
+        }, [profile.personal, profile.current, profile.goals.primaryGoal, profile.goals.targetWeight, profile.dietary, profile.preferences]);
 
         // Show advanced on first time
         React.useEffect(() => {
