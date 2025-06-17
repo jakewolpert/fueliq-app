@@ -1,1714 +1,905 @@
-// Enhanced meal-planning.js with Pantry Integration
-(function() {
-  'use strict';
-
-  // Load pantry data helper
-  const loadPantryData = () => {
+// Habbt Nutrition Tab - Complete JavaScript Module
+// Enhanced with Barcode Scanner and AI Suggestions
+// USDA API Functions
+const searchFoods = async (query) => {
+    if (!query || query.length < 2) return [];
+    
     try {
-      const pantryData = localStorage.getItem('fueliq_pantry');
-      return pantryData ? JSON.parse(pantryData) : { items: [] };
+        const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&query=${encodeURIComponent(query)}&pageSize=15&dataType=Foundation,SR%20Legacy,Branded`);
+        const data = await response.json();
+        
+        if (data.foods && data.foods.length > 0) {
+            return data.foods.map(food => ({
+                fdcId: food.fdcId,
+                description: food.description,
+                brandOwner: food.brandOwner,
+                ingredients: food.ingredients,
+                nutrients: food.foodNutrients ? food.foodNutrients.reduce((acc, nutrient) => {
+                    const nutrientName = nutrient.nutrientName.toLowerCase();
+                    if (nutrientName.includes('energy')) acc.calories = nutrient.value || 0;
+                    if (nutrientName.includes('protein')) acc.protein = nutrient.value || 0;
+                    if (nutrientName.includes('carbohydrate')) acc.carbs = nutrient.value || 0;
+                    if (nutrientName.includes('total lipid')) acc.fat = nutrient.value || 0;
+                    if (nutrientName.includes('fiber')) acc.fiber = nutrient.value || 0;
+                    if (nutrientName.includes('sodium')) acc.sodium = nutrient.value || 0;
+                    if (nutrientName.includes('sugars')) acc.sugar = nutrient.value || 0;
+                    return acc;
+                }, {}) : {},
+                dataType: food.dataType || 'Unknown',
+                source: 'usda'
+            }));
+        }
+        
+        return [];
+    } catch (error) {
+        console.error('USDA API Error:', error);
+        return [];
+    }
+};
+
+// Enhanced Fallback Food Database with More Options
+const FALLBACK_FOODS = {
+    // Proteins
+    'chicken breast': { calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, sodium: 74, sugar: 0 },
+    'salmon': { calories: 208, protein: 20, carbs: 0, fat: 12, fiber: 0, sodium: 82, sugar: 0 },
+    'tuna': { calories: 144, protein: 30, carbs: 0, fat: 1, fiber: 0, sodium: 50, sugar: 0 },
+    'ground beef': { calories: 250, protein: 26, carbs: 0, fat: 15, fiber: 0, sodium: 75, sugar: 0 },
+    'ground turkey': { calories: 200, protein: 27, carbs: 0, fat: 8, fiber: 0, sodium: 90, sugar: 0 },
+    'eggs': { calories: 155, protein: 13, carbs: 1, fat: 11, fiber: 0, sodium: 124, sugar: 1 },
+    'tofu': { calories: 144, protein: 15, carbs: 3, fat: 9, fiber: 2, sodium: 18, sugar: 1 },
+    'greek yogurt': { calories: 100, protein: 17, carbs: 6, fat: 0, fiber: 0, sodium: 60, sugar: 6 },
+    'cottage cheese': { calories: 98, protein: 11, carbs: 3, fat: 4, fiber: 0, sodium: 364, sugar: 3 },
+    'protein powder': { calories: 120, protein: 25, carbs: 3, fat: 1, fiber: 1, sodium: 150, sugar: 1 },
+    
+    // Vegetables
+    'broccoli': { calories: 34, protein: 3, carbs: 7, fat: 0.4, fiber: 3, sodium: 33, sugar: 2 },
+    'spinach': { calories: 23, protein: 3, carbs: 4, fat: 0.4, fiber: 2, sodium: 79, sugar: 0 },
+    'carrots': { calories: 41, protein: 1, carbs: 10, fat: 0.2, fiber: 3, sodium: 69, sugar: 5 },
+    'bell peppers': { calories: 31, protein: 1, carbs: 7, fat: 0.3, fiber: 3, sodium: 4, sugar: 5 },
+    'tomatoes': { calories: 18, protein: 1, carbs: 4, fat: 0.2, fiber: 1, sodium: 5, sugar: 3 },
+    'cucumber': { calories: 16, protein: 1, carbs: 4, fat: 0.1, fiber: 1, sodium: 2, sugar: 2 },
+    'lettuce': { calories: 15, protein: 1, carbs: 3, fat: 0.2, fiber: 1, sodium: 28, sugar: 1 },
+    'onions': { calories: 40, protein: 1, carbs: 9, fat: 0.1, fiber: 2, sodium: 4, sugar: 4 },
+    'mushrooms': { calories: 22, protein: 3, carbs: 3, fat: 0.3, fiber: 1, sodium: 5, sugar: 2 },
+    'zucchini': { calories: 17, protein: 1, carbs: 3, fat: 0.3, fiber: 1, sodium: 8, sugar: 3 },
+    
+    // Fruits
+    'apple': { calories: 52, protein: 0.3, carbs: 14, fat: 0.2, fiber: 2, sodium: 1, sugar: 10 },
+    'banana': { calories: 89, protein: 1, carbs: 23, fat: 0.3, fiber: 3, sodium: 1, sugar: 12 },
+    'orange': { calories: 47, protein: 1, carbs: 12, fat: 0.1, fiber: 2, sodium: 0, sugar: 9 },
+    'berries': { calories: 57, protein: 1, carbs: 14, fat: 0.3, fiber: 8, sodium: 1, sugar: 10 },
+    'grapes': { calories: 69, protein: 1, carbs: 16, fat: 0.2, fiber: 1, sodium: 3, sugar: 16 },
+    'pineapple': { calories: 50, protein: 1, carbs: 13, fat: 0.1, fiber: 1, sodium: 1, sugar: 10 },
+    'strawberries': { calories: 32, protein: 1, carbs: 8, fat: 0.3, fiber: 2, sodium: 1, sugar: 5 },
+    'avocado': { calories: 160, protein: 2, carbs: 9, fat: 15, fiber: 7, sodium: 7, sugar: 1 },
+    
+    // Grains & Starches
+    'brown rice': { calories: 111, protein: 3, carbs: 23, fat: 0.9, fiber: 2, sodium: 5, sugar: 0 },
+    'white rice': { calories: 130, protein: 3, carbs: 28, fat: 0.3, fiber: 0, sodium: 5, sugar: 0 },
+    'quinoa': { calories: 120, protein: 4, carbs: 22, fat: 2, fiber: 3, sodium: 7, sugar: 0 },
+    'oats': { calories: 389, protein: 17, carbs: 66, fat: 7, fiber: 11, sodium: 2, sugar: 1 },
+    'sweet potato': { calories: 86, protein: 2, carbs: 20, fat: 0.1, fiber: 3, sodium: 54, sugar: 4 },
+    'potato': { calories: 77, protein: 2, carbs: 17, fat: 0.1, fiber: 2, sodium: 6, sugar: 1 },
+    'pasta': { calories: 131, protein: 5, carbs: 25, fat: 1, fiber: 2, sodium: 6, sugar: 1 },
+    'bread': { calories: 265, protein: 9, carbs: 49, fat: 3, fiber: 3, sodium: 491, sugar: 5 },
+    
+    // Nuts & Seeds
+    'almonds': { calories: 579, protein: 21, carbs: 22, fat: 50, fiber: 12, sodium: 1, sugar: 4 },
+    'walnuts': { calories: 654, protein: 15, carbs: 14, fat: 65, fiber: 7, sodium: 2, sugar: 3 },
+    'peanut butter': { calories: 588, protein: 25, carbs: 20, fat: 50, fiber: 8, sodium: 17, sugar: 9 },
+    'chia seeds': { calories: 486, protein: 17, carbs: 42, fat: 31, fiber: 34, sodium: 16, sugar: 0 },
+    'flaxseed': { calories: 534, protein: 18, carbs: 29, fat: 42, fiber: 28, sodium: 30, sugar: 2 },
+    
+    // Dairy
+    'milk': { calories: 42, protein: 3, carbs: 5, fat: 1, fiber: 0, sodium: 44, sugar: 5 },
+    'cheese': { calories: 113, protein: 7, carbs: 1, fat: 9, fiber: 0, sodium: 186, sugar: 1 },
+    'yogurt': { calories: 59, protein: 10, carbs: 4, fat: 0.4, fiber: 0, sodium: 46, sugar: 4 },
+    
+    // Oils & Fats
+    'olive oil': { calories: 884, protein: 0, carbs: 0, fat: 100, fiber: 0, sodium: 2, sugar: 0 },
+    'coconut oil': { calories: 862, protein: 0, carbs: 0, fat: 100, fiber: 0, sodium: 0, sugar: 0 },
+    'butter': { calories: 717, protein: 1, carbs: 0, fat: 81, fiber: 0, sodium: 11, sugar: 0 }
+};
+
+// Enhanced Barcode API (Open Food Facts)
+const lookupBarcode = async (barcode) => {
+    try {
+        const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+        const data = await response.json();
+        
+        if (data.status === 1 && data.product) {
+            const product = data.product;
+            const nutrients = product.nutriments || {};
+            
+            return {
+                fdcId: barcode,
+                description: product.product_name || product.product_name_en || 'Unknown Product',
+                brandOwner: product.brands || 'Unknown Brand',
+                ingredients: product.ingredients_text || '',
+                nutrients: {
+                    calories: nutrients['energy-kcal_100g'] || nutrients.energy_100g/4.184 || 0,
+                    protein: nutrients.proteins_100g || 0,
+                    carbs: nutrients.carbohydrates_100g || 0,
+                    fat: nutrients.fat_100g || 0,
+                    fiber: nutrients.fiber_100g || 0,
+                    sodium: nutrients.sodium_100g || 0,
+                    sugar: nutrients.sugars_100g || 0
+                },
+                dataType: 'Barcode',
+                source: 'openfoodfacts',
+                barcode: barcode
+            };
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Barcode lookup failed:', error);
+        return null;
+    }
+};
+
+// Storage functions with Habbt branding and backward compatibility
+const isLocalStorageAvailable = () => {
+    try {
+        const test = '__localStorage_test__';
+        localStorage.setItem(test, test);
+        localStorage.removeItem(test);
+        return true;
     } catch (e) {
-      console.warn('Could not load pantry data:', e);
-      return { items: [] };
+        return false;
     }
-  };
+};
 
-  // Enhanced recipe database with ingredient matching
-  const RECIPE_DATABASE = [
-    {
-      id: 'chicken-quinoa-bowl',
-      name: 'Mediterranean Chicken Quinoa Bowl',
-      image: '🥗',
-      cookTime: '25 min',
-      servings: 2,
-      calories: 420,
-      protein: 35,
-      carbs: 45,
-      fat: 12,
-      cuisine: 'Mediterranean',
-      mealType: 'lunch',
-      ingredients: [
-        { name: 'Chicken Breast', amount: '1', unit: 'lbs', category: 'protein' },
-        { name: 'Quinoa', amount: '1', unit: 'cups', category: 'grains' },
-        { name: 'Bell Peppers', amount: '2', unit: 'pieces', category: 'vegetables' },
-        { name: 'Olive Oil', amount: '2', unit: 'tbsp', category: 'fats' },
-        { name: 'Tomatoes', amount: '2', unit: 'pieces', category: 'vegetables' }
-      ]
-    },
-    {
-      id: 'salmon-broccoli',
-      name: 'Herb-Crusted Salmon with Broccoli',
-      image: '🐟',
-      cookTime: '20 min',
-      servings: 2,
-      calories: 380,
-      protein: 32,
-      carbs: 15,
-      fat: 22,
-      cuisine: 'American',
-      mealType: 'dinner',
-      ingredients: [
-        { name: 'Salmon Fillet', amount: '1', unit: 'lbs', category: 'protein' },
-        { name: 'Broccoli', amount: '2', unit: 'heads', category: 'vegetables' },
-        { name: 'Mixed Herbs', amount: '1', unit: 'packages', category: 'seasonings' },
-        { name: 'Olive Oil', amount: '1', unit: 'tbsp', category: 'fats' }
-      ]
-    },
-    {
-      id: 'beef-stir-fry',
-      name: 'Asian Beef Stir Fry',
-      image: '🥢',
-      cookTime: '15 min',
-      servings: 2,
-      calories: 450,
-      protein: 28,
-      carbs: 35,
-      fat: 18,
-      cuisine: 'Asian',
-      mealType: 'dinner',
-      ingredients: [
-        { name: 'Ground Beef', amount: '1', unit: 'lbs', category: 'protein' },
-        { name: 'Bell Peppers', amount: '2', unit: 'pieces', category: 'vegetables' },
-        { name: 'Onions', amount: '1', unit: 'pieces', category: 'vegetables' },
-        { name: 'Brown Rice', amount: '1', unit: 'cups', category: 'grains' }
-      ]
-    },
-    {
-      id: 'veggie-scramble',
-      name: 'Garden Veggie Scramble',
-      image: '🍳',
-      cookTime: '10 min',
-      servings: 1,
-      calories: 280,
-      protein: 18,
-      carbs: 12,
-      fat: 18,
-      cuisine: 'American',
-      mealType: 'breakfast',
-      ingredients: [
-        { name: 'Eggs', amount: '3', unit: 'pieces', category: 'protein' },
-        { name: 'Spinach', amount: '1', unit: 'cups', category: 'vegetables' },
-        { name: 'Mushrooms', amount: '0.5', unit: 'cups', category: 'vegetables' },
-        { name: 'Cheese', amount: '0.25', unit: 'cups', category: 'dairy' }
-      ]
-    },
-    {
-      id: 'greek-yogurt-bowl',
-      name: 'Protein Greek Yogurt Bowl',
-      image: '🥣',
-      cookTime: '5 min',
-      servings: 1,
-      calories: 320,
-      protein: 25,
-      carbs: 35,
-      fat: 8,
-      cuisine: 'Mediterranean',
-      mealType: 'breakfast',
-      ingredients: [
-        { name: 'Greek Yogurt', amount: '1', unit: 'containers', category: 'protein' },
-        { name: 'Mixed Nuts', amount: '0.25', unit: 'cups', category: 'fats' },
-        { name: 'Oats', amount: '0.5', unit: 'cups', category: 'grains' }
-      ]
-    },
-    {
-      id: 'turkey-sweet-potato',
-      name: 'Turkey & Sweet Potato Hash',
-      image: '🍠',
-      cookTime: '20 min',
-      servings: 2,
-      calories: 390,
-      protein: 30,
-      carbs: 40,
-      fat: 12,
-      cuisine: 'American',
-      mealType: 'lunch',
-      ingredients: [
-        { name: 'Ground Turkey', amount: '1', unit: 'lbs', category: 'protein' },
-        { name: 'Sweet Potatoes', amount: '2', unit: 'pieces', category: 'vegetables' },
-        { name: 'Onions', amount: '1', unit: 'pieces', category: 'vegetables' },
-        { name: 'Olive Oil', amount: '1', unit: 'tbsp', category: 'fats' }
-      ]
-    },
-    {
-      id: 'tofu-stir-fry',
-      name: 'Teriyaki Tofu Stir Fry',
-      image: '🥘',
-      cookTime: '18 min',
-      servings: 2,
-      calories: 340,
-      protein: 20,
-      carbs: 42,
-      fat: 14,
-      cuisine: 'Asian',
-      mealType: 'lunch',
-      ingredients: [
-        { name: 'Extra Firm Tofu', amount: '1', unit: 'blocks', category: 'protein' },
-        { name: 'Broccoli', amount: '1', unit: 'heads', category: 'vegetables' },
-        { name: 'Carrots', amount: '2', unit: 'pieces', category: 'vegetables' },
-        { name: 'Brown Rice', amount: '1', unit: 'cups', category: 'grains' }
-      ]
-    },
-    {
-      id: 'overnight-oats',
-      name: 'Protein Overnight Oats',
-      image: '🌾',
-      cookTime: '5 min',
-      servings: 1,
-      calories: 350,
-      protein: 15,
-      carbs: 55,
-      fat: 8,
-      cuisine: 'American',
-      mealType: 'breakfast',
-      ingredients: [
-        { name: 'Rolled Oats', amount: '0.5', unit: 'cups', category: 'grains' },
-        { name: 'Greek Yogurt', amount: '0.5', unit: 'containers', category: 'protein' },
-        { name: 'Mixed Nuts', amount: '2', unit: 'tbsp', category: 'fats' },
-        { name: 'Milk', amount: '0.5', unit: 'cups', category: 'dairy' }
-      ]
-    }
-  ];
+const memoryStorage = {};
 
-  // Smart ingredient matching
-  const findPantryMatches = (recipeIngredients, pantryItems) => {
-    const matches = [];
-    const missing = [];
-
-    recipeIngredients.forEach(ingredient => {
-      const pantryMatch = pantryItems.find(pantryItem => {
-        const recipeName = ingredient.name.toLowerCase();
-        const pantryName = pantryItem.name.toLowerCase();
-        
-        return pantryName.includes(recipeName) || 
-               recipeName.includes(pantryName) ||
-               (recipeName.includes('chicken') && pantryName.includes('chicken')) ||
-               (recipeName.includes('beef') && pantryName.includes('beef')) ||
-               (recipeName.includes('salmon') && pantryName.includes('salmon')) ||
-               (recipeName.includes('tofu') && pantryName.includes('tofu')) ||
-               (recipeName.includes('yogurt') && pantryName.includes('yogurt'));
-      });
-
-      if (pantryMatch) {
-        matches.push({ ingredient, pantryItem: pantryMatch, available: true });
-      } else {
-        missing.push({ ingredient, available: false });
-      }
-    });
-
-    return { matches, missing };
-  };
-
-  // Calculate pantry score for recipe
-  const calculatePantryScore = (recipe, pantryItems) => {
-    const { matches, missing } = findPantryMatches(recipe.ingredients, pantryItems);
-    const matchPercentage = matches.length / recipe.ingredients.length;
+const saveMealData = (date, data) => {
+    const keys = [`habbt_meals_${date}`, `fueliq_meals_${date}`]; // Save to both for compatibility
+    const dataStr = JSON.stringify(data);
     
-    const expiringBonus = matches.some(match => {
-      const daysUntilExpiry = getDaysUntilExpiry(match.pantryItem.expiryDate);
-      return daysUntilExpiry !== null && daysUntilExpiry <= 3;
-    }) ? 0.2 : 0;
-
-    return {
-      score: matchPercentage + expiringBonus,
-      matchPercentage,
-      availableIngredients: matches.length,
-      totalIngredients: recipe.ingredients.length,
-      missingIngredients: missing.length,
-      matches,
-      missing,
-      hasExpiringIngredients: expiringBonus > 0
-    };
-  };
-
-  // Helper function for expiry calculation
-  const getDaysUntilExpiry = (expiryDate) => {
-    if (!expiryDate) return null;
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry - today;
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
-
-  // Enhanced preference scoring
-  const calculatePreferenceScore = (recipe, preferences) => {
-    let score = 0.5;
-
-    if (preferences.foodsILove) {
-      const lovedIngredients = recipe.ingredients.filter(ingredient =>
-        preferences.foodsILove.some(loved => 
-          ingredient.name.toLowerCase().includes(loved.toLowerCase()) ||
-          loved.toLowerCase().includes(ingredient.name.toLowerCase())
-        )
-      );
-      score += lovedIngredients.length * 0.15;
-    }
-
-    if (preferences.foodsIAvoid) {
-      const avoidedIngredients = recipe.ingredients.filter(ingredient =>
-        preferences.foodsIAvoid.some(avoided => 
-          ingredient.name.toLowerCase().includes(avoided.toLowerCase()) ||
-          avoided.toLowerCase().includes(ingredient.name.toLowerCase())
-        )
-      );
-      if (avoidedIngredients.length > 0) {
-        score = 0;
-      }
-    }
-
-    if (preferences.cuisinePreferences && preferences.cuisinePreferences.includes(recipe.cuisine)) {
-      score += 0.1;
-    }
-
-    return Math.min(score, 1);
-  };
-
-  // Select best recipe for meal type
-  const selectBestRecipe = (scoredRecipes, mealType, usedRecipes) => {
-    const availableRecipes = scoredRecipes.filter(recipe => 
-      recipe.mealType === mealType && !usedRecipes.includes(recipe.id)
-    );
-
-    if (availableRecipes.length === 0) {
-      const fallback = scoredRecipes.find(recipe => recipe.mealType === mealType);
-      return fallback || null;
-    }
-
-    const selected = availableRecipes[0];
-    usedRecipes.push(selected.id);
-    return selected;
-  };
-
-  // Enhanced meal planning with pantry integration
-  const generateSmartMealPlan = (preferences = {}, days = 7) => {
-    const pantryData = loadPantryData();
-    const pantryItems = pantryData.items || [];
-    
-    console.log('🛒 Pantry items loaded:', pantryItems.length);
-
-    const scoredRecipes = RECIPE_DATABASE.map(recipe => {
-      const pantryAnalysis = calculatePantryScore(recipe, pantryItems);
-      const preferenceScore = calculatePreferenceScore(recipe, preferences);
-      
-      return {
-        ...recipe,
-        pantryAnalysis,
-        preferenceScore,
-        totalScore: (pantryAnalysis.score * 0.4) + (preferenceScore * 0.6)
-      };
-    });
-
-    scoredRecipes.sort((a, b) => b.totalScore - a.totalScore);
-
-    const weekPlan = {};
-    const usedRecipes = [];
-
-    for (let day = 0; day < days; day++) {
-      const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day];
-      
-      const breakfast = selectBestRecipe(scoredRecipes, 'breakfast', usedRecipes);
-      const lunch = selectBestRecipe(scoredRecipes, 'lunch', usedRecipes);
-      const dinner = selectBestRecipe(scoredRecipes, 'dinner', usedRecipes);
-
-      weekPlan[dayName] = { breakfast, lunch, dinner };
-    }
-
-    return weekPlan;
-  };
-
-  // Enhanced Shopping List Generation with Smart Consolidation
-  const generateShoppingList = (weekPlan) => {
-    const pantryData = loadPantryData();
-    const pantryItems = pantryData.items || [];
-    const requiredIngredients = {};
-
-    console.log('📋 Generating smart shopping list with ingredient consolidation...');
-
-    // Step 1: Collect all ingredients from all meals
-    Object.entries(weekPlan).forEach(([day, dayPlan]) => {
-      ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
-        const meal = dayPlan[mealType];
-        if (meal && meal.ingredients) {
-          meal.ingredients.forEach(ingredient => {
-            // Normalize ingredient name for better matching
-            const normalizedName = normalizeIngredientName(ingredient.name);
-            const key = normalizedName.toLowerCase();
-            
-            if (requiredIngredients[key]) {
-              // 🔄 CONSOLIDATE: Add to existing ingredient
-              const amount = parseFloat(ingredient.amount) || 1;
-              requiredIngredients[key].totalAmount += amount;
-              requiredIngredients[key].recipes.push(`${meal.name} (${day} ${mealType})`);
-              requiredIngredients[key].occasions.push({ 
-                day, 
-                mealType, 
-                meal: meal.name, 
-                amount: amount,
-                unit: ingredient.unit 
-              });
-              
-              // Track unit consistency
-              if (ingredient.unit && ingredient.unit !== requiredIngredients[key].unit) {
-                requiredIngredients[key].unitVariations = requiredIngredients[key].unitVariations || [];
-                if (!requiredIngredients[key].unitVariations.includes(ingredient.unit)) {
-                  requiredIngredients[key].unitVariations.push(ingredient.unit);
-                }
-              }
-            } else {
-              // 🆕 NEW: Create new ingredient entry
-              requiredIngredients[key] = {
-                name: ingredient.name, // Keep original capitalization
-                normalizedName: normalizedName,
-                category: ingredient.category,
-                unit: ingredient.unit || getDefaultUnit(ingredient.name, ingredient.category),
-                totalAmount: parseFloat(ingredient.amount) || 1,
-                recipes: [`${meal.name} (${day} ${mealType})`],
-                occasions: [{ 
-                  day, 
-                  mealType, 
-                  meal: meal.name, 
-                  amount: parseFloat(ingredient.amount) || 1,
-                  unit: ingredient.unit 
-                }],
-                estimatedCost: estimateIngredientCost(ingredient.name),
-                isConsolidated: false
-              };
-            }
-          });
-        }
-      });
-    });
-
-    // Step 2: Mark consolidated ingredients
-    Object.values(requiredIngredients).forEach(ingredient => {
-      if (ingredient.occasions.length > 1) {
-        ingredient.isConsolidated = true;
-        ingredient.consolidationSummary = `Used in ${ingredient.occasions.length} meals across ${new Set(ingredient.occasions.map(o => o.day)).size} days`;
-      }
-    });
-
-    // Step 3: Check against pantry and create final shopping list
-    const shoppingList = [];
-    Object.values(requiredIngredients).forEach(ingredient => {
-      const pantryMatch = findPantryMatch(ingredient, pantryItems);
-      
-      if (!pantryMatch || pantryMatch.quantity < ingredient.totalAmount) {
-        const neededAmount = pantryMatch ? 
-          Math.max(0, ingredient.totalAmount - pantryMatch.quantity) : 
-          ingredient.totalAmount;
-          
-        shoppingList.push({
-          ...ingredient,
-          neededAmount: neededAmount,
-          originalAmount: ingredient.totalAmount,
-          pantryAvailable: pantryMatch ? pantryMatch.quantity : 0,
-          hasPantryItem: !!pantryMatch,
-          consolidationInfo: ingredient.isConsolidated ? {
-            mealsCount: ingredient.occasions.length,
-            daysSpread: new Set(ingredient.occasions.map(o => o.day)).size,
-            summary: ingredient.consolidationSummary
-          } : null
-        });
-      }
-    });
-
-    console.log(`✅ Smart consolidation complete: ${Object.keys(requiredIngredients).length} unique ingredients, ${shoppingList.length} items needed`);
-    
-    return shoppingList;
-  };
-
-  // 🔧 HELPER: Normalize ingredient names for better matching
-  function normalizeIngredientName(name) {
-    return name
-      .toLowerCase()
-      .replace(/\s+/g, ' ') // normalize whitespace
-      .replace(/[^\w\s]/g, '') // remove special characters
-      .trim()
-      // Common variations
-      .replace(/^organic\s+/, '')
-      .replace(/^fresh\s+/, '')
-      .replace(/^baby\s+/, '')
-      .replace(/\s+breast$/, ' breast') // chicken breast variations
-      .replace(/\s+fillet$/, ' fillet') // salmon fillet variations
-      ;
-  }
-
-  // Get appropriate unit for ingredient
-  function getDefaultUnit(ingredientName, category) {
-    const unitMap = {
-      'chicken breast': 'lbs', 'ground beef': 'lbs', 'salmon fillet': 'lbs',
-      'ground turkey': 'lbs', 'eggs': 'pieces', 'tofu': 'blocks',
-      'greek yogurt': 'containers', 'broccoli': 'heads', 'spinach': 'bags',
-      'bell peppers': 'pieces', 'tomatoes': 'pieces', 'onions': 'pieces',
-      'carrots': 'pieces', 'mushrooms': 'cups', 'sweet potatoes': 'pieces',
-      'brown rice': 'cups', 'quinoa': 'cups', 'oats': 'cups',
-      'milk': 'cups', 'cheese': 'cups', 'olive oil': 'tbsp'
-    };
-
-    const ingredientKey = ingredientName.toLowerCase();
-    if (unitMap[ingredientKey]) return unitMap[ingredientKey];
-    
-    for (const [key, unit] of Object.entries(unitMap)) {
-      if (ingredientKey.includes(key) || key.includes(ingredientKey)) {
-        return unit;
-      }
-    }
-    
-    const categoryDefaults = {
-      'protein': 'lbs', 'vegetables': 'pieces', 'grains': 'cups',
-      'dairy': 'containers', 'fats': 'tbsp', 'seasonings': 'tsp'
-    };
-    
-    return categoryDefaults[category] || 'pieces';
-  }
-
-  // Estimate cost for budgeting
-  function estimateIngredientCost(ingredientName) {
-    const costMap = {
-      'chicken breast': 3.50, 'salmon fillet': 8.99, 'ground beef': 5.99,
-      'broccoli': 2.99, 'spinach': 3.49, 'bell peppers': 1.99,
-      'brown rice': 2.49, 'quinoa': 4.99, 'eggs': 3.99, 'milk': 3.49
-    };
-    
-    return costMap[ingredientName.toLowerCase()] || 2.99;
-  }
-
-  // Smart pantry matching
-  function findPantryMatch(ingredient, pantryItems) {
-    return pantryItems.find(pantryItem => {
-      const ingredientName = ingredient.name.toLowerCase();
-      const pantryName = pantryItem.name.toLowerCase();
-      
-      if (pantryName === ingredientName) return true;
-      if (pantryName.includes(ingredientName) || ingredientName.includes(pantryName)) return true;
-      
-      const variations = {
-        'chicken': 'chicken breast', 'ground beef': 'beef', 'spinach': 'baby spinach',
-        'bell peppers': 'peppers', 'sweet potatoes': 'sweet potato'
-      };
-      
-      for (const [variation, canonical] of Object.entries(variations)) {
-        if ((ingredientName.includes(variation) && pantryName.includes(canonical)) ||
-            (ingredientName.includes(canonical) && pantryName.includes(variation))) {
-          return true;
-        }
-      }
-      
-      return false;
-    });
-  }
-
-  // Enhanced shopping list display with smart consolidation
-  const displayShoppingList = (shoppingList) => {
-    const container = document.getElementById('shopping-list');
-    
-    if (shoppingList.length === 0) {
-      container.innerHTML = `
-        <div class="text-center py-6">
-          <span class="text-4xl">🎉</span>
-          <p class="text-lg font-semibold text-green-600 mt-2">You have everything you need!</p>
-          <p class="text-gray-600">All ingredients are available in your pantry.</p>
-        </div>
-      `;
-      return;
-    }
-
-    const totalCost = shoppingList.reduce((sum, item) => sum + (item.estimatedCost * item.neededAmount), 0);
-    const consolidatedItems = shoppingList.filter(item => item.consolidationInfo);
-
-    const grouped = {};
-    shoppingList.forEach(item => {
-      if (!grouped[item.category]) grouped[item.category] = [];
-      grouped[item.category].push(item);
-    });
-
-    container.innerHTML = `
-      <div class="space-y-4">
-        <!-- Smart Shopping Summary -->
-        <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4">
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <h4 class="font-bold text-blue-800">🧠 Smart Shopping Summary</h4>
-              <p class="text-sm text-blue-600">
-                ${shoppingList.length} items needed • ${consolidatedItems.length} ingredients consolidated • Est. $${totalCost.toFixed(2)}
-              </p>
-            </div>
-            <div class="text-xs text-blue-600 text-right">
-              <div>💡 ${consolidatedItems.length} smart consolidations saved you from duplicate orders</div>
-              <div>📦 ${shoppingList.filter(item => item.hasPantryItem).length} items partially in pantry</div>
-            </div>
-          </div>
-          
-          ${consolidatedItems.length > 0 ? `
-            <div class="bg-green-100 border border-green-300 rounded-lg p-3 mt-3">
-              <h5 class="font-semibold text-green-800 text-sm mb-2">🔄 Consolidated Ingredients:</h5>
-              <div class="text-xs text-green-700 space-y-1">
-                ${consolidatedItems.slice(0, 3).map(item => 
-                  `<div>• <strong>${item.name}</strong>: ${item.consolidationInfo.summary}</div>`
-                ).join('')}
-                ${consolidatedItems.length > 3 ? `<div>• And ${consolidatedItems.length - 3} more...</div>` : ''}
-              </div>
-            </div>
-          ` : ''}
-        </div>
-
-        <!-- Shopping List by Category -->
-        ${Object.entries(grouped).map(([category, items]) => `
-          <div class="border border-gray-200 rounded-lg p-4">
-            <div class="flex items-center justify-between mb-3">
-              <h4 class="font-semibold text-gray-800 capitalize flex items-center">
-                ${getCategoryIcon(category)} ${category}
-                <span class="ml-2 text-sm text-gray-500">(${items.length} items)</span>
-              </h4>
-              <div class="text-sm text-gray-600">
-                Est. $${items.reduce((sum, item) => sum + (item.estimatedCost * item.neededAmount), 0).toFixed(2)}
-              </div>
-            </div>
-            <div class="space-y-3">
-              ${items.map(item => `
-                <div class="bg-gray-50 rounded-lg p-3">
-                  <div class="flex items-start justify-between">
-                    <div class="flex-1">
-                      <div class="flex items-center space-x-3">
-                        <input type="checkbox" class="delivery-item" data-item='${JSON.stringify(item)}' checked>
-                        <div>
-                          <div class="font-medium text-gray-800 flex items-center gap-2">
-                            ${item.name}
-                            ${item.consolidationInfo ? `
-                              <span class="bg-purple-100 text-purple-600 px-2 py-1 rounded-full text-xs font-bold">
-                                🔄 ${item.consolidationInfo.mealsCount} meals
-                              </span>
-                            ` : ''}
-                          </div>
-                          <div class="text-sm text-gray-600">
-                            Need: <strong>${formatQuantity(item.neededAmount, item.unit)}</strong>
-                            ${item.hasPantryItem ? 
-                              `• Have: ${formatQuantity(item.pantryAvailable, item.unit)} in pantry` : 
-                              '• Not in pantry'
-                            }
-                          </div>
-                          <div class="text-xs text-gray-500 mt-1">
-                            ${item.consolidationInfo ? 
-                              `Smart consolidation: ${item.consolidationInfo.summary}` :
-                              `For: ${item.recipes.slice(0, 2).join(', ')}${item.recipes.length > 2 ? ` +${item.recipes.length - 2} more` : ''}`
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="text-right ml-4">
-                      <div class="text-sm font-bold text-orange-600">
-                        $${(item.estimatedCost * item.neededAmount).toFixed(2)}
-                      </div>
-                      <div class="text-xs text-gray-500">
-                        $${item.estimatedCost.toFixed(2)} per ${item.unit}
-                      </div>
-                      <button onclick="showIngredientDetails('${item.name}')" 
-                              class="text-xs text-blue-500 hover:text-blue-600 mt-1">
-                        View details
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  };
-
-  // Helper functions
-  function formatQuantity(amount, unit) {
-    const num = parseFloat(amount);
-    const formatted = num % 1 === 0 ? num.toString() : num.toFixed(1);
-    
-    const singularUnits = {
-      'pieces': 'piece', 'heads': 'head', 'bags': 'bag', 'blocks': 'block',
-      'containers': 'container', 'loaves': 'loaf', 'boxes': 'box', 'sticks': 'stick'
-    };
-    
-    const displayUnit = (num === 1 && singularUnits[unit]) ? singularUnits[unit] : unit;
-    return `${formatted} ${displayUnit}`;
-  }
-
-  function getCategoryIcon(category) {
-    const icons = {
-      'protein': '🥩', 'vegetables': '🥬', 'grains': '🌾',
-      'dairy': '🥛', 'fats': '🫒', 'seasonings': '🧂'
-    };
-    return icons[category] || '📦';
-  }
-
-  // Show detailed ingredient information
-  window.showIngredientDetails = function(ingredientName) {
-    const ingredient = getCurrentShoppingList().find(item => item.name === ingredientName);
-    if (!ingredient) return;
-
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50';
-    
-    modal.innerHTML = `
-      <div class="bg-white rounded-xl p-6 w-full max-w-lg">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xl font-bold text-gray-800">${ingredient.name}</h3>
-          <button onclick="this.parentElement.parentElement.parentElement.remove()" 
-                  class="text-gray-500 hover:text-gray-700 text-xl">×</button>
-        </div>
-        
-        <div class="space-y-4">
-          <div class="bg-gray-50 rounded-lg p-4">
-            <h4 class="font-semibold mb-2">Quantity Needed</h4>
-            <div class="text-sm space-y-1">
-              <div>Total needed: <strong>${formatQuantity(ingredient.originalAmount, ingredient.unit)}</strong></div>
-              ${ingredient.hasPantryItem ? 
-                `<div>Available in pantry: <strong>${formatQuantity(ingredient.pantryAvailable, ingredient.unit)}</strong></div>
-                 <div>Need to buy: <strong>${formatQuantity(ingredient.neededAmount, ingredient.unit)}</strong></div>` :
-                `<div>Not in pantry - need to buy: <strong>${formatQuantity(ingredient.neededAmount, ingredient.unit)}</strong></div>`
-              }
-            </div>
-          </div>
-          
-          <div class="bg-gray-50 rounded-lg p-4">
-            <h4 class="font-semibold mb-2">Used In Recipes</h4>
-            <div class="text-sm space-y-1">
-              ${ingredient.occasions.map(occasion => 
-                `<div>• ${occasion.meal} (${occasion.day} ${occasion.mealType})</div>`
-              ).join('')}
-            </div>
-          </div>
-          
-          <div class="bg-gray-50 rounded-lg p-4">
-            <h4 class="font-semibold mb-2">Cost Estimate</h4>
-            <div class="text-sm">
-              <div>Price per ${ingredient.unit}: $${ingredient.estimatedCost.toFixed(2)}</div>
-              <div>Total cost: <strong>$${(ingredient.estimatedCost * ingredient.neededAmount).toFixed(2)}</strong></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(modal);
-  };
-
-  // Helper to get current shopping list
-  function getCurrentShoppingList() {
-    const checkboxes = document.querySelectorAll('.delivery-item');
-    return Array.from(checkboxes).map(cb => JSON.parse(cb.dataset.item));
-  }
-
-  // Main render function
-  const renderMealPlanning = (containerId) => {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
-    const pantryData = loadPantryData();
-
-    container.innerHTML = `
-      <div class="max-w-6xl mx-auto p-6">
-        <!-- Header with Pantry Integration -->
-        <div class="bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl p-6 mb-6 text-white">
-          <h1 class="text-3xl font-bold mb-2">🍽️ Smart Meal Planning</h1>
-          <p class="text-lg opacity-90 mb-4">AI-powered meal suggestions using your pantry</p>
-          
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="text-center">
-              <div class="text-2xl font-bold">${pantryData.items?.length || 0}</div>
-              <div class="text-sm opacity-90">Pantry Items</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold">${userProfile.foodsILove?.length || 0}</div>
-              <div class="text-sm opacity-90">Loved Foods</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold">${userProfile.cuisinePreferences?.length || 0}</div>
-              <div class="text-sm opacity-90">Cuisines</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold">${RECIPE_DATABASE.length}</div>
-              <div class="text-sm opacity-90">Recipes</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Smart Suggestions -->
-        <div id="smart-suggestions" class="mb-6"></div>
-
-        <!-- Generate Plan Buttons -->
-        <div class="text-center mb-6">
-          <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button id="generate-plan-btn" class="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
-              ✨ Generate Smart Meal Plan
-            </button>
-            
-            <button onclick="showRecipeBrowser()" class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
-              🔍 Browse All Recipes
-            </button>
-            
-            <button onclick="navigateToGroceryWithList()" class="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all">
-              🛒 Order Groceries
-            </button>
-          </div>
-          
-          <p class="text-gray-600 text-sm mt-3">Generate a plan automatically, browse recipes, or order groceries from your meal plan!</p>
-        </div>
-
-        <!-- Meal Plan Display -->
-        <div id="meal-plan-display" class="hidden">
-          <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">📅 Your Weekly Meal Plan</h2>
-            <div id="weekly-calendar" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-          </div>
-          
-          <div class="bg-white rounded-xl shadow-lg p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">🛒 Smart Shopping List</h2>
-            <div id="shopping-list" class="space-y-2"></div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    showSmartSuggestions();
-
-    document.getElementById('generate-plan-btn').addEventListener('click', () => {
-      generatePlan();
-    });
-  };
-
-  // Show smart suggestions based on pantry
-  const showSmartSuggestions = () => {
-    const pantryData = loadPantryData();
-    const pantryItems = pantryData.items || [];
-    const suggestionsContainer = document.getElementById('smart-suggestions');
-
-    if (pantryItems.length === 0) {
-      suggestionsContainer.innerHTML = `
-        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <p class="text-yellow-800">💡 <strong>Tip:</strong> Add items to your pantry to get personalized meal suggestions!</p>
-        </div>
-      `;
-      return;
-    }
-
-    const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
-    const scoredRecipes = RECIPE_DATABASE.map(recipe => ({
-      ...recipe,
-      pantryAnalysis: calculatePantryScore(recipe, pantryItems)
-    })).filter(recipe => recipe.pantryAnalysis.matchPercentage >= 0.5)
-      .sort((a, b) => b.pantryAnalysis.score - a.pantryAnalysis.score)
-      .slice(0, 3);
-
-    if (scoredRecipes.length > 0) {
-      suggestionsContainer.innerHTML = `
-        <div class="bg-green-50 border border-green-200 rounded-xl p-4">
-          <h3 class="font-bold text-green-800 mb-3">🎯 Recommended Recipes (Using Your Pantry)</h3>
-          <div class="space-y-2">
-            ${scoredRecipes.map(recipe => `
-              <div class="flex items-center justify-between bg-white rounded-lg p-3">
-                <div class="flex items-center gap-3">
-                  <span class="text-2xl">${recipe.image}</span>
-                  <div>
-                    <div class="font-semibold">${recipe.name}</div>
-                    <div class="text-sm text-gray-600">${recipe.pantryAnalysis.availableIngredients}/${recipe.pantryAnalysis.totalIngredients} ingredients available</div>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div class="text-sm font-bold text-green-600">${Math.round(recipe.pantryAnalysis.matchPercentage * 100)}% match</div>
-                  ${recipe.pantryAnalysis.hasExpiringIngredients ? '<div class="text-xs text-orange-600">⚠️ Uses expiring items</div>' : ''}
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    }
-  };
-
-  // Generate and display meal plan
-  let generatePlan = () => {
-    const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
-    const weekPlan = generateMealPlanWithChoices();
-    const shoppingList = generateShoppingList(weekPlan);
-
-    displayWeekPlan(weekPlan);
-    displayShoppingList(shoppingList);
-
-    document.getElementById('meal-plan-display').classList.remove('hidden');
-    localStorage.setItem('fueliq_meal_plan', JSON.stringify(weekPlan));
-
-    console.log('✅ Smart meal plan generated with pantry integration!');
-  };
-
-  // Display weekly calendar with clickable meal cards
-  const displayWeekPlan = (weekPlan) => {
-    const calendar = document.getElementById('weekly-calendar');
-    
-    calendar.innerHTML = Object.entries(weekPlan).map(([day, meals]) => `
-      <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
-        <h3 class="font-bold text-purple-800 mb-3">${day}</h3>
-        <div class="space-y-3">
-          ${['breakfast', 'lunch', 'dinner'].map(mealType => {
-            const meal = meals[mealType];
-            if (!meal) return '';
-            
-            const pantryData = loadPantryData();
-            const pantryAnalysis = calculatePantryScore(meal, pantryData.items || []);
-            
-            return `
-              <div class="bg-white rounded-lg p-3 border border-purple-100 hover:border-purple-300 cursor-pointer transform hover:scale-[1.02] transition-all duration-200" 
-                   onclick="showRecipeDetails('${meal.id}', '${day}', '${mealType}')">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="flex items-center gap-2">
-                    <span class="text-lg">${meal.image}</span>
-                    <div>
-                      <div class="font-semibold text-sm hover:text-purple-600 transition-colors">${meal.name}</div>
-                      <div class="text-xs text-gray-600">${mealType} • ${meal.cookTime}</div>
-                    </div>
-                  </div>
-                  <div class="flex flex-col gap-1">
-                    ${pantryAnalysis.matchPercentage > 0.5 ? `<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">🛒 ${Math.round(pantryAnalysis.matchPercentage * 100)}%</span>` : ''}
-                    <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">${meal.calories} cal</span>
-                  </div>
-                </div>
-                <div class="text-xs text-gray-600 mb-2">
-                  ${pantryAnalysis.availableIngredients}/${pantryAnalysis.totalIngredients} ingredients available
-                  ${pantryAnalysis.hasExpiringIngredients ? ' • ⚠️ Uses expiring items' : ''}
-                </div>
-                <div class="text-xs text-gray-400 text-center">
-                  🍽️ Click for recipe details & instructions
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
-    `).join('');
-
-    // Add the recipe modal HTML to the page (only once)
-    if (!document.getElementById('recipe-modal')) {
-      const modalHTML = `
-        <div id="recipe-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-          <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div id="recipe-modal-content">
-              <!-- Recipe details will be inserted here -->
-            </div>
-          </div>
-        </div>
-      `;
-      document.body.insertAdjacentHTML('beforeend', modalHTML);
-    }
-  };
-
-  // Show detailed recipe information in modal
-  window.showRecipeDetails = function(recipeId, day, mealType) {
-    const recipe = RECIPE_DATABASE.find(r => r.id === recipeId);
-    if (!recipe) return;
-
-    const pantryData = loadPantryData();
-    const pantryItems = pantryData.items || [];
-    const pantryAnalysis = calculatePantryScore(recipe, pantryItems);
-    
-    const modalContent = document.getElementById('recipe-modal-content');
-    modalContent.innerHTML = `
-      <!-- Modal Header -->
-      <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 rounded-t-lg">
-        <div class="flex justify-between items-start">
-          <div>
-            <h2 class="text-2xl font-bold mb-2">${recipe.image} ${recipe.name}</h2>
-            <div class="flex gap-4 text-sm opacity-90">
-              <span>🕒 ${recipe.cookTime}</span>
-              <span>👥 ${recipe.servings} servings</span>
-              <span>🏷️ ${recipe.mealType}</span>
-              <span>📅 ${day} ${mealType}</span>
-            </div>
-          </div>
-          <button onclick="closeRecipeModal()" 
-                  class="text-white hover:text-gray-200 text-2xl font-bold transition-colors">
-            ×
-          </button>
-        </div>
-      </div>
-
-      <div class="p-6">
-        <!-- Quick Stats Row -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div class="bg-green-50 rounded-lg p-3 text-center">
-            <div class="text-2xl font-bold text-green-600">${recipe.calories}</div>
-            <div class="text-sm text-gray-600">Calories</div>
-          </div>
-          <div class="bg-blue-50 rounded-lg p-3 text-center">
-            <div class="text-2xl font-bold text-blue-600">${pantryAnalysis.availableIngredients}/${pantryAnalysis.totalIngredients}</div>
-            <div class="text-sm text-gray-600">In Pantry</div>
-          </div>
-          <div class="bg-orange-50 rounded-lg p-3 text-center">
-            <div class="text-2xl font-bold text-orange-600">${recipe.protein}g</div>
-            <div class="text-sm text-gray-600">Protein</div>
-          </div>
-          <div class="bg-purple-50 rounded-lg p-3 text-center">
-            <div class="text-2xl font-bold text-purple-600">${Math.round(pantryAnalysis.matchPercentage * 100)}%</div>
-            <div class="text-sm text-gray-600">Pantry Match</div>
-          </div>
-        </div>
-
-        <!-- Main Content Grid -->
-        <div class="grid md:grid-cols-2 gap-6">
-          
-          <!-- Left Column: Ingredients & Nutrition -->
-          <div class="space-y-6">
-            
-            <!-- Ingredients List -->
-            <div class="bg-gray-50 rounded-lg p-4">
-              <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <span class="text-xl">🛒</span> Ingredients
-              </h3>
-              <div class="space-y-2">
-                ${recipe.ingredients.map(ingredient => {
-                  const pantryMatch = findPantryMatch(ingredient, pantryItems);
-                  const hasInPantry = !!pantryMatch;
-                  
-                  return `
-                    <div class="flex items-center justify-between p-2 bg-white rounded border ${hasInPantry ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}">
-                      <div class="flex items-center gap-2">
-                        <span class="text-lg">${hasInPantry ? '✅' : '🛒'}</span>
-                        <span class="font-medium">${ingredient.name}</span>
-                      </div>
-                      <div class="text-right">
-                        <div class="text-sm font-medium">${ingredient.amount} ${ingredient.unit}</div>
-                        <div class="text-xs ${hasInPantry ? 'text-green-600' : 'text-red-600'}">
-                          ${hasInPantry ? 'Have in pantry' : 'Need to buy'}
-                        </div>
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            </div>
-
-            <!-- Detailed Nutrition -->
-            <div class="bg-gray-50 rounded-lg p-4">
-              <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <span class="text-xl">📊</span> Nutrition Facts
-              </h3>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center py-2 border-b border-gray-200">
-                  <span class="font-medium">Calories</span>
-                  <span class="font-bold text-lg">${recipe.calories}</span>
-                </div>
-                
-                <!-- Macronutrients -->
-                <div class="space-y-2">
-                  <div class="flex justify-between items-center">
-                    <span class="text-green-600 font-medium">Protein</span>
-                    <div class="text-right">
-                      <span class="font-bold">${recipe.protein}g</span>
-                      <span class="text-sm text-gray-500 ml-1">(${Math.round((recipe.protein * 4 / recipe.calories) * 100)}%)</span>
-                    </div>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-blue-600 font-medium">Carbohydrates</span>
-                    <div class="text-right">
-                      <span class="font-bold">${recipe.carbs}g</span>
-                      <span class="text-sm text-gray-500 ml-1">(${Math.round((recipe.carbs * 4 / recipe.calories) * 100)}%)</span>
-                    </div>
-                  </div>
-                  <div class="flex justify-between items-center">
-                    <span class="text-orange-600 font-medium">Fat</span>
-                    <div class="text-right">
-                      <span class="font-bold">${recipe.fat}g</span>
-                      <span class="text-sm text-gray-500 ml-1">(${Math.round((recipe.fat * 9 / recipe.calories) * 100)}%)</span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Visual Macro Breakdown -->
-                <div class="mt-4">
-                  <div class="text-sm text-gray-600 mb-2">Macronutrient Distribution</div>
-                  <div class="flex h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <div class="bg-green-500" style="width: ${Math.round((recipe.protein * 4 / recipe.calories) * 100)}%"></div>
-                    <div class="bg-blue-500" style="width: ${Math.round((recipe.carbs * 4 / recipe.calories) * 100)}%"></div>
-                    <div class="bg-orange-500" style="width: ${Math.round((recipe.fat * 9 / recipe.calories) * 100)}%"></div>
-                  </div>
-                  <div class="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>🟢 Protein</span>
-                    <span>🔵 Carbs</span>
-                    <span>🟠 Fat</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Right Column: Instructions & Actions -->
-          <div class="space-y-6">
-            
-            <!-- Cooking Instructions -->
-            <div class="bg-gray-50 rounded-lg p-4">
-              <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <span class="text-xl">👨‍🍳</span> Quick Cooking Guide
-              </h3>
-              <div class="space-y-3">
-                ${getBasicInstructions(recipe).map((instruction, index) => `
-                  <div class="flex gap-3">
-                    <div class="flex-shrink-0 w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                      ${index + 1}
-                    </div>
-                    <p class="text-gray-700 leading-relaxed pt-1">${instruction}</p>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-
-            <!-- Chef's Tips -->
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <h4 class="font-semibold text-yellow-800 mb-2 flex items-center gap-2">
-                <span class="text-lg">💡</span> Chef's Tips
-              </h4>
-              <div class="text-sm text-yellow-700 space-y-1">
-                ${getChefsTips(recipe).map(tip => `<p>• ${tip}</p>`).join('')}
-              </div>
-            </div>
-
-            <!-- Recipe Info -->
-            <div class="flex flex-wrap gap-2">
-              <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
-                ${recipe.cuisine}
-              </span>
-              <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-                ${recipe.mealType}
-              </span>
-              <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-                ${recipe.servings} servings
-              </span>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="mt-8 border-t border-gray-200 pt-6">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            
-            <!-- Save Recipe -->
-            <button onclick="saveRecipeToFavorites('${recipe.id}')" 
-                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors">
-              <span class="text-lg">💾</span>
-              Save Recipe
-            </button>
-
-            <!-- Order Missing Ingredients -->
-            ${pantryAnalysis.missingIngredients > 0 ? `
-              <button onclick="orderMissingIngredients('${recipe.id}')" 
-                      class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors">
-                <span class="text-lg">🛒</span>
-                Order Missing (${pantryAnalysis.missingIngredients})
-              </button>
-            ` : `
-              <div class="bg-green-100 text-green-700 px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2">
-                <span class="text-lg">✅</span>
-                All Ingredients Available
-              </div>
-            `}
-
-            <!-- Modify Meal Plan -->
-            <button onclick="showRecipeBrowser('${recipe.mealType}', '${day}', '${mealType}')" 
-                    class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors">
-              <span class="text-lg">🔄</span>
-              Change This Meal
-            </button>
-            
-          </div>
-
-          <!-- Missing Ingredients List -->
-          ${pantryAnalysis.missing.length > 0 ? `
-            <div class="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-3">
-              <h4 class="font-semibold text-orange-800 mb-2">Missing Ingredients:</h4>
-              <div class="grid grid-cols-2 gap-2 text-sm">
-                ${pantryAnalysis.missing.map(item => `
-                  <span class="text-orange-700">• ${item.ingredient.name} (${item.ingredient.amount} ${item.ingredient.unit})</span>
-                `).join('')}
-              </div>
-            </div>
-          ` : ''}
-
-        </div>
-      </div>
-    `;
-
-    // Show the modal
-    document.getElementById('recipe-modal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // Prevent background scrolling
-  };
-
-  // Close recipe modal
-  window.closeRecipeModal = function() {
-    document.getElementById('recipe-modal').classList.add('hidden');
-    document.body.style.overflow = 'auto'; // Restore scrolling
-  };
-
-  // Generate basic cooking instructions based on recipe
-  function getBasicInstructions(recipe) {
-    const instructions = [];
-    
-    // Category-based instructions
-    if (recipe.mealType === 'breakfast') {
-      instructions.push('Gather all ingredients and prep workspace');
-      instructions.push('Heat pan/griddle to medium heat if needed');
-      instructions.push('Combine ingredients according to recipe type');
-      instructions.push('Cook for recommended time, stirring as needed');
-      instructions.push('Season to taste and serve immediately');
-    } else if (recipe.mealType === 'lunch') {
-      instructions.push('Prep all vegetables and proteins first');
-      instructions.push('Heat cooking oil in large pan or skillet');
-      instructions.push('Cook proteins until almost done');
-      instructions.push('Add vegetables and seasonings');
-      instructions.push('Combine everything and serve hot');
-    } else if (recipe.mealType === 'dinner') {
-      instructions.push('Preheat oven to 400°F if baking');
-      instructions.push('Season proteins and let come to room temperature');
-      instructions.push('Cook proteins using preferred method');
-      instructions.push('Prepare sides and vegetables');
-      instructions.push('Let proteins rest, then plate and serve');
-    }
-
-    return instructions;
-  }
-
-  // Generate chef's tips based on recipe
-  function getChefsTips(recipe) {
-    const tips = [];
-    
-    // Ingredient-specific tips
-    if (recipe.ingredients.some(ing => ing.name.toLowerCase().includes('chicken'))) {
-      tips.push('Use a meat thermometer - chicken should reach 165°F internal temperature');
-    }
-    
-    if (recipe.ingredients.some(ing => ing.name.toLowerCase().includes('salmon'))) {
-      tips.push('Cook salmon skin-side down first for crispy skin');
-    }
-
-    if (recipe.ingredients.some(ing => ing.name.toLowerCase().includes('quinoa'))) {
-      tips.push('Rinse quinoa before cooking to remove bitter coating');
-    }
-
-    // Meal type tips
-    if (recipe.mealType === 'breakfast') {
-      tips.push('Prep ingredients the night before for quicker morning assembly');
-    } else if (recipe.mealType === 'lunch') {
-      tips.push('This recipe is perfect for meal prep - make extra portions');
-    } else if (recipe.mealType === 'dinner') {
-      tips.push('Let meat rest for 5 minutes after cooking for better texture');
-    }
-
-    // Default tips if none match
-    if (tips.length === 0) {
-      tips.push('Read through all steps before starting');
-      tips.push('Prep all ingredients first (mise en place)');
-      tips.push('Adjust seasoning to taste at the end');
-    }
-
-    return tips.slice(0, 3); // Limit to 3 tips
-  }
-
-  // Recipe action functions
-  window.saveRecipeToFavorites = function(recipeId) {
-    const favorites = JSON.parse(localStorage.getItem('fueliq_favorite_recipes') || '[]');
-    if (!favorites.includes(recipeId)) {
-      favorites.push(recipeId);
-      localStorage.setItem('fueliq_favorite_recipes', JSON.stringify(favorites));
-      alert('Recipe saved to your favorites! 💾');
-    } else {
-      alert('Recipe is already in your favorites! ⭐');
-    }
-  };
-
-  window.orderMissingIngredients = function(recipeId) {
-    const recipe = RECIPE_DATABASE.find(r => r.id === recipeId);
-    if (!recipe) return;
-    
-    const pantryData = loadPantryData();
-    const pantryItems = pantryData.items || [];
-    const pantryAnalysis = calculatePantryScore(recipe, pantryItems);
-    
-    localStorage.setItem('fueliq_recipe_shopping_list', JSON.stringify(pantryAnalysis.missing));
-    
-    alert(`${pantryAnalysis.missing.length} missing ingredients added to your shopping list! Redirecting to delivery options... 🛒`);
-    
-    // Redirect to delivery tab with shopping list
-    if (window.setCurrentView) {
-window.setCurrentView('grocery');
-    }
-  };
-
-  // Show recipe browser modal
-  window.showRecipeBrowser = function(filterMealType = null, replaceDay = null, replaceMealType = null) {
-    const pantryData = loadPantryData();
-    const pantryItems = pantryData.items || [];
-    
-    // Calculate pantry scores for all recipes
-    const recipesWithScores = RECIPE_DATABASE.map(recipe => ({
-      ...recipe,
-      pantryAnalysis: calculatePantryScore(recipe, pantryItems)
-    }));
-
-    const modalHTML = `
-      <div id="recipe-browser-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-          
-          <!-- Header -->
-          <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6">
-            <div class="flex justify-between items-center">
-              <div>
-                <h2 class="text-2xl font-bold mb-2">🍽️ Recipe Browser</h2>
-                <p class="opacity-90">
-                  ${filterMealType ? `Showing ${filterMealType} recipes` : 'Browse all recipes'} 
-                  ${replaceDay ? `• Replacing ${replaceDay} ${replaceMealType}` : ''}
-                </p>
-              </div>
-              <button onclick="closeRecipeBrowser()" 
-                      class="text-white hover:text-gray-200 text-2xl font-bold transition-colors">
-                ×
-              </button>
-            </div>
-            
-            <!-- Search and Filters -->
-            <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
-              <input type="text" id="recipe-search" placeholder="Search recipes..." 
-                     class="px-4 py-2 rounded-lg text-gray-800">
-              
-              <select id="meal-type-filter" class="px-4 py-2 rounded-lg text-gray-800">
-                <option value="">All Meal Types</option>
-                <option value="breakfast" ${filterMealType === 'breakfast' ? 'selected' : ''}>Breakfast</option>
-                <option value="lunch" ${filterMealType === 'lunch' ? 'selected' : ''}>Lunch</option>
-                <option value="dinner" ${filterMealType === 'dinner' ? 'selected' : ''}>Dinner</option>
-              </select>
-              
-              <select id="cuisine-filter" class="px-4 py-2 rounded-lg text-gray-800">
-                <option value="">All Cuisines</option>
-                <option value="Mediterranean">Mediterranean</option>
-                <option value="American">American</option>
-                <option value="Asian">Asian</option>
-              </select>
-              
-              <select id="pantry-filter" class="px-4 py-2 rounded-lg text-gray-800">
-                <option value="">All Recipes</option>
-                <option value="high-match">High Pantry Match (75%+)</option>
-                <option value="medium-match">Medium Match (50%+)</option>
-                <option value="can-make">Can Make Now (100%)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Recipe Grid -->
-          <div class="flex-1 overflow-y-auto p-6">
-            <div id="recipe-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <!-- Recipes will be populated here -->
-            </div>
-            
-            <!-- No Results Message -->
-            <div id="no-results" class="hidden text-center py-12">
-              <span class="text-6xl">🔍</span>
-              <p class="text-xl text-gray-600 mt-4">No recipes found</p>
-              <p class="text-gray-500">Try adjusting your filters or search terms</p>
-            </div>
-          </div>
-
-          <!-- Footer Stats -->
-          <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
-            <div class="flex justify-between items-center text-sm text-gray-600">
-              <span id="recipe-count">Showing ${recipesWithScores.length} recipes</span>
-              <span id="pantry-stats">Pantry: ${pantryItems.length} items</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Remove existing modal if any
-    const existingModal = document.getElementById('recipe-browser-modal');
-    if (existingModal) existingModal.remove();
-
-    // Add new modal
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    document.body.style.overflow = 'hidden';
-
-    // Initialize filters and display
-    setupRecipeBrowserEvents(recipesWithScores, replaceDay, replaceMealType);
-    displayRecipes(recipesWithScores);
-  };
-
-  // Setup event listeners for recipe browser
-  function setupRecipeBrowserEvents(allRecipes, replaceDay, replaceMealType) {
-    const searchInput = document.getElementById('recipe-search');
-    const mealTypeFilter = document.getElementById('meal-type-filter');
-    const cuisineFilter = document.getElementById('cuisine-filter');
-    const pantryFilter = document.getElementById('pantry-filter');
-
-    // Filter function
-    const filterRecipes = () => {
-      const searchTerm = searchInput.value.toLowerCase();
-      const mealType = mealTypeFilter.value;
-      const cuisine = cuisineFilter.value;
-      const pantryMatch = pantryFilter.value;
-
-      let filtered = allRecipes.filter(recipe => {
-        // Search filter
-        const matchesSearch = !searchTerm || 
-          recipe.name.toLowerCase().includes(searchTerm) ||
-          recipe.ingredients.some(ing => ing.name.toLowerCase().includes(searchTerm));
-
-        // Meal type filter
-        const matchesMealType = !mealType || recipe.mealType === mealType;
-
-        // Cuisine filter
-        const matchesCuisine = !cuisine || recipe.cuisine === cuisine;
-
-        // Pantry match filter
-        let matchesPantry = true;
-        if (pantryMatch === 'high-match') {
-          matchesPantry = recipe.pantryAnalysis.matchPercentage >= 0.75;
-        } else if (pantryMatch === 'medium-match') {
-          matchesPantry = recipe.pantryAnalysis.matchPercentage >= 0.5;
-        } else if (pantryMatch === 'can-make') {
-          matchesPantry = recipe.pantryAnalysis.matchPercentage === 1;
-        }
-
-        return matchesSearch && matchesMealType && matchesCuisine && matchesPantry;
-      });
-
-      displayRecipes(filtered);
-      
-      // Update count
-      document.getElementById('recipe-count').textContent = `Showing ${filtered.length} recipes`;
-    };
-
-    // Add event listeners
-    searchInput.addEventListener('input', filterRecipes);
-    mealTypeFilter.addEventListener('change', filterRecipes);
-    cuisineFilter.addEventListener('change', filterRecipes);
-    pantryFilter.addEventListener('change', filterRecipes);
-
-    // Store replace info for later use
-    window.recipeReplacementInfo = { replaceDay, replaceMealType };
-  }
-
-  // Display recipes in grid
-  function displayRecipes(recipes) {
-    const grid = document.getElementById('recipe-grid');
-    const noResults = document.getElementById('no-results');
-
-    if (recipes.length === 0) {
-      grid.classList.add('hidden');
-      noResults.classList.remove('hidden');
-      return;
-    }
-
-    grid.classList.remove('hidden');
-    noResults.classList.add('hidden');
-
-    // Sort by pantry match percentage (highest first)
-    const sortedRecipes = [...recipes].sort((a, b) => 
-      b.pantryAnalysis.matchPercentage - a.pantryAnalysis.matchPercentage
-    );
-
-    grid.innerHTML = sortedRecipes.map(recipe => {
-      const pantryMatch = Math.round(recipe.pantryAnalysis.matchPercentage * 100);
-      const canMakeNow = recipe.pantryAnalysis.matchPercentage === 1;
-      const highMatch = recipe.pantryAnalysis.matchPercentage >= 0.75;
-      
-      return `
-        <div class="bg-white rounded-lg border border-gray-200 hover:border-purple-300 hover:shadow-lg transition-all cursor-pointer" 
-             onclick="selectRecipeFromBrowser('${recipe.id}')">
-          
-          <!-- Recipe Header -->
-          <div class="p-4 border-b border-gray-100">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-2xl">${recipe.image}</span>
-              <div class="flex gap-1">
-                ${canMakeNow ? 
-                  '<span class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">✅ Can Make Now</span>' :
-                  highMatch ? 
-                  '<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-bold">🔥 High Match</span>' :
-                  '<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-bold">🛒 Need Items</span>'
-                }
-              </div>
-            </div>
-            
-            <h3 class="font-bold text-gray-800 hover:text-purple-600 transition-colors">${recipe.name}</h3>
-            <div class="text-sm text-gray-600 mt-1">
-              ${recipe.mealType} • ${recipe.cuisine} • ${recipe.cookTime}
-            </div>
-          </div>
-
-          <!-- Pantry Analysis -->
-          <div class="p-4 bg-gray-50">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-sm font-medium text-gray-700">Pantry Match</span>
-              <span class="text-sm font-bold ${canMakeNow ? 'text-green-600' : highMatch ? 'text-blue-600' : 'text-orange-600'}">
-                ${pantryMatch}%
-              </span>
-            </div>
-            
-            <!-- Progress bar -->
-            <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-              <div class="h-2 rounded-full ${canMakeNow ? 'bg-green-500' : highMatch ? 'bg-blue-500' : 'bg-orange-500'}" 
-                   style="width: ${pantryMatch}%"></div>
-            </div>
-            
-            <div class="text-xs text-gray-600">
-              ${recipe.pantryAnalysis.availableIngredients}/${recipe.pantryAnalysis.totalIngredients} ingredients available
-              ${recipe.pantryAnalysis.hasExpiringIngredients ? ' • ⚠️ Uses expiring items' : ''}
-            </div>
-          </div>
-
-          <!-- Recipe Stats -->
-          <div class="p-4 border-t border-gray-100">
-            <div class="grid grid-cols-3 gap-3 text-center">
-              <div>
-                <div class="text-lg font-bold text-gray-800">${recipe.calories}</div>
-                <div class="text-xs text-gray-600">Calories</div>
-              </div>
-              <div>
-                <div class="text-lg font-bold text-green-600">${recipe.protein}g</div>
-                <div class="text-xs text-gray-600">Protein</div>
-              </div>
-              <div>
-                <div class="text-lg font-bold text-purple-600">${recipe.servings}</div>
-                <div class="text-xs text-gray-600">Servings</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Action Area -->
-          <div class="p-4 bg-purple-50 rounded-b-lg">
-            <div class="text-center">
-              <span class="text-sm text-purple-700 font-medium">
-                ${window.recipeReplacementInfo?.replaceDay ? 
-                  `📅 Replace ${window.recipeReplacementInfo.replaceDay} ${window.recipeReplacementInfo.replaceMealType}` : 
-                  '🍽️ Click to view details & add to meal plan'
-                }
-              </span>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  // Handle recipe selection from browser
-  window.selectRecipeFromBrowser = function(recipeId) {
-    const recipe = RECIPE_DATABASE.find(r => r.id === recipeId);
-    if (!recipe) return;
-
-    // Check if we're replacing a meal or just viewing
-    if (window.recipeReplacementInfo?.replaceDay && window.recipeReplacementInfo?.replaceMealType) {
-      // Replace the meal in the current plan
-      replaceMealInPlan(window.recipeReplacementInfo.replaceDay, window.recipeReplacementInfo.replaceMealType, recipe);
-      closeRecipeBrowser();
-    } else {
-      // Just show recipe details
-      closeRecipeBrowser();
-      setTimeout(() => {
-        showRecipeDetails(recipeId, 'Selected', 'Recipe');
-      }, 300);
-    }
-  };
-
-  // Replace meal in current plan
-  function replaceMealInPlan(day, mealType, newRecipe) {
-    // Get current meal plan
-    let currentPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
-    
-    if (currentPlan[day]) {
-      // Replace the meal
-      currentPlan[day][mealType] = newRecipe;
-      
-      // Save updated plan
-      localStorage.setItem('fueliq_meal_plan', JSON.stringify(currentPlan));
-      
-      // Regenerate shopping list
-      const shoppingList = generateShoppingList(currentPlan);
-      displayShoppingList(shoppingList);
-      
-      // Update the display
-      displayWeekPlan(currentPlan);
-      
-      alert(`✅ ${day} ${mealType} updated to "${newRecipe.name}"!\n\nShopping list has been automatically updated.`);
-    }
-  }
-
-  // Close recipe browser
-  window.closeRecipeBrowser = function() {
-    const modal = document.getElementById('recipe-browser-modal');
-    if (modal) {
-      modal.remove();
-      document.body.style.overflow = 'auto';
-    }
-    // Clean up replacement info
-    delete window.recipeReplacementInfo;
-  };
-
-  // Enhanced meal generation with choice options
-  window.generateMealPlanWithChoices = function() {
-    const userProfile = JSON.parse(localStorage.getItem('fueliq_user_profile') || '{}');
-    const pantryData = loadPantryData();
-    const pantryItems = pantryData.items || [];
-    
-    // Calculate scores for all recipes
-    const scoredRecipes = RECIPE_DATABASE.map(recipe => {
-      const pantryAnalysis = calculatePantryScore(recipe, pantryItems);
-      const preferenceScore = calculatePreferenceScore(recipe, userProfile);
-      
-      return {
-        ...recipe,
-        pantryAnalysis,
-        preferenceScore,
-        totalScore: (pantryAnalysis.score * 0.4) + (preferenceScore * 0.6)
-      };
-    });
-
-    // Sort by total score
-    scoredRecipes.sort((a, b) => b.totalScore - a.totalScore);
-
-    // Generate plan with top choices
-    const weekPlan = {};
-    const usedRecipes = [];
-
-    for (let day = 0; day < 7; day++) {
-      const dayName = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day];
-      
-      // Get best recipes for each meal type
-      const breakfast = selectBestRecipe(scoredRecipes, 'breakfast', usedRecipes);
-      const lunch = selectBestRecipe(scoredRecipes, 'lunch', usedRecipes);
-      const dinner = selectBestRecipe(scoredRecipes, 'dinner', usedRecipes);
-
-      weekPlan[dayName] = { breakfast, lunch, dinner };
-    }
-
-    return weekPlan;
-  };
-
-  // Navigation to grocery delivery
-  window.navigateToGroceryWithList = function() {
-    if (window.navigationInProgress) {
-      console.log('⚠️ Navigation already in progress, skipping...');
-      return;
-    }
-    
-    window.navigationInProgress = true;
-    
-    try {
-      const currentPlan = JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}');
-      
-      if (Object.keys(currentPlan).length === 0) {
-        alert('❌ No meal plan found. Please generate a meal plan first.');
-        return;
-      }
-      
-      const shoppingList = generateShoppingList(currentPlan);
-      
-      if (shoppingList.length === 0) {
-        alert('✅ All ingredients are already in your pantry!');
-        return;
-      }
-      
-      console.log('🛒 Generating shopping list with', shoppingList.length, 'items');
-      
-      localStorage.removeItem('fueliq_pending_grocery_list');
-      localStorage.setItem('fueliq_pending_grocery_list', JSON.stringify(shoppingList));
-      
-      if (window.FuelIQIntegration && !window.integrationEventSent) {
+    if (isLocalStorageAvailable()) {
         try {
-          window.integrationEventSent = true;
-          
-          window.FuelIQIntegration.emit('groceryListGenerated', {
-            ingredients: shoppingList,
-            source: 'meal_planning',
-            totalItems: shoppingList.length,
-            timestamp: Date.now()
-          });
-          
-          if (window.FuelIQIntegration.utils && window.FuelIQIntegration.utils.showSuccessMessage) {
-            window.FuelIQIntegration.utils.showSuccessMessage(
-              `Generated grocery list with ${shoppingList.length} ingredients!`
-            );
-          }
-          
-          setTimeout(() => {
-            window.integrationEventSent = false;
-          }, 5000);
-          
+            keys.forEach(key => localStorage.setItem(key, dataStr));
         } catch (e) {
-          console.error('Integration event failed:', e);
-          window.integrationEventSent = false;
+            console.warn('localStorage failed, using memory storage:', e);
+            keys.forEach(key => memoryStorage[key] = dataStr);
         }
-      }
-      
-      try {
-        if (window.setCurrentView) {
-window.setCurrentView('grocery');
-        } else {
-const navigationEvent = new CustomEvent('navigateToTab', { detail: 'grocery' });
-          window.dispatchEvent(navigationEvent);
-        }
-      } catch (e) {
-        console.error('Navigation failed:', e);
-        alert('Please manually switch to the Delivery tab to see your grocery list!');
-      }
-      
-    } finally {
-      setTimeout(() => {
-        window.navigationInProgress = false;
-      }, 2000);
-    }
-  };
-
-  // Cleanup function
-  const cleanup = () => {
-    // Remove event listeners if needed
-  };
-
-  // Export
-  window.FuelIQMealPlanning = {
-    renderMealPlanning,
-    cleanup,
-    generateSmartMealPlan,
-    generateShoppingList
-  };
-
-  // Integration initialization
-  const initializeIntegration = () => {
-    if (window.FuelIQIntegration && typeof window.FuelIQIntegration.registerModule === 'function') {
-      console.log('🔗 Meal Planning connected to integration system');
-      
-      try {
-        window.FuelIQIntegration.registerModule('mealPlanning', {
-          generatePlan: generateMealPlanWithChoices,
-          getShoppingList: generateShoppingList,
-          getCurrentPlan: () => JSON.parse(localStorage.getItem('fueliq_meal_plan') || '{}')
-        });
-      } catch (e) {
-        console.error('Failed to register meal planning module:', e);
-      }
-      
-      try {
-        window.FuelIQIntegration.on('pantryUpdated', (data) => {
-          console.log('📦 Pantry updated, refreshing meal suggestions');
-          if (typeof showSmartSuggestions === 'function') {
-            showSmartSuggestions();
-          }
-        });
-      } catch (e) {
-        console.error('Failed to setup pantry listener:', e);
-      }
     } else {
-      console.warn('FuelIQIntegration not ready, retrying...');
-      setTimeout(initializeIntegration, 1000);
+        keys.forEach(key => memoryStorage[key] = dataStr);
     }
-  };
+};
 
-  // Initialize integration when module loads
-  setTimeout(initializeIntegration, 1000);
+const loadMealData = (date) => {
+    const keys = [`habbt_meals_${date}`, `fueliq_meals_${date}`]; // Try both keys
+    let data = null;
+    
+    if (isLocalStorageAvailable()) {
+        try {
+            for (const key of keys) {
+                data = localStorage.getItem(key);
+                if (data) break;
+            }
+        } catch (e) {
+            console.warn('localStorage failed, using memory storage:', e);
+            for (const key of keys) {
+                data = memoryStorage[key];
+                if (data) break;
+            }
+        }
+    } else {
+        for (const key of keys) {
+            data = memoryStorage[key];
+            if (data) break;
+        }
+    }
+    
+    return data ? JSON.parse(data) : {
+        breakfast: [],
+        lunch: [],
+        dinner: [],
+        snacks: []
+    };
+};
 
-})();
+// Enhanced camera/scanner component
+const CameraScanner = ({ onScan, onClose }) => {
+    const [isScanning, setIsScanning] = React.useState(false);
+    const [manualBarcode, setManualBarcode] = React.useState('');
+    const [error, setError] = React.useState('');
+    const videoRef = React.useRef(null);
+    const streamRef = React.useRef(null);
+
+    React.useEffect(() => {
+        return () => {
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, []);
+
+    const startCamera = async () => {
+        try {
+            setError('');
+            setIsScanning(true);
+            
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment' }
+            });
+            
+            streamRef.current = stream;
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+        } catch (err) {
+            console.error('Camera access failed:', err);
+            setError('Camera access denied. Please allow camera permission and try again.');
+            setIsScanning(false);
+        }
+    };
+
+    const stopCamera = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
+        setIsScanning(false);
+    };
+
+    const simulateScan = () => {
+        const mockBarcodes = [
+            '0123456789012',
+            '0737628064502', // Cheerios
+            '0016000275157', // Coca-Cola
+            '0041196891171'  // Kraft Mac & Cheese
+        ];
+        const randomBarcode = mockBarcodes[Math.floor(Math.random() * mockBarcodes.length)];
+        onScan(randomBarcode);
+        onClose();
+    };
+
+    const handleManualEntry = () => {
+        if (manualBarcode.trim()) {
+            onScan(manualBarcode.trim());
+            onClose();
+        }
+    };
+
+    return React.createElement('div', { 
+        className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50' 
+    },
+        React.createElement('div', { 
+            className: 'bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto flex flex-col' 
+        },
+            React.createElement('div', { className: 'flex justify-between items-center mb-4' },
+                React.createElement('h3', { className: 'text-xl font-bold text-gray-800' }, 'Barcode Scanner'),
+                React.createElement('button', { 
+                    onClick: onClose,
+                    className: 'text-gray-500 hover:text-gray-700 text-xl font-bold' 
+                }, '×')
+            ),
+
+            React.createElement('div', { className: 'mb-4 p-3 bg-blue-50 rounded-lg' },
+                React.createElement('p', { className: 'text-blue-800 text-sm' },
+                    '📷 Point camera at barcode or enter manually below'
+                )
+            ),
+
+            !isScanning ? 
+                React.createElement('div', { className: 'text-center space-y-3' },
+                    React.createElement('div', { className: 'w-32 h-32 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4' },
+                        React.createElement('span', { className: 'text-4xl' }, '📷')
+                    ),
+                    React.createElement('button', {
+                        onClick: startCamera,
+                        className: 'w-full bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white px-6 py-3 rounded-lg font-semibold mb-2 transition-all duration-200'
+                    }, '📷 Start Camera'),
+                    
+                    React.createElement('button', {
+                        onClick: simulateScan,
+                        className: 'w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200'
+                    }, '🎯 Demo Scan (Random Product)')
+                ) :
+                React.createElement('div', { className: 'relative' },
+                    React.createElement('video', {
+                        ref: videoRef,
+                        autoPlay: true,
+                        playsInline: true,
+                        className: 'w-full h-48 bg-black rounded-lg object-cover'
+                    }),
+                    React.createElement('div', { className: 'absolute inset-0 flex items-center justify-center' },
+                        React.createElement('div', { className: 'w-32 h-20 border-2 border-blue-500 rounded-lg' })
+                    ),
+                    React.createElement('div', { className: 'text-center mt-3' },
+                        React.createElement('p', { className: 'text-sm text-gray-600 mb-3' }, 'Point camera at barcode'),
+                        React.createElement('div', { className: 'flex gap-2 justify-center' },
+                            React.createElement('button', {
+                                onClick: simulateScan,
+                                className: 'bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white px-4 py-2 rounded-lg'
+                            }, 'Simulate Scan'),
+                            React.createElement('button', {
+                                onClick: stopCamera,
+                                className: 'bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg'
+                            }, 'Stop')
+                        )
+                    )
+                ),
+
+            error && React.createElement('div', { className: 'bg-red-50 border border-red-200 rounded-lg p-3 mb-4' },
+                React.createElement('p', { className: 'text-red-700 text-sm' }, error)
+            ),
+
+            React.createElement('div', { className: 'border-t pt-4 mt-4' },
+                React.createElement('h4', { className: 'font-semibold text-gray-700 mb-3' }, 'Or enter manually:'),
+                React.createElement('div', { className: 'flex gap-2' },
+                    React.createElement('input', {
+                        type: 'text',
+                        value: manualBarcode,
+                        onChange: (e) => setManualBarcode(e.target.value),
+                        placeholder: 'Enter barcode number',
+                        className: 'flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200'
+                    }),
+                    React.createElement('button', {
+                        onClick: handleManualEntry,
+                        disabled: !manualBarcode.trim(),
+                        className: 'bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg'
+                    }, 'Add')
+                )
+            )
+        )
+    );
+};
+
+// Enhanced food search with better UX
+const FoodSearchComponent = ({ onAddFood, mealType }) => {
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const [searchResults, setSearchResults] = React.useState([]);
+    const [loading, setLoading] = React.useState(false);
+    const [showScanner, setShowScanner] = React.useState(false);
+    const [nutritionData, setNutritionData] = React.useState(null);
+
+    const handleSearch = async (query) => {
+        if (query.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const results = await searchFoods(query);
+            
+            if (results.length === 0) {
+                const fallbackKeys = Object.keys(FALLBACK_FOODS).filter(key => 
+                    key.toLowerCase().includes(query.toLowerCase())
+                );
+                
+                const fallbackResults = fallbackKeys.map(key => ({
+                    fdcId: `fallback_${key}`,
+                    description: key.charAt(0).toUpperCase() + key.slice(1),
+                    brandOwner: 'Habbt Database',
+                    nutrients: FALLBACK_FOODS[key],
+                    dataType: 'Fallback',
+                    source: 'fallback'
+                }));
+                
+                setSearchResults(fallbackResults);
+            } else {
+                setSearchResults(results);
+            }
+        } catch (error) {
+            console.error('Search failed:', error);
+            setSearchResults([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleBarcodeScan = async (barcode) => {
+        setLoading(true);
+        try {
+            const product = await lookupBarcode(barcode);
+            if (product) {
+                setSearchResults([product]);
+                setSearchQuery(product.description);
+            } else {
+                alert('Product not found. Please try manual entry.');
+            }
+        } catch (error) {
+            console.error('Barcode lookup failed:', error);
+            alert('Barcode lookup failed. Please try manual entry.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    React.useEffect(() => {
+        const debounceTimer = setTimeout(() => {
+            handleSearch(searchQuery);
+        }, 300);
+
+        return () => clearTimeout(debounceTimer);
+    }, [searchQuery]);
+
+    const addFood = (food, servingSize = 100) => {
+        const foodItem = {
+            id: Date.now() + Math.random(),
+            name: food.description,
+            brand: food.brandOwner || '',
+            calories: Math.round((food.nutrients.calories || 0) * (servingSize / 100)),
+            protein: Math.round((food.nutrients.protein || 0) * (servingSize / 100) * 10) / 10,
+            carbs: Math.round((food.nutrients.carbs || 0) * (servingSize / 100) * 10) / 10,
+            fat: Math.round((food.nutrients.fat || 0) * (servingSize / 100) * 10) / 10,
+            fiber: Math.round((food.nutrients.fiber || 0) * (servingSize / 100) * 10) / 10,
+            sodium: Math.round((food.nutrients.sodium || 0) * (servingSize / 100)),
+            sugar: Math.round((food.nutrients.sugar || 0) * (servingSize / 100) * 10) / 10,
+            servingSize: servingSize,
+            fdcId: food.fdcId,
+            source: food.source || 'usda',
+            barcode: food.barcode || null,
+            timestamp: new Date().toISOString()
+        };
+
+        onAddFood(mealType, foodItem);
+        setSearchQuery('');
+        setSearchResults([]);
+    };
+
+    return React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-white/20' },
+        React.createElement('div', { className: 'flex flex-col space-y-4' },
+            React.createElement('div', { className: 'flex space-x-2' },
+                React.createElement('input', {
+                    type: 'text',
+                    value: searchQuery,
+                    onChange: (e) => setSearchQuery(e.target.value),
+                    placeholder: 'Search foods (e.g., chicken breast, apple)...',
+                    className: 'flex-1 px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 font-medium'
+                }),
+                React.createElement('button', {
+                    onClick: () => setShowScanner(true),
+                    className: 'px-4 py-3 bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200'
+                }, '📷')
+            ),
+
+            loading && React.createElement('div', { className: 'text-center py-4' },
+                React.createElement('div', { className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto' }),
+                React.createElement('p', { className: 'text-gray-600 mt-2' }, 'Searching...')
+            ),
+
+            searchResults.length > 0 && React.createElement('div', { className: 'max-h-80 overflow-y-auto space-y-2' },
+                ...searchResults.map(food => 
+                    React.createElement('div', { 
+                        key: food.fdcId,
+                        className: 'border border-gray-200 rounded-xl p-3 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 cursor-pointer'
+                    },
+                        React.createElement('div', { className: 'flex justify-between items-start' },
+                            React.createElement('div', { className: 'flex-1' },
+                                React.createElement('h4', { className: 'font-semibold text-gray-800' }, food.description),
+                                food.brandOwner && React.createElement('p', { className: 'text-sm text-gray-600' }, food.brandOwner),
+                                React.createElement('div', { className: 'text-xs text-gray-500 mt-1' },
+                                    `${Math.round(food.nutrients.calories || 0)} cal, ${Math.round(food.nutrients.protein || 0)}g protein per 100g`
+                                ),
+                                React.createElement('div', { className: 'text-xs font-medium mt-1' },
+                                    React.createElement('span', { 
+                                        className: `px-2 py-1 rounded-full ${
+                                            food.source === 'usda' ? 'bg-green-100 text-green-700' :
+                                            food.source === 'openfoodfacts' ? 'bg-blue-100 text-blue-700' :
+                                            'bg-gray-100 text-gray-700'
+                                        }`
+                                    }, food.dataType || 'Unknown')
+                                )
+                            ),
+                            React.createElement('button', {
+                                onClick: () => addFood(food),
+                                className: 'ml-4 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-sm rounded-lg font-semibold shadow-md transform hover:scale-105 transition-all duration-200'
+                            }, 'Add')
+                        )
+                    )
+                )
+            ),
+
+            showScanner && React.createElement(CameraScanner, {
+                onScan: handleBarcodeScan,
+                onClose: () => setShowScanner(false)
+            })
+        )
+    );
+};
+
+// Enhanced macro display with better visuals
+const MacroDisplay = ({ meals }) => {
+    const calculateTotals = () => {
+        const allFoods = [...meals.breakfast, ...meals.lunch, ...meals.dinner, ...meals.snacks];
+        return allFoods.reduce((totals, food) => ({
+            calories: totals.calories + (food.calories || 0),
+            protein: totals.protein + (food.protein || 0),
+            carbs: totals.carbs + (food.carbs || 0),
+            fat: totals.fat + (food.fat || 0),
+            fiber: totals.fiber + (food.fiber || 0),
+            sodium: totals.sodium + (food.sodium || 0),
+            sugar: totals.sugar + (food.sugar || 0)
+        }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sodium: 0, sugar: 0 });
+    };
+
+    const totals = calculateTotals();
+    const goals = getGoals();
+
+    const getProgressColor = (current, goal) => {
+        if (!goal) return 'bg-gray-300';
+        const percentage = (current / goal) * 100;
+        if (percentage < 50) return 'bg-red-400';
+        if (percentage < 80) return 'bg-yellow-400';
+        if (percentage <= 110) return 'bg-green-400';
+        return 'bg-blue-400';
+    };
+
+    const getProgressPercentage = (current, goal) => {
+        if (!goal) return 0;
+        return Math.min((current / goal) * 100, 100);
+    };
+
+    return React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20' },
+        React.createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4 flex items-center' },
+            React.createElement('span', { className: 'mr-2 text-2xl' }, '📊'),
+            'Daily Nutrition Summary'
+        ),
+
+        React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mb-6' },
+            React.createElement('div', { className: 'text-center p-4 bg-gradient-to-br from-blue-50 to-teal-50 rounded-xl border border-blue-200' },
+                React.createElement('div', { className: 'text-2xl font-bold text-blue-600' }, Math.round(totals.calories)),
+                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Calories'),
+                goals.calories && React.createElement('div', { className: 'text-xs text-blue-600 mt-1' }, 
+                    `Goal: ${goals.calories}`
+                )
+            ),
+            React.createElement('div', { className: 'text-center p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-xl border border-red-200' },
+                React.createElement('div', { className: 'text-2xl font-bold text-red-600' }, `${Math.round(totals.protein)}g`),
+                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Protein'),
+                goals.protein && React.createElement('div', { className: 'text-xs text-red-600 mt-1' }, 
+                    `Goal: ${goals.protein}g`
+                )
+            ),
+            React.createElement('div', { className: 'text-center p-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border border-yellow-200' },
+                React.createElement('div', { className: 'text-2xl font-bold text-yellow-600' }, `${Math.round(totals.carbs)}g`),
+                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Carbs'),
+                goals.carbs && React.createElement('div', { className: 'text-xs text-yellow-600 mt-1' }, 
+                    `Goal: ${goals.carbs}g`
+                )
+            ),
+            React.createElement('div', { className: 'text-center p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border border-purple-200' },
+                React.createElement('div', { className: 'text-2xl font-bold text-purple-600' }, `${Math.round(totals.fat)}g`),
+                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Fat'),
+                goals.fat && React.createElement('div', { className: 'text-xs text-purple-600 mt-1' }, 
+                    `Goal: ${goals.fat}g`
+                )
+            )
+        ),
+
+        // Progress bars
+        goals.calories && React.createElement('div', { className: 'space-y-3' },
+            React.createElement('div', null,
+                React.createElement('div', { className: 'flex justify-between text-sm mb-1' },
+                    React.createElement('span', null, 'Calories'),
+                    React.createElement('span', null, `${Math.round(totals.calories)}/${goals.calories}`)
+                ),
+                React.createElement('div', { className: 'w-full bg-gray-200 rounded-full h-2' },
+                    React.createElement('div', {
+                        className: `h-2 rounded-full transition-all duration-500 ${getProgressColor(totals.calories, goals.calories)}`,
+                        style: { width: `${getProgressPercentage(totals.calories, goals.calories)}%` }
+                    })
+                )
+            ),
+            
+            goals.protein && React.createElement('div', null,
+                React.createElement('div', { className: 'flex justify-between text-sm mb-1' },
+                    React.createElement('span', null, 'Protein'),
+                    React.createElement('span', null, `${Math.round(totals.protein)}g/${goals.protein}g`)
+                ),
+                React.createElement('div', { className: 'w-full bg-gray-200 rounded-full h-2' },
+                    React.createElement('div', {
+                        className: `h-2 rounded-full transition-all duration-500 ${getProgressColor(totals.protein, goals.protein)}`,
+                        style: { width: `${getProgressPercentage(totals.protein, goals.protein)}%` }
+                    })
+                )
+            )
+        ),
+
+        React.createElement('div', { className: 'mt-4 pt-4 border-t border-gray-200' },
+            React.createElement('div', { className: 'grid grid-cols-3 gap-4 text-center text-sm' },
+                React.createElement('div', null,
+                    React.createElement('div', { className: 'font-semibold text-green-600' }, `${Math.round(totals.fiber)}g`),
+                    React.createElement('div', { className: 'text-gray-600' }, 'Fiber')
+                ),
+                React.createElement('div', null,
+                    React.createElement('div', { className: 'font-semibold text-cyan-600' }, `${Math.round(totals.sodium)}mg`),
+                    React.createElement('div', { className: 'text-gray-600' }, 'Sodium')
+                ),
+                React.createElement('div', null,
+                    React.createElement('div', { className: 'font-semibold text-pink-600' }, `${Math.round(totals.sugar)}g`),
+                    React.createElement('div', { className: 'text-gray-600' }, 'Sugar')
+                )
+            )
+        )
+    );
+};
+
+// Enhanced meal section with better styling
+const MealSection = ({ title, foods, onRemoveFood, onAddFood, mealType, emoji }) => {
+    const [showSearch, setShowSearch] = React.useState(false);
+
+    const mealCalories = foods.reduce((sum, food) => sum + (food.calories || 0), 0);
+    const mealProtein = foods.reduce((sum, food) => sum + (food.protein || 0), 0);
+
+    return React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 overflow-hidden' },
+        React.createElement('div', { className: 'bg-gradient-to-r from-blue-500 via-blue-600 to-teal-600 text-white p-4' },
+            React.createElement('div', { className: 'flex justify-between items-center' },
+                React.createElement('h3', { className: 'text-lg font-bold flex items-center' },
+                    React.createElement('span', { className: 'mr-2 text-xl' }, emoji),
+                    title
+                ),
+                React.createElement('div', { className: 'text-right text-sm' },
+                    React.createElement('div', null, `${Math.round(mealCalories)} cal`),
+                    React.createElement('div', null, `${Math.round(mealProtein)}g protein`)
+                )
+            ),
+            React.createElement('button', {
+                onClick: () => setShowSearch(!showSearch),
+                className: 'mt-3 w-full px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition-all duration-200 backdrop-blur-sm'
+            }, `${showSearch ? '✕ Close' : '+ Add Food'}`)
+        ),
+
+        showSearch && React.createElement('div', { className: 'p-4 border-b border-gray-200' },
+            React.createElement(FoodSearchComponent, {
+                onAddFood: onAddFood,
+                mealType: mealType
+            })
+        ),
+
+        React.createElement('div', { className: 'p-4' },
+            foods.length === 0 ? 
+                React.createElement('p', { className: 'text-gray-500 text-center py-8' }, `No foods added to ${title.toLowerCase()} yet`) :
+                React.createElement('div', { className: 'space-y-3' },
+                    ...foods.map(food => 
+                        React.createElement('div', { 
+                            key: food.id,
+                            className: 'flex justify-between items-start p-3 bg-gray-50 rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-200'
+                        },
+                            React.createElement('div', { className: 'flex-1' },
+                                React.createElement('h4', { className: 'font-semibold text-gray-800' }, food.name),
+                                food.brand && React.createElement('p', { className: 'text-sm text-gray-600' }, food.brand),
+                                React.createElement('div', { className: 'text-sm text-gray-700 mt-1' },
+                                    `${food.calories} cal • ${food.protein}g protein • ${food.carbs}g carbs • ${food.fat}g fat`
+                                ),
+                                food.servingSize && food.servingSize !== 100 && React.createElement('div', { className: 'text-xs text-gray-500 mt-1' },
+                                    `Serving: ${food.servingSize}g`
+                                )
+                            ),
+                            React.createElement('button', {
+                                onClick: () => onRemoveFood(mealType, food.id),
+                                className: 'ml-4 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-sm rounded-lg font-medium transition-all duration-200'
+                            }, 'Remove')
+                        )
+                    )
+                )
+        )
+    );
+};
+
+// Get user goals from profile
+const getGoals = () => {
+    try {
+        const habbtProfile = JSON.parse(localStorage.getItem('habbt_profile_data') || '{}');
+        const fueliqProfile = JSON.parse(localStorage.getItem('fueliq_profile_data') || '{}'); // Fallback
+        const profile = habbtProfile.goals || fueliqProfile.goals || {};
+        
+        return {
+            calories: profile.calories || 2000,
+            protein: profile.protein || 150,
+            carbs: profile.carbs || 250,
+            fat: profile.fat || 67
+        };
+    } catch (e) {
+        return { calories: 2000, protein: 150, carbs: 250, fat: 67 };
+    }
+};
+
+// AI meal suggestions based on current intake
+const AITips = ({ meals }) => {
+    const totals = Object.values(meals).flat().reduce((acc, food) => ({
+        calories: acc.calories + (food.calories || 0),
+        protein: acc.protein + (food.protein || 0),
+        carbs: acc.carbs + (food.carbs || 0),
+        fat: acc.fat + (food.fat || 0)
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+    const goals = getGoals();
+    const suggestions = [];
+
+    if (totals.protein < goals.protein * 0.8) {
+        suggestions.push({
+            type: 'protein',
+            message: `You're ${Math.round(goals.protein - totals.protein)}g short on protein. Try adding Greek yogurt, chicken breast, or protein powder.`,
+            icon: '🥩'
+        });
+    }
+
+    if (totals.calories < goals.calories * 0.6) {
+        suggestions.push({
+            type: 'calories',
+            message: `Your intake is quite low at ${Math.round(totals.calories)} calories. Consider adding healthy fats like nuts or avocado.`,
+            icon: '🥑'
+        });
+    }
+
+    if (totals.carbs < goals.carbs * 0.5 && totals.protein > goals.protein * 0.8) {
+        suggestions.push({
+            type: 'carbs',
+            message: 'Great protein intake! Add some complex carbs like quinoa or sweet potato for energy.',
+            icon: '🍠'
+        });
+    }
+
+    if (suggestions.length === 0) {
+        suggestions.push({
+            type: 'positive',
+            message: 'Your nutrition is looking balanced! Keep up the great habits! 🌟',
+            icon: '✨'
+        });
+    }
+
+    return React.createElement('div', { className: 'bg-gradient-to-r from-blue-50 to-teal-50 rounded-2xl p-4 border border-blue-200' },
+        React.createElement('h3', { className: 'text-lg font-bold text-blue-800 mb-3 flex items-center' },
+            React.createElement('span', { className: 'mr-2 text-xl' }, '🤖'),
+            'AI Nutrition Coach'
+        ),
+        React.createElement('div', { className: 'space-y-2' },
+            ...suggestions.map((tip, index) => 
+                React.createElement('div', { 
+                    key: index,
+                    className: 'flex items-start space-x-3 p-3 bg-white/60 rounded-lg'
+                },
+                    React.createElement('span', { className: 'text-lg' }, tip.icon),
+                    React.createElement('p', { className: 'text-sm text-blue-700 leading-relaxed' }, tip.message)
+                )
+            )
+        )
+    );
+};
+
+// Main nutrition component
+const NutritionTracker = () => {
+    const [currentDate, setCurrentDate] = React.useState(new Date().toISOString().split('T')[0]);
+    const [meals, setMeals] = React.useState(loadMealData(currentDate));
+
+    React.useEffect(() => {
+        setMeals(loadMealData(currentDate));
+    }, [currentDate]);
+
+    React.useEffect(() => {
+        saveMealData(currentDate, meals);
+    }, [meals, currentDate]);
+
+    const addFood = (mealType, food) => {
+        setMeals(prev => ({
+            ...prev,
+            [mealType]: [...prev[mealType], food]
+        }));
+    };
+
+    const removeFood = (mealType, foodId) => {
+        setMeals(prev => ({
+            ...prev,
+            [mealType]: prev[mealType].filter(food => food.id !== foodId)
+        }));
+    };
+
+    const navigateDate = (direction) => {
+        const newDate = new Date(currentDate);
+        newDate.setDate(newDate.getDate() + direction);
+        setCurrentDate(newDate.toISOString().split('T')[0]);
+    };
+
+    const isToday = currentDate === new Date().toISOString().split('T')[0];
+
+    return React.createElement('div', { className: 'min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-cyan-50' },
+        React.createElement('div', { className: 'max-w-7xl mx-auto p-6' },
+            // Header
+            React.createElement('div', { className: 'bg-gradient-to-r from-blue-600 to-teal-600 rounded-3xl shadow-2xl p-8 mb-8 text-white' },
+                React.createElement('div', { className: 'text-center' },
+                    React.createElement('h1', { className: 'text-4xl font-bold mb-2' }, '🍽️ Nutrition Habits'),
+                    React.createElement('p', { className: 'text-xl opacity-90 mb-4' }, 'Track your daily nutrition for better habits'),
+                    
+                    // Date Navigation
+                    React.createElement('div', { className: 'flex items-center justify-center space-x-4 mt-6' },
+                        React.createElement('button', {
+                            onClick: () => navigateDate(-1),
+                            className: 'px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-all duration-200 backdrop-blur-sm'
+                        }, '← Previous'),
+                        React.createElement('div', { className: 'px-6 py-2 bg-white/20 rounded-lg backdrop-blur-sm' },
+                            React.createElement('input', {
+                                type: 'date',
+                                value: currentDate,
+                                onChange: (e) => setCurrentDate(e.target.value),
+                                max: new Date().toISOString().split('T')[0],
+                                className: 'bg-transparent text-white font-semibold focus:outline-none'
+                            })
+                        ),
+                        React.createElement('button', {
+                            onClick: () => navigateDate(1),
+                            disabled: isToday,
+                            className: `px-4 py-2 ${isToday ? 'bg-gray-500 cursor-not-allowed' : 'bg-white/20 hover:bg-white/30'} rounded-lg font-semibold transition-all duration-200 backdrop-blur-sm`
+                        }, 'Next →')
+                    )
+                )
+            ),
+
+            // Macro Summary and AI Tips
+            React.createElement('div', { className: 'grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8' },
+                React.createElement(MacroDisplay, { meals }),
+                React.createElement(AITips, { meals })
+            ),
+
+            // Meal Sections
+            React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6' },
+                React.createElement(MealSection, {
+                    title: 'Breakfast',
+                    foods: meals.breakfast,
+                    onRemoveFood: removeFood,
+                    onAddFood: addFood,
+                    mealType: 'breakfast',
+                    emoji: '🌅'
+                }),
+                React.createElement(MealSection, {
+                    title: 'Lunch',
+                    foods: meals.lunch,
+                    onRemoveFood: removeFood,
+                    onAddFood: addFood,
+                    mealType: 'lunch',
+                    emoji: '☀️'
+                }),
+                React.createElement(MealSection, {
+                    title: 'Dinner',
+                    foods: meals.dinner,
+                    onRemoveFood: removeFood,
+                    onAddFood: addFood,
+                    mealType: 'dinner',
+                    emoji: '🌙'
+                }),
+                React.createElement(MealSection, {
+                    title: 'Snacks',
+                    foods: meals.snacks,
+                    onRemoveFood: removeFood,
+                    onAddFood: addFood,
+                    mealType: 'snacks',
+                    emoji: '🍿'
+                })
+            )
+        )
+    );
+};
+
+// Export for integration with both Habbt and FuelIQ (backward compatibility)
+const renderNutritionTab = (containerId) => {
+    const container = document.getElementById(containerId);
+    if (container) {
+        ReactDOM.render(React.createElement(NutritionTracker), container);
+    }
+};
+
+const renderMealsTab = renderNutritionTab; // Alias for backward compatibility
+
+// Make available globally with ALL possible naming conventions
+window.HabbtNutrition = {
+    NutritionTracker,
+    renderNutritionTab,
+    renderMealsTab
+};
+
+window.HabbtMeals = window.HabbtNutrition;
+window.FuelIQMeals = window.HabbtNutrition;
+window.FuelIQNutrition = window.HabbtNutrition;
+
+// Legacy function names that the main app might be looking for
+window.renderMealsTab = renderMealsTab;
+window.renderNutritionTab = renderNutritionTab;
+
+console.log('✅ Habbt Nutrition tab loaded - Complete rebranded version with beautiful blue-teal design');
+console.log('✅ Available as: HabbtNutrition, HabbtMeals, FuelIQMeals, FuelIQNutrition');
+console.log('✅ Functions: renderNutritionTab, renderMealsTab');
