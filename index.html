@@ -347,36 +347,50 @@ useEffect(() => {
     setTimeout(tryRenderProfile, 100);
   }
 }, [currentView]);
-      // Enhanced pantry tab rendering
-      useEffect(() => {
-        if (currentView === 'pantry') {
-          clearContainer('pantry-container');
-          
-          let retryCount = 0;
-          const maxRetries = 10;
-          
-          const tryRenderPantry = () => {
-            if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
-              try {
-                window.FuelIQPantry.renderSmartPantry('pantry-container');
-                console.log('✅ Pantry tab rendered successfully');
-              } catch (error) {
-                console.error('Error rendering pantry tab:', error);
-              }
-            } else {
-              retryCount++;
-              if (retryCount < maxRetries) {
-                console.log(`⏳ Waiting for FuelIQPantry module... (${retryCount}/${maxRetries})`);
-                setTimeout(tryRenderPantry, 200);
-              } else {
-                console.warn('❌ FuelIQPantry module failed to load');
-              }
-            }
-          };
-          
-          setTimeout(tryRenderPantry, 100);
+      // Simplified pantry tab rendering
+useEffect(() => {
+  if (currentView === 'pantry') {
+    clearContainer('pantry-container');
+    
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    const tryRenderPantry = () => {
+      if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
+        try {
+          window.FuelIQPantry.renderSmartPantry('pantry-container');
+          console.log('✅ Pantry tab rendered successfully');
+        } catch (error) {
+          console.error('Error rendering pantry tab:', error);
         }
-      }, [currentView]);
+      } else {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Waiting for pantry module... (${retryCount}/${maxRetries})`);
+          setTimeout(tryRenderPantry, 1000);
+        } else {
+          console.warn('❌ Pantry module failed to load');
+          const container = document.getElementById('pantry-container');
+          if (container) {
+            container.innerHTML = `
+              <div class="max-w-6xl mx-auto p-6">
+                <div class="bg-green-50 border border-green-200 rounded-xl p-6">
+                  <h2 class="text-xl font-bold text-green-800 mb-2">🛒 Pantry Tab Issue</h2>
+                  <p class="text-green-600 mb-4">Pantry functionality is not loading properly.</p>
+                  <button onclick="location.reload()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                    Refresh Page
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+        }
+      }
+    };
+    
+    setTimeout(tryRenderPantry, 500);
+  }
+}, [currentView]);
 
       // Enhanced meal planning tab rendering
       useEffect(() => {
