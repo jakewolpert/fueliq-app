@@ -1,4 +1,4 @@
-// Enhanced meal-planning.js with Pantry Integration - CONFLICT-FREE VERSION
+// Enhanced Habbt Meal Planning - Complete Feature Set
 (function() {
     'use strict';
 
@@ -39,267 +39,547 @@
         }
     };
 
-    // Unique fallback foods database for planning
-    const PLANNING_FALLBACK_FOODS = {
-        // Proteins
-        'chicken breast': { calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, sodium: 74, sugar: 0 },
-        'salmon': { calories: 208, protein: 20, carbs: 0, fat: 12, fiber: 0, sodium: 82, sugar: 0 },
-        'tuna': { calories: 144, protein: 30, carbs: 0, fat: 1, fiber: 0, sodium: 50, sugar: 0 },
-        'ground beef': { calories: 250, protein: 26, carbs: 0, fat: 15, fiber: 0, sodium: 75, sugar: 0 },
-        'ground turkey': { calories: 200, protein: 27, carbs: 0, fat: 8, fiber: 0, sodium: 90, sugar: 0 },
-        'eggs': { calories: 155, protein: 13, carbs: 1, fat: 11, fiber: 0, sodium: 124, sugar: 1 },
-        'tofu': { calories: 144, protein: 15, carbs: 3, fat: 9, fiber: 2, sodium: 18, sugar: 1 },
-        'greek yogurt': { calories: 100, protein: 17, carbs: 6, fat: 0, fiber: 0, sodium: 60, sugar: 6 },
-        'cottage cheese': { calories: 98, protein: 11, carbs: 3, fat: 4, fiber: 0, sodium: 364, sugar: 3 },
-        'protein powder': { calories: 120, protein: 25, carbs: 3, fat: 1, fiber: 1, sodium: 150, sugar: 1 },
-        
-        // Vegetables
-        'broccoli': { calories: 34, protein: 3, carbs: 7, fat: 0.4, fiber: 3, sodium: 33, sugar: 2 },
-        'spinach': { calories: 23, protein: 3, carbs: 4, fat: 0.4, fiber: 2, sodium: 79, sugar: 0 },
-        'carrots': { calories: 41, protein: 1, carbs: 10, fat: 0.2, fiber: 3, sodium: 69, sugar: 5 },
-        'bell peppers': { calories: 31, protein: 1, carbs: 7, fat: 0.3, fiber: 3, sodium: 4, sugar: 5 },
-        'tomatoes': { calories: 18, protein: 1, carbs: 4, fat: 0.2, fiber: 1, sodium: 5, sugar: 3 },
-        'cucumber': { calories: 16, protein: 1, carbs: 4, fat: 0.1, fiber: 1, sodium: 2, sugar: 2 },
-        'lettuce': { calories: 15, protein: 1, carbs: 3, fat: 0.2, fiber: 1, sodium: 28, sugar: 1 },
-        'onions': { calories: 40, protein: 1, carbs: 9, fat: 0.1, fiber: 2, sodium: 4, sugar: 4 },
-        'mushrooms': { calories: 22, protein: 3, carbs: 3, fat: 0.3, fiber: 1, sodium: 5, sugar: 2 },
-        'zucchini': { calories: 17, protein: 1, carbs: 3, fat: 0.3, fiber: 1, sodium: 8, sugar: 3 },
-        
-        // Fruits
-        'apple': { calories: 52, protein: 0.3, carbs: 14, fat: 0.2, fiber: 2, sodium: 1, sugar: 10 },
-        'banana': { calories: 89, protein: 1, carbs: 23, fat: 0.3, fiber: 3, sodium: 1, sugar: 12 },
-        'orange': { calories: 47, protein: 1, carbs: 12, fat: 0.1, fiber: 2, sodium: 0, sugar: 9 },
-        'berries': { calories: 57, protein: 1, carbs: 14, fat: 0.3, fiber: 8, sodium: 1, sugar: 10 },
-        'grapes': { calories: 69, protein: 1, carbs: 16, fat: 0.2, fiber: 1, sodium: 3, sugar: 16 },
-        'pineapple': { calories: 50, protein: 1, carbs: 13, fat: 0.1, fiber: 1, sodium: 1, sugar: 10 },
-        'strawberries': { calories: 32, protein: 1, carbs: 8, fat: 0.3, fiber: 2, sodium: 1, sugar: 5 },
-        'avocado': { calories: 160, protein: 2, carbs: 9, fat: 15, fiber: 7, sodium: 7, sugar: 1 },
-        
-        // Grains & Starches
-        'brown rice': { calories: 111, protein: 3, carbs: 23, fat: 0.9, fiber: 2, sodium: 5, sugar: 0 },
-        'white rice': { calories: 130, protein: 3, carbs: 28, fat: 0.3, fiber: 0, sodium: 5, sugar: 0 },
-        'quinoa': { calories: 120, protein: 4, carbs: 22, fat: 2, fiber: 3, sodium: 7, sugar: 0 },
-        'oats': { calories: 389, protein: 17, carbs: 66, fat: 7, fiber: 11, sodium: 2, sugar: 1 },
-        'sweet potato': { calories: 86, protein: 2, carbs: 20, fat: 0.1, fiber: 3, sodium: 54, sugar: 4 },
-        'potato': { calories: 77, protein: 2, carbs: 17, fat: 0.1, fiber: 2, sodium: 6, sugar: 1 },
-        'pasta': { calories: 131, protein: 5, carbs: 25, fat: 1, fiber: 2, sodium: 6, sugar: 1 },
-        'bread': { calories: 265, protein: 9, carbs: 49, fat: 3, fiber: 3, sodium: 491, sugar: 5 },
-        
-        // Nuts & Seeds
-        'almonds': { calories: 579, protein: 21, carbs: 22, fat: 50, fiber: 12, sodium: 1, sugar: 4 },
-        'walnuts': { calories: 654, protein: 15, carbs: 14, fat: 65, fiber: 7, sodium: 2, sugar: 3 },
-        'peanut butter': { calories: 588, protein: 25, carbs: 20, fat: 50, fiber: 8, sodium: 17, sugar: 9 },
-        'chia seeds': { calories: 486, protein: 17, carbs: 42, fat: 31, fiber: 34, sodium: 16, sugar: 0 },
-        'flaxseed': { calories: 534, protein: 18, carbs: 29, fat: 42, fiber: 28, sodium: 30, sugar: 2 },
-        
-        // Dairy
-        'milk': { calories: 42, protein: 3, carbs: 5, fat: 1, fiber: 0, sodium: 44, sugar: 5 },
-        'cheese': { calories: 113, protein: 7, carbs: 1, fat: 9, fiber: 0, sodium: 186, sugar: 1 },
-        'yogurt': { calories: 59, protein: 10, carbs: 4, fat: 0.4, fiber: 0, sodium: 46, sugar: 4 },
-        
-        // Oils & Fats
-        'olive oil': { calories: 884, protein: 0, carbs: 0, fat: 100, fiber: 0, sodium: 2, sugar: 0 },
-        'coconut oil': { calories: 862, protein: 0, carbs: 0, fat: 100, fiber: 0, sodium: 0, sugar: 0 },
-        'butter': { calories: 717, protein: 1, carbs: 0, fat: 81, fiber: 0, sodium: 11, sugar: 0 }
-    };
-
-    // Unique barcode lookup function for planning
-    const lookupBarcodeForPlanning = async (barcode) => {
-        try {
-            const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
-            const data = await response.json();
-            
-            if (data.status === 1 && data.product) {
-                const product = data.product;
-                const nutrients = product.nutriments || {};
-                
-                return {
-                    fdcId: barcode,
-                    description: product.product_name || product.product_name_en || 'Unknown Product',
-                    brandOwner: product.brands || 'Unknown Brand',
-                    ingredients: product.ingredients_text || '',
-                    nutrients: {
-                        calories: nutrients['energy-kcal_100g'] || nutrients.energy_100g/4.184 || 0,
-                        protein: nutrients.proteins_100g || 0,
-                        carbs: nutrients.carbohydrates_100g || 0,
-                        fat: nutrients.fat_100g || 0,
-                        fiber: nutrients.fiber_100g || 0,
-                        sodium: nutrients.sodium_100g || 0,
-                        sugar: nutrients.sugars_100g || 0
-                    },
-                    dataType: 'Barcode',
-                    source: 'openfoodfacts',
-                    barcode: barcode
-                };
+    // Comprehensive meal database with cooking instructions
+    const MEAL_DATABASE = {
+        breakfast: [
+            {
+                id: 'breakfast_1',
+                name: 'Protein Power Oatmeal',
+                calories: 450,
+                protein: 30,
+                carbs: 55,
+                fat: 12,
+                fiber: 8,
+                prepTime: '5 minutes',
+                cookTime: '3 minutes',
+                difficulty: 'Easy',
+                servings: 1,
+                tags: ['high-protein', 'quick', 'vegetarian'],
+                ingredients: [
+                    { name: 'rolled oats', amount: '1/2 cup', calories: 150 },
+                    { name: 'protein powder', amount: '1 scoop', calories: 120 },
+                    { name: 'banana', amount: '1 medium', calories: 105 },
+                    { name: 'almond butter', amount: '1 tbsp', calories: 95 },
+                    { name: 'chia seeds', amount: '1 tbsp', calories: 60 },
+                    { name: 'cinnamon', amount: '1/2 tsp', calories: 3 }
+                ],
+                instructions: [
+                    "Cook oats with water or milk according to package directions (about 3 minutes in microwave)",
+                    "Let cool for 1 minute, then stir in protein powder until smooth",
+                    "Slice banana and arrange on top",
+                    "Add almond butter, chia seeds, and sprinkle with cinnamon",
+                    "Mix everything together and enjoy!"
+                ],
+                tips: "For extra flavor, try vanilla protein powder and add a handful of berries",
+                nutrition_focus: "High protein content supports muscle building and keeps you full until lunch"
+            },
+            {
+                id: 'breakfast_2',
+                name: 'Veggie Scramble Power Bowl',
+                calories: 380,
+                protein: 25,
+                carbs: 15,
+                fat: 22,
+                fiber: 6,
+                prepTime: '5 minutes',
+                cookTime: '8 minutes',
+                difficulty: 'Easy',
+                servings: 1,
+                tags: ['high-protein', 'low-carb', 'vegetarian'],
+                ingredients: [
+                    { name: 'eggs', amount: '3 large', calories: 210 },
+                    { name: 'spinach', amount: '2 cups fresh', calories: 15 },
+                    { name: 'bell pepper', amount: '1/2 cup diced', calories: 15 },
+                    { name: 'mushrooms', amount: '1/2 cup sliced', calories: 10 },
+                    { name: 'avocado', amount: '1/2 medium', calories: 120 },
+                    { name: 'olive oil', amount: '1 tsp', calories: 40 }
+                ],
+                instructions: [
+                    "Heat olive oil in a non-stick pan over medium heat",
+                    "Add bell pepper and mushrooms, cook for 3-4 minutes until softened",
+                    "Add spinach and cook until wilted (about 1 minute)",
+                    "Beat eggs and pour into the pan with vegetables",
+                    "Scramble everything together for 2-3 minutes until eggs are cooked",
+                    "Serve topped with sliced avocado"
+                ],
+                tips: "Add hot sauce or herbs like basil for extra flavor without calories",
+                nutrition_focus: "Perfect balance of protein and healthy fats with plenty of vegetables"
+            },
+            {
+                id: 'breakfast_3',
+                name: 'Greek Yogurt Berry Parfait',
+                calories: 320,
+                protein: 28,
+                carbs: 35,
+                fat: 8,
+                fiber: 6,
+                prepTime: '3 minutes',
+                cookTime: '0 minutes',
+                difficulty: 'Easy',
+                servings: 1,
+                tags: ['high-protein', 'no-cook', 'antioxidants'],
+                ingredients: [
+                    { name: 'greek yogurt', amount: '1 cup plain', calories: 130 },
+                    { name: 'mixed berries', amount: '3/4 cup', calories: 60 },
+                    { name: 'granola', amount: '1/4 cup', calories: 110 },
+                    { name: 'honey', amount: '1 tbsp', calories: 64 },
+                    { name: 'almonds', amount: '1 tbsp sliced', calories: 35 }
+                ],
+                instructions: [
+                    "In a glass or bowl, add half the Greek yogurt",
+                    "Layer with half the berries and a drizzle of honey",
+                    "Add remaining yogurt, then top with remaining berries",
+                    "Sprinkle granola and sliced almonds on top",
+                    "Drizzle with remaining honey and serve immediately"
+                ],
+                tips: "Prepare the night before without granola, add granola just before eating to keep it crunchy",
+                nutrition_focus: "High in protein and probiotics, with antioxidants from berries"
             }
-            
-            return null;
-        } catch (error) {
-            console.error('Planning barcode lookup failed:', error);
-            return null;
-        }
+        ],
+        lunch: [
+            {
+                id: 'lunch_1',
+                name: 'Mediterranean Chicken Bowl',
+                calories: 520,
+                protein: 42,
+                carbs: 35,
+                fat: 24,
+                fiber: 8,
+                prepTime: '10 minutes',
+                cookTime: '15 minutes',
+                difficulty: 'Medium',
+                servings: 1,
+                tags: ['high-protein', 'mediterranean', 'balanced'],
+                ingredients: [
+                    { name: 'chicken breast', amount: '6 oz', calories: 280 },
+                    { name: 'quinoa', amount: '1/2 cup cooked', calories: 110 },
+                    { name: 'cucumber', amount: '1/2 cup diced', calories: 8 },
+                    { name: 'cherry tomatoes', amount: '1/2 cup', calories: 15 },
+                    { name: 'red onion', amount: '2 tbsp diced', calories: 8 },
+                    { name: 'feta cheese', amount: '2 tbsp crumbled', calories: 50 },
+                    { name: 'olive oil', amount: '1 tbsp', calories: 120 },
+                    { name: 'lemon juice', amount: '1 tbsp', calories: 4 },
+                    { name: 'oregano', amount: '1 tsp dried', calories: 3 }
+                ],
+                instructions: [
+                    "Season chicken breast with salt, pepper, and oregano",
+                    "Heat a pan over medium-high heat and cook chicken 6-7 minutes per side",
+                    "Let chicken rest for 3 minutes, then slice",
+                    "Cook quinoa according to package directions if not already prepared",
+                    "Mix olive oil, lemon juice, and remaining oregano for dressing",
+                    "In a bowl, combine quinoa, cucumber, tomatoes, and red onion",
+                    "Top with sliced chicken and feta cheese",
+                    "Drizzle with dressing and serve"
+                ],
+                tips: "Marinate chicken in lemon juice and herbs for 30 minutes for extra flavor",
+                nutrition_focus: "Complete protein with complex carbs and healthy Mediterranean fats"
+            },
+            {
+                id: 'lunch_2',
+                name: 'Asian Salmon Power Salad',
+                calories: 480,
+                protein: 35,
+                carbs: 20,
+                fat: 28,
+                fiber: 7,
+                prepTime: '8 minutes',
+                cookTime: '12 minutes',
+                difficulty: 'Medium',
+                servings: 1,
+                tags: ['high-protein', 'omega-3', 'asian-inspired'],
+                ingredients: [
+                    { name: 'salmon fillet', amount: '5 oz', calories: 275 },
+                    { name: 'mixed greens', amount: '3 cups', calories: 20 },
+                    { name: 'edamame', amount: '1/2 cup shelled', calories: 95 },
+                    { name: 'carrots', amount: '1/2 cup julienned', calories: 25 },
+                    { name: 'avocado', amount: '1/2 medium', calories: 120 },
+                    { name: 'sesame oil', amount: '1 tsp', calories: 40 },
+                    { name: 'rice vinegar', amount: '1 tbsp', calories: 0 },
+                    { name: 'ginger', amount: '1 tsp fresh grated', calories: 1 },
+                    { name: 'sesame seeds', amount: '1 tsp', calories: 17 }
+                ],
+                instructions: [
+                    "Season salmon with salt and pepper",
+                    "Heat a pan over medium-high heat and cook salmon 4-5 minutes per side",
+                    "Let salmon rest, then flake into chunks",
+                    "Whisk together sesame oil, rice vinegar, and grated ginger",
+                    "In a large bowl, combine mixed greens, edamame, and carrots",
+                    "Top with salmon chunks and sliced avocado",
+                    "Drizzle with dressing and sprinkle with sesame seeds"
+                ],
+                tips: "For crispy salmon skin, start cooking skin-side down and don't flip until it releases easily",
+                nutrition_focus: "Rich in omega-3 fatty acids and complete proteins with plenty of vegetables"
+            }
+        ],
+        dinner: [
+            {
+                id: 'dinner_1',
+                name: 'Herb-Crusted Cod with Roasted Vegetables',
+                calories: 420,
+                protein: 35,
+                carbs: 32,
+                fat: 16,
+                fiber: 9,
+                prepTime: '15 minutes',
+                cookTime: '25 minutes',
+                difficulty: 'Medium',
+                servings: 1,
+                tags: ['lean-protein', 'vegetables', 'herbs'],
+                ingredients: [
+                    { name: 'cod fillet', amount: '6 oz', calories: 180 },
+                    { name: 'sweet potato', amount: '1 medium cubed', calories: 115 },
+                    { name: 'broccoli', amount: '1 cup florets', calories: 25 },
+                    { name: 'zucchini', amount: '1 medium sliced', calories: 20 },
+                    { name: 'olive oil', amount: '1 tbsp', calories: 120 },
+                    { name: 'panko breadcrumbs', amount: '2 tbsp', calories: 30 },
+                    { name: 'fresh herbs', amount: '2 tbsp mixed', calories: 5 },
+                    { name: 'garlic', amount: '2 cloves minced', calories: 8 },
+                    { name: 'lemon', amount: '1/2 juiced', calories: 7 }
+                ],
+                instructions: [
+                    "Preheat oven to 425°F (220°C)",
+                    "Toss sweet potato cubes with 1 tsp olive oil, salt and pepper",
+                    "Roast sweet potatoes for 10 minutes",
+                    "Add broccoli and zucchini to the pan, roast 10-15 minutes more",
+                    "Mix panko, herbs, garlic, and remaining olive oil",
+                    "Place cod on a baking sheet, top with herb mixture",
+                    "Bake cod for 12-15 minutes until flakes easily",
+                    "Serve cod over roasted vegetables with lemon juice"
+                ],
+                tips: "Don't overcook the cod - it should be opaque and flake easily with a fork",
+                nutrition_focus: "Lean protein with complex carbs and plenty of fiber from vegetables"
+            }
+        ],
+        snacks: [
+            {
+                id: 'snack_1',
+                name: 'Apple Almond Butter Energy Bites',
+                calories: 180,
+                protein: 8,
+                carbs: 18,
+                fat: 10,
+                fiber: 4,
+                prepTime: '5 minutes',
+                cookTime: '0 minutes',
+                difficulty: 'Easy',
+                servings: 1,
+                tags: ['no-cook', 'portable', 'energy'],
+                ingredients: [
+                    { name: 'apple', amount: '1 medium sliced', calories: 95 },
+                    { name: 'almond butter', amount: '1 tbsp', calories: 95 },
+                    { name: 'cinnamon', amount: 'pinch', calories: 0 }
+                ],
+                instructions: [
+                    "Wash and core the apple, then slice into wedges",
+                    "Arrange apple slices on a plate",
+                    "Serve with almond butter for dipping",
+                    "Sprinkle with cinnamon for extra flavor"
+                ],
+                tips: "Choose crisp apples like Honeycrisp or Gala for the best texture",
+                nutrition_focus: "Natural sugars from fruit balanced with protein and healthy fats"
+            }
+        ]
     };
 
-    // Unique storage functions for planning
-    const isPlanningStorageAvailable = () => {
+    // User preferences and goals
+    const getUserPreferences = () => {
         try {
-            const test = '__planning_localStorage_test__';
-            localStorage.setItem(test, test);
-            localStorage.removeItem(test);
-            return true;
+            const habbtProfile = JSON.parse(localStorage.getItem('habbt_profile_data') || '{}');
+            const fueliqProfile = JSON.parse(localStorage.getItem('fueliq_profile_data') || '{}');
+            const profile = habbtProfile || fueliqProfile || {};
+            
+            return {
+                goal: profile.goal || 'maintenance',
+                calorieTarget: profile.goals?.calories || 2000,
+                proteinTarget: profile.goals?.protein || 150,
+                carbTarget: profile.goals?.carbs || 250,
+                fatTarget: profile.goals?.fat || 67,
+                dietaryRestrictions: profile.dietaryRestrictions || [],
+                activityLevel: profile.activityLevel || 'moderate',
+                mealsPerDay: profile.mealsPerDay || 3
+            };
         } catch (e) {
-            return false;
+            return {
+                goal: 'maintenance',
+                calorieTarget: 2000,
+                proteinTarget: 150,
+                carbTarget: 250,
+                fatTarget: 67,
+                dietaryRestrictions: [],
+                activityLevel: 'moderate',
+                mealsPerDay: 3
+            };
         }
     };
 
-    const planningMemoryStorage = {};
-
+    // Load pantry data
     const loadPlanningPantryData = () => {
         try {
             const pantryData = localStorage.getItem('habbt_pantry') || localStorage.getItem('fueliq_pantry');
             return pantryData ? JSON.parse(pantryData) : { items: [] };
         } catch (e) {
-            console.error('Error loading pantry data for meal planning:', e);
             return { items: [] };
         }
     };
 
-    const savePlanningData = (date, data) => {
-        const key = `habbt_meal_plan_${date}`;
-        const dataStr = JSON.stringify(data);
+    // Generate custom meal plan based on user preferences
+    const generateCustomMealPlan = (preferences, pantryItems) => {
+        const { goal, calorieTarget, proteinTarget, dietaryRestrictions } = preferences;
+        const availableIngredients = pantryItems.map(item => item.name.toLowerCase());
         
-        if (isPlanningStorageAvailable()) {
-            try {
-                localStorage.setItem(key, dataStr);
-            } catch (e) {
-                console.warn('Planning localStorage failed, using memory storage:', e);
-                planningMemoryStorage[key] = dataStr;
-            }
-        } else {
-            planningMemoryStorage[key] = dataStr;
-        }
-    };
+        // Calorie distribution based on goal
+        const calorieDistribution = {
+            muscle_gain: { breakfast: 0.25, lunch: 0.35, dinner: 0.35, snacks: 0.05 },
+            fat_loss: { breakfast: 0.30, lunch: 0.35, dinner: 0.30, snacks: 0.05 },
+            maintenance: { breakfast: 0.25, lunch: 0.35, dinner: 0.35, snacks: 0.05 }
+        };
 
-    const loadPlanningData = (date) => {
-        const key = `habbt_meal_plan_${date}`;
-        let data = null;
+        const distribution = calorieDistribution[goal] || calorieDistribution.maintenance;
         
-        if (isPlanningStorageAvailable()) {
-            try {
-                data = localStorage.getItem(key);
-            } catch (e) {
-                console.warn('Planning localStorage failed, using memory storage:', e);
-                data = planningMemoryStorage[key];
-            }
-        } else {
-            data = planningMemoryStorage[key];
-        }
-        
-        return data ? JSON.parse(data) : {
+        const mealPlan = {
             breakfast: [],
             lunch: [],
             dinner: [],
             snacks: []
         };
+
+        // Filter meals based on dietary restrictions and preferences
+        Object.keys(MEAL_DATABASE).forEach(mealType => {
+            const targetCalories = calorieTarget * distribution[mealType];
+            const availableMeals = MEAL_DATABASE[mealType].filter(meal => {
+                // Check dietary restrictions
+                if (dietaryRestrictions.includes('vegetarian') && !meal.tags.includes('vegetarian')) {
+                    return meal.tags.includes('vegetarian') || !meal.ingredients.some(ing => 
+                        ['chicken', 'beef', 'pork', 'fish', 'salmon', 'cod'].some(meat => 
+                            ing.name.toLowerCase().includes(meat)
+                        )
+                    );
+                }
+                
+                // Check if meal fits calorie target (within 20% range)
+                return meal.calories >= targetCalories * 0.8 && meal.calories <= targetCalories * 1.2;
+            });
+
+            // Prioritize meals with ingredients from pantry
+            const mealsWithPantryIngredients = availableMeals.filter(meal => 
+                meal.ingredients.some(ingredient => 
+                    availableIngredients.includes(ingredient.name.toLowerCase())
+                )
+            );
+
+            // Select the best meal
+            const selectedMeals = mealsWithPantryIngredients.length > 0 ? mealsWithPantryIngredients : availableMeals;
+            if (selectedMeals.length > 0) {
+                mealPlan[mealType] = [selectedMeals[0]]; // For now, select the first suitable meal
+            }
+        });
+
+        return mealPlan;
     };
 
-    // AI meal suggestions based on nutritional goals and pantry
-    const generateMealSuggestions = (mealType, pantryItems, nutritionalGoals) => {
-        const suggestions = [];
-        const availableIngredients = pantryItems.map(item => item.name.toLowerCase());
-        
-        // Suggest meals based on what's available in pantry
-        if (mealType === 'breakfast') {
-            if (availableIngredients.includes('eggs')) {
-                suggestions.push({
-                    name: 'Scrambled Eggs with Vegetables',
-                    ingredients: ['eggs', 'spinach', 'bell peppers'],
-                    calories: 250,
-                    protein: 20,
-                    carbs: 8,
-                    fat: 15,
-                    prepTime: '10 minutes',
-                    difficulty: 'Easy'
-                });
-            }
-            if (availableIngredients.includes('oats')) {
-                suggestions.push({
-                    name: 'Protein Oatmeal Bowl',
-                    ingredients: ['oats', 'protein powder', 'berries'],
-                    calories: 350,
-                    protein: 25,
-                    carbs: 45,
-                    fat: 8,
-                    prepTime: '5 minutes',
-                    difficulty: 'Easy'
-                });
-            }
-        }
-        
-        if (mealType === 'lunch') {
-            if (availableIngredients.includes('chicken breast')) {
-                suggestions.push({
-                    name: 'Grilled Chicken Salad',
-                    ingredients: ['chicken breast', 'lettuce', 'tomatoes', 'cucumber'],
-                    calories: 300,
-                    protein: 35,
-                    carbs: 10,
-                    fat: 12,
-                    prepTime: '15 minutes',
-                    difficulty: 'Medium'
-                });
-            }
-            if (availableIngredients.includes('quinoa')) {
-                suggestions.push({
-                    name: 'Quinoa Power Bowl',
-                    ingredients: ['quinoa', 'broccoli', 'avocado', 'almonds'],
-                    calories: 420,
-                    protein: 18,
-                    carbs: 35,
-                    fat: 25,
-                    prepTime: '20 minutes',
-                    difficulty: 'Easy'
-                });
-            }
-        }
-        
-        if (mealType === 'dinner') {
-            if (availableIngredients.includes('salmon')) {
-                suggestions.push({
-                    name: 'Baked Salmon with Sweet Potato',
-                    ingredients: ['salmon', 'sweet potato', 'spinach'],
-                    calories: 450,
-                    protein: 35,
-                    carbs: 25,
-                    fat: 22,
-                    prepTime: '25 minutes',
-                    difficulty: 'Medium'
-                });
-            }
-            if (availableIngredients.includes('ground turkey')) {
-                suggestions.push({
-                    name: 'Turkey and Vegetable Stir-fry',
-                    ingredients: ['ground turkey', 'broccoli', 'carrots', 'brown rice'],
-                    calories: 380,
-                    protein: 30,
-                    carbs: 35,
-                    fat: 15,
-                    prepTime: '20 minutes',
-                    difficulty: 'Medium'
-                });
-            }
-        }
-        
-        return suggestions;
+    // Calculate missing ingredients
+    const calculateMissingIngredients = (mealPlan, pantryItems) => {
+        const pantryItemNames = pantryItems.map(item => item.name.toLowerCase());
+        const missingIngredients = [];
+
+        Object.values(mealPlan).flat().forEach(meal => {
+            meal.ingredients.forEach(ingredient => {
+                if (!pantryItemNames.includes(ingredient.name.toLowerCase())) {
+                    const existing = missingIngredients.find(item => 
+                        item.name.toLowerCase() === ingredient.name.toLowerCase()
+                    );
+                    if (!existing) {
+                        missingIngredients.push({
+                            name: ingredient.name,
+                            amount: ingredient.amount,
+                            calories: ingredient.calories,
+                            forMeal: meal.name
+                        });
+                    }
+                }
+            });
+        });
+
+        return missingIngredients;
     };
 
-    // Main meal planning component
+    // Storage functions
+    const savePlanningData = (date, data) => {
+        const key = `habbt_meal_plan_${date}`;
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+        } catch (e) {
+            console.warn('Failed to save meal plan:', e);
+        }
+    };
+
+    const loadPlanningData = (date) => {
+        const key = `habbt_meal_plan_${date}`;
+        try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : { breakfast: [], lunch: [], dinner: [], snacks: [] };
+        } catch (e) {
+            return { breakfast: [], lunch: [], dinner: [], snacks: [] };
+        }
+    };
+
+    // Shopping list functions
+    const saveShoppingList = (items) => {
+        try {
+            localStorage.setItem('habbt_shopping_list', JSON.stringify(items));
+        } catch (e) {
+            console.warn('Failed to save shopping list:', e);
+        }
+    };
+
+    const loadShoppingList = () => {
+        try {
+            const data = localStorage.getItem('habbt_shopping_list');
+            return data ? JSON.parse(data) : [];
+        } catch (e) {
+            return [];
+        }
+    };
+
+    // Meal Detail Modal Component
+    const MealDetailModal = ({ meal, isOpen, onClose, onAddToPlan, mealType }) => {
+        if (!isOpen || !meal) return null;
+
+        return React.createElement('div', { className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50' },
+            React.createElement('div', { className: 'bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto' },
+                React.createElement('div', { className: 'p-6' },
+                    // Header
+                    React.createElement('div', { className: 'flex justify-between items-start mb-6' },
+                        React.createElement('div', null,
+                            React.createElement('h2', { className: 'text-2xl font-bold text-gray-800 mb-2' }, meal.name),
+                            React.createElement('div', { className: 'flex flex-wrap gap-2 mb-4' },
+                                ...meal.tags.map(tag => 
+                                    React.createElement('span', { 
+                                        key: tag,
+                                        className: 'px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium'
+                                    }, tag)
+                                )
+                            )
+                        ),
+                        React.createElement('button', {
+                            onClick: onClose,
+                            className: 'text-gray-500 hover:text-gray-700 text-2xl font-bold'
+                        }, '×')
+                    ),
+
+                    // Nutrition Info
+                    React.createElement('div', { className: 'grid grid-cols-4 gap-4 mb-6' },
+                        React.createElement('div', { className: 'text-center p-3 bg-blue-50 rounded-lg' },
+                            React.createElement('div', { className: 'text-xl font-bold text-blue-600' }, meal.calories),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Calories')
+                        ),
+                        React.createElement('div', { className: 'text-center p-3 bg-red-50 rounded-lg' },
+                            React.createElement('div', { className: 'text-xl font-bold text-red-600' }, `${meal.protein}g`),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Protein')
+                        ),
+                        React.createElement('div', { className: 'text-center p-3 bg-yellow-50 rounded-lg' },
+                            React.createElement('div', { className: 'text-xl font-bold text-yellow-600' }, `${meal.carbs}g`),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Carbs')
+                        ),
+                        React.createElement('div', { className: 'text-center p-3 bg-purple-50 rounded-lg' },
+                            React.createElement('div', { className: 'text-xl font-bold text-purple-600' }, `${meal.fat}g`),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Fat')
+                        )
+                    ),
+
+                    // Meal Info
+                    React.createElement('div', { className: 'grid grid-cols-3 gap-4 mb-6 text-center' },
+                        React.createElement('div', null,
+                            React.createElement('div', { className: 'text-lg font-semibold text-gray-800' }, meal.prepTime),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Prep Time')
+                        ),
+                        React.createElement('div', null,
+                            React.createElement('div', { className: 'text-lg font-semibold text-gray-800' }, meal.cookTime),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Cook Time')
+                        ),
+                        React.createElement('div', null,
+                            React.createElement('div', { className: 'text-lg font-semibold text-gray-800' }, meal.difficulty),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Difficulty')
+                        )
+                    ),
+
+                    // Ingredients
+                    React.createElement('div', { className: 'mb-6' },
+                        React.createElement('h3', { className: 'text-lg font-bold text-gray-800 mb-3' }, 'Ingredients'),
+                        React.createElement('div', { className: 'space-y-2' },
+                            ...meal.ingredients.map((ingredient, index) => 
+                                React.createElement('div', { 
+                                    key: index,
+                                    className: 'flex justify-between items-center p-2 bg-gray-50 rounded-lg'
+                                },
+                                    React.createElement('span', { className: 'font-medium' }, ingredient.name),
+                                    React.createElement('span', { className: 'text-sm text-gray-600' }, ingredient.amount)
+                                )
+                            )
+                        )
+                    ),
+
+                    // Instructions
+                    React.createElement('div', { className: 'mb-6' },
+                        React.createElement('h3', { className: 'text-lg font-bold text-gray-800 mb-3' }, 'Cooking Instructions'),
+                        React.createElement('ol', { className: 'space-y-3' },
+                            ...meal.instructions.map((instruction, index) => 
+                                React.createElement('li', { 
+                                    key: index,
+                                    className: 'flex gap-3'
+                                },
+                                    React.createElement('span', { 
+                                        className: 'flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold'
+                                    }, index + 1),
+                                    React.createElement('span', { className: 'text-gray-700' }, instruction)
+                                )
+                            )
+                        )
+                    ),
+
+                    // Tips and Nutrition Focus
+                    React.createElement('div', { className: 'space-y-4 mb-6' },
+                        React.createElement('div', { className: 'p-4 bg-yellow-50 rounded-lg border border-yellow-200' },
+                            React.createElement('h4', { className: 'font-bold text-yellow-800 mb-2' }, '💡 Chef\'s Tip'),
+                            React.createElement('p', { className: 'text-yellow-700 text-sm' }, meal.tips)
+                        ),
+                        React.createElement('div', { className: 'p-4 bg-green-50 rounded-lg border border-green-200' },
+                            React.createElement('h4', { className: 'font-bold text-green-800 mb-2' }, '🥗 Nutrition Focus'),
+                            React.createElement('p', { className: 'text-green-700 text-sm' }, meal.nutrition_focus)
+                        )
+                    ),
+
+                    // Actions
+                    React.createElement('div', { className: 'flex gap-3' },
+                        React.createElement('button', {
+                            onClick: () => {
+                                onAddToPlan(meal, mealType);
+                                onClose();
+                            },
+                            className: 'flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white rounded-lg font-semibold'
+                        }, `Add to ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}`),
+                        React.createElement('button', {
+                            onClick: onClose,
+                            className: 'px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-semibold'
+                        }, 'Close')
+                    )
+                )
+            )
+        );
+    };
+
+    // Main Meal Planning Component
     const MealPlanningApp = () => {
         const [currentDate, setCurrentDate] = React.useState(new Date().toISOString().split('T')[0]);
         const [mealPlan, setMealPlan] = React.useState(loadPlanningData(currentDate));
         const [pantryItems, setPantryItems] = React.useState([]);
-        const [selectedMeal, setSelectedMeal] = React.useState('breakfast');
-        const [suggestions, setSuggestions] = React.useState([]);
+        const [userPreferences, setUserPreferences] = React.useState(getUserPreferences());
+        const [selectedMeal, setSelectedMeal] = React.useState(null);
+        const [modalOpen, setModalOpen] = React.useState(false);
+        const [modalMealType, setModalMealType] = React.useState('breakfast');
+        const [missingIngredients, setMissingIngredients] = React.useState([]);
+        const [shoppingList, setShoppingList] = React.useState(loadShoppingList());
+        const [isGenerating, setIsGenerating] = React.useState(false);
 
         React.useEffect(() => {
             const pantryData = loadPlanningPantryData();
@@ -312,29 +592,50 @@
 
         React.useEffect(() => {
             savePlanningData(currentDate, mealPlan);
-        }, [mealPlan, currentDate]);
+            const missing = calculateMissingIngredients(mealPlan, pantryItems);
+            setMissingIngredients(missing);
+        }, [mealPlan, currentDate, pantryItems]);
 
-        React.useEffect(() => {
-            const newSuggestions = generateMealSuggestions(selectedMeal, pantryItems, {});
-            setSuggestions(newSuggestions);
-        }, [selectedMeal, pantryItems]);
+        const generateMealPlan = async () => {
+            setIsGenerating(true);
+            
+            // Simulate AI processing time
+            setTimeout(() => {
+                const newPlan = generateCustomMealPlan(userPreferences, pantryItems);
+                setMealPlan(newPlan);
+                setIsGenerating(false);
+            }, 2000);
+        };
 
         const addMealToPlan = (meal, mealType) => {
             setMealPlan(prev => ({
                 ...prev,
-                [mealType]: [...prev[mealType], {
-                    id: Date.now() + Math.random(),
-                    ...meal,
-                    timestamp: new Date().toISOString()
-                }]
+                [mealType]: [...prev[mealType], { ...meal, planId: Date.now() + Math.random() }]
             }));
         };
 
-        const removeMealFromPlan = (mealType, mealId) => {
+        const removeMealFromPlan = (mealType, planId) => {
             setMealPlan(prev => ({
                 ...prev,
-                [mealType]: prev[mealType].filter(meal => meal.id !== mealId)
+                [mealType]: prev[mealType].filter(meal => meal.planId !== planId)
             }));
+        };
+
+        const openMealDetail = (meal, mealType) => {
+            setSelectedMeal(meal);
+            setModalMealType(mealType);
+            setModalOpen(true);
+        };
+
+        const addToShoppingList = (ingredient) => {
+            const newList = [...shoppingList];
+            const existing = newList.find(item => item.name.toLowerCase() === ingredient.name.toLowerCase());
+            
+            if (!existing) {
+                newList.push({ ...ingredient, id: Date.now() + Math.random() });
+                setShoppingList(newList);
+                saveShoppingList(newList);
+            }
         };
 
         const navigateDate = (direction) => {
@@ -343,13 +644,25 @@
             setCurrentDate(newDate.toISOString().split('T')[0]);
         };
 
+        const totalCalories = Object.values(mealPlan).flat().reduce((sum, meal) => sum + meal.calories, 0);
+        const totalProtein = Object.values(mealPlan).flat().reduce((sum, meal) => sum + meal.protein, 0);
+
         return React.createElement('div', { className: 'min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-cyan-50' },
             React.createElement('div', { className: 'max-w-7xl mx-auto p-6' },
                 // Header
                 React.createElement('div', { className: 'bg-gradient-to-r from-blue-600 to-teal-600 rounded-3xl shadow-2xl p-8 mb-8 text-white' },
                     React.createElement('div', { className: 'text-center' },
-                        React.createElement('h1', { className: 'text-4xl font-bold mb-2' }, '🍽️ Meal Planning'),
-                        React.createElement('p', { className: 'text-xl opacity-90 mb-4' }, 'Plan your meals with AI suggestions'),
+                        React.createElement('h1', { className: 'text-4xl font-bold mb-2' }, '🍽️ AI Meal Planning'),
+                        React.createElement('p', { className: 'text-xl opacity-90 mb-6' }, 'Personalized meal plans based on your goals and pantry'),
+                        
+                        // Generate Button
+                        React.createElement('button', {
+                            onClick: generateMealPlan,
+                            disabled: isGenerating,
+                            className: `px-8 py-4 bg-white/20 hover:bg-white/30 disabled:bg-white/10 rounded-2xl font-bold text-lg transition-all duration-200 backdrop-blur-sm ${isGenerating ? 'cursor-not-allowed' : 'transform hover:scale-105'}`
+                        }, 
+                            isGenerating ? '🤖 Generating Your Perfect Meal Plan...' : '✨ Generate Custom Meal Plan'
+                        ),
                         
                         // Date Navigation
                         React.createElement('div', { className: 'flex items-center justify-center space-x-4 mt-6' },
@@ -373,120 +686,158 @@
                     )
                 ),
 
-                // Meal Type Selector
-                React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 mb-8 border border-white/20' },
-                    React.createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4' }, 'Select Meal Type'),
-                    React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4' },
-                        ['breakfast', 'lunch', 'dinner', 'snacks'].map(mealType => 
-                            React.createElement('button', {
-                                key: mealType,
-                                onClick: () => setSelectedMeal(mealType),
-                                className: `p-4 rounded-xl border-2 transition-all duration-200 ${
-                                    selectedMeal === mealType 
-                                        ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                                        : 'border-gray-200 bg-white hover:border-blue-300 text-gray-700'
-                                }`
-                            }, 
-                                React.createElement('div', { className: 'text-2xl mb-2' },
-                                    mealType === 'breakfast' ? '🌅' :
-                                    mealType === 'lunch' ? '☀️' :
-                                    mealType === 'dinner' ? '🌙' : '🍿'
-                                ),
-                                React.createElement('div', { className: 'font-semibold capitalize' }, mealType)
+                // Summary Cards
+                React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6 mb-8' },
+                    React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20' },
+                        React.createElement('h3', { className: 'text-lg font-bold text-gray-800 mb-4' }, '📊 Daily Totals'),
+                        React.createElement('div', { className: 'space-y-2' },
+                            React.createElement('div', { className: 'flex justify-between' },
+                                React.createElement('span', null, 'Calories:'),
+                                React.createElement('span', { className: 'font-bold text-blue-600' }, `${totalCalories}/${userPreferences.calorieTarget}`)
+                            ),
+                            React.createElement('div', { className: 'flex justify-between' },
+                                React.createElement('span', null, 'Protein:'),
+                                React.createElement('span', { className: 'font-bold text-red-600' }, `${Math.round(totalProtein)}g/${userPreferences.proteinTarget}g`)
+                            )
+                        )
+                    ),
+                    React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20' },
+                        React.createElement('h3', { className: 'text-lg font-bold text-gray-800 mb-4' }, '🛒 Shopping List'),
+                        React.createElement('div', null,
+                            React.createElement('div', { className: 'text-2xl font-bold text-orange-600' }, missingIngredients.length),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'ingredients needed'),
+                            missingIngredients.length > 0 && React.createElement('button', {
+                                onClick: () => missingIngredients.forEach(addToShoppingList),
+                                className: 'mt-2 text-sm px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg'
+                            }, 'Add All to Cart')
+                        )
+                    ),
+                    React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20' },
+                        React.createElement('h3', { className: 'text-lg font-bold text-gray-800 mb-4' }, '🎯 Goal Progress'),
+                        React.createElement('div', null,
+                            React.createElement('div', { className: 'text-lg font-bold text-green-600' }, 
+                                `${Math.round((totalCalories / userPreferences.calorieTarget) * 100)}%`
+                            ),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'of daily calories'),
+                            React.createElement('div', { className: 'w-full bg-gray-200 rounded-full h-2 mt-2' },
+                                React.createElement('div', {
+                                    className: 'bg-green-500 h-2 rounded-full transition-all duration-500',
+                                    style: { width: `${Math.min((totalCalories / userPreferences.calorieTarget) * 100, 100)}%` }
+                                })
                             )
                         )
                     )
                 ),
 
-                // AI Suggestions and Current Plan
+                // Meal Plan Grid
                 React.createElement('div', { className: 'grid grid-cols-1 lg:grid-cols-2 gap-8' },
-                    // AI Suggestions
-                    React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20' },
-                        React.createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4 flex items-center' },
-                            React.createElement('span', { className: 'mr-2 text-2xl' }, '🤖'),
-                            `AI ${selectedMeal.charAt(0).toUpperCase() + selectedMeal.slice(1)} Suggestions`
-                        ),
-                        
-                        suggestions.length === 0 ? 
-                            React.createElement('div', { className: 'text-center py-8' },
-                                React.createElement('div', { className: 'text-4xl mb-4' }, '🛒'),
-                                React.createElement('h4', { className: 'text-lg font-bold text-gray-700 mb-2' }, 'No Suggestions Available'),
-                                React.createElement('p', { className: 'text-gray-600' }, 'Add ingredients to your pantry to get personalized meal suggestions!')
-                            ) :
-                            React.createElement('div', { className: 'space-y-4' },
-                                ...suggestions.map((suggestion, index) => 
-                                    React.createElement('div', { 
-                                        key: index,
-                                        className: 'border border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200'
-                                    },
-                                        React.createElement('div', { className: 'flex justify-between items-start mb-3' },
-                                            React.createElement('h4', { className: 'font-bold text-gray-800' }, suggestion.name),
-                                            React.createElement('button', {
-                                                onClick: () => addMealToPlan(suggestion, selectedMeal),
-                                                className: 'px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-sm rounded-lg font-semibold'
-                                            }, 'Add to Plan')
-                                        ),
-                                        React.createElement('div', { className: 'text-sm text-gray-600 mb-2' },
-                                            `${suggestion.calories} cal • ${suggestion.protein}g protein • ${suggestion.prepTime} • ${suggestion.difficulty}`
-                                        ),
-                                        React.createElement('div', { className: 'text-xs text-gray-500' },
-                                            `Ingredients: ${suggestion.ingredients.join(', ')}`
-                                        )
-                                    )
-                                )
-                            )
-                    ),
-
-                    // Current Meal Plan
-                    React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20' },
-                        React.createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4 flex items-center' },
-                            React.createElement('span', { className: 'mr-2 text-2xl' }, '📋'),
-                            'Today\'s Meal Plan'
-                        ),
-                        
-                        React.createElement('div', { className: 'space-y-4' },
-                            ['breakfast', 'lunch', 'dinner', 'snacks'].map(mealType => 
-                                React.createElement('div', { key: mealType, className: 'border border-gray-200 rounded-xl p-4' },
-                                    React.createElement('h4', { className: 'font-bold text-gray-700 mb-3 flex items-center' },
-                                        React.createElement('span', { className: 'mr-2' },
-                                            mealType === 'breakfast' ? '🌅' :
-                                            mealType === 'lunch' ? '☀️' :
-                                            mealType === 'dinner' ? '🌙' : '🍿'
-                                        ),
-                                        mealType.charAt(0).toUpperCase() + mealType.slice(1)
+                    ['breakfast', 'lunch', 'dinner', 'snacks'].map(mealType => 
+                        React.createElement('div', { 
+                            key: mealType,
+                            className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 overflow-hidden'
+                        },
+                            React.createElement('div', { className: 'bg-gradient-to-r from-blue-500 via-blue-600 to-teal-600 text-white p-6' },
+                                React.createElement('h3', { className: 'text-xl font-bold flex items-center' },
+                                    React.createElement('span', { className: 'mr-3 text-2xl' },
+                                        mealType === 'breakfast' ? '🌅' :
+                                        mealType === 'lunch' ? '☀️' :
+                                        mealType === 'dinner' ? '🌙' : '🍿'
                                     ),
-                                    
-                                    mealPlan[mealType].length === 0 ?
-                                        React.createElement('p', { className: 'text-gray-500 text-sm' }, `No ${mealType} planned`) :
-                                        React.createElement('div', { className: 'space-y-2' },
-                                            ...mealPlan[mealType].map(meal => 
+                                    mealType.charAt(0).toUpperCase() + mealType.slice(1)
+                                )
+                            ),
+                            React.createElement('div', { className: 'p-6' },
+                                mealPlan[mealType].length === 0 ? 
+                                    React.createElement('div', { className: 'text-center py-8' },
+                                        React.createElement('div', { className: 'text-4xl mb-4' }, '🍽️'),
+                                        React.createElement('p', { className: 'text-gray-500 mb-4' }, `No ${mealType} planned yet`),
+                                        React.createElement('button', {
+                                            onClick: generateMealPlan,
+                                            className: 'px-4 py-2 bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white rounded-lg font-semibold'
+                                        }, 'Generate Suggestions')
+                                    ) :
+                                    React.createElement('div', { className: 'space-y-4' },
+                                        ...mealPlan[mealType].map(meal => 
+                                            React.createElement('div', { 
+                                                key: meal.planId || meal.id,
+                                                className: 'border border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 cursor-pointer'
+                                            },
                                                 React.createElement('div', { 
-                                                    key: meal.id,
-                                                    className: 'flex justify-between items-center p-2 bg-gray-50 rounded-lg'
+                                                    onClick: () => openMealDetail(meal, mealType),
+                                                    className: 'flex justify-between items-start mb-3'
                                                 },
                                                     React.createElement('div', { className: 'flex-1' },
-                                                        React.createElement('div', { className: 'font-medium text-gray-800' }, meal.name),
-                                                        React.createElement('div', { className: 'text-xs text-gray-600' },
-                                                            `${meal.calories} cal • ${meal.protein}g protein`
+                                                        React.createElement('h4', { className: 'font-bold text-gray-800 mb-1' }, meal.name),
+                                                        React.createElement('div', { className: 'text-sm text-gray-600 mb-2' },
+                                                            `${meal.calories} cal • ${meal.protein}g protein • ${meal.prepTime}`
+                                                        ),
+                                                        React.createElement('div', { className: 'flex flex-wrap gap-1' },
+                                                            ...meal.tags.slice(0, 3).map(tag => 
+                                                                React.createElement('span', { 
+                                                                    key: tag,
+                                                                    className: 'px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full'
+                                                                }, tag)
+                                                            )
                                                         )
-                                                    ),
+                                                    )
+                                                ),
+                                                React.createElement('div', { className: 'flex gap-2 mt-3' },
                                                     React.createElement('button', {
-                                                        onClick: () => removeMealFromPlan(mealType, meal.id),
-                                                        className: 'px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs rounded font-medium'
+                                                        onClick: () => openMealDetail(meal, mealType),
+                                                        className: 'flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg font-semibold'
+                                                    }, 'View Recipe'),
+                                                    React.createElement('button', {
+                                                        onClick: () => removeMealFromPlan(mealType, meal.planId || meal.id),
+                                                        className: 'px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-sm rounded-lg font-semibold'
                                                     }, 'Remove')
                                                 )
                                             )
                                         )
-                                )
+                                    )
                             )
                         )
                     )
-                )
+                ),
+
+                // Missing Ingredients Section
+                missingIngredients.length > 0 && React.createElement('div', { className: 'mt-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20' },
+                    React.createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4 flex items-center' },
+                        React.createElement('span', { className: 'mr-2 text-2xl' }, '🛒'),
+                        'Missing Ingredients'
+                    ),
+                    React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' },
+                        ...missingIngredients.map((ingredient, index) => 
+                            React.createElement('div', { 
+                                key: index,
+                                className: 'flex justify-between items-center p-3 bg-orange-50 border border-orange-200 rounded-lg'
+                            },
+                                React.createElement('div', { className: 'flex-1' },
+                                    React.createElement('div', { className: 'font-medium text-gray-800' }, ingredient.name),
+                                    React.createElement('div', { className: 'text-sm text-gray-600' }, ingredient.amount),
+                                    React.createElement('div', { className: 'text-xs text-orange-600' }, `For: ${ingredient.forMeal}`)
+                                ),
+                                React.createElement('button', {
+                                    onClick: () => addToShoppingList(ingredient),
+                                    className: 'px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg font-semibold'
+                                }, 'Add to Cart')
+                            )
+                        )
+                    )
+                ),
+
+                // Meal Detail Modal
+                React.createElement(MealDetailModal, {
+                    meal: selectedMeal,
+                    isOpen: modalOpen,
+                    onClose: () => setModalOpen(false),
+                    onAddToPlan: addMealToPlan,
+                    mealType: modalMealType
+                })
             )
         );
     };
 
-    // Render function for the main app
+    // Render function
     function renderMealPlanning(containerId) {
         const container = document.getElementById(containerId);
         if (container) {
@@ -494,18 +845,15 @@
         }
     }
 
-    // Export functions with Habbt compatibility
+    // Export functions
     window.HabbtMealPlanning = {
         MealPlanningApp,
         renderMealPlanning
     };
 
-    // Backward compatibility
     window.FuelIQMealPlanning = window.HabbtMealPlanning;
     window.renderMealPlanning = renderMealPlanning;
 
-    console.log('✅ Habbt Meal Planning loaded - Complete rebranded version with blue-teal design');
-    console.log('✅ Available as: HabbtMealPlanning, FuelIQMealPlanning');
-    console.log('✅ Functions: renderMealPlanning');
+    console.log('✅ Habbt Meal Planning loaded - Complete with AI generation, recipe details, and shopping integration');
 
 })();
