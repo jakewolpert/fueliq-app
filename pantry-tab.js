@@ -1152,15 +1152,23 @@
         }
     };
 
-    // Make available globally with both naming conventions
+    const renderPantryTab = renderSmartPantry; // Alias for backward compatibility
+
+    // Make available globally with ALL possible naming conventions
     window.HabbtPantry = {
         SmartPantry,
-        renderSmartPantry
+        renderSmartPantry,
+        renderPantryTab
     };
 
-    // Backward compatibility
     window.FuelIQPantry = window.HabbtPantry;
 
+    // Legacy function names that the main app might be looking for
+    window.renderPantryTab = renderPantryTab;
+    window.renderSmartPantry = renderSmartPantry;
+
     console.log('✅ Habbt Smart Pantry loaded - Complete rebranded version with beautiful blue-teal design');
+    console.log('✅ Available as: HabbtPantry, FuelIQPantry');
+    console.log('✅ Functions: renderSmartPantry, renderPantryTab');
 
 })();
