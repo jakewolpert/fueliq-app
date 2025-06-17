@@ -643,7 +643,13 @@ useEffect(() => {
         );
       }
 
-     
+     // Special handling for profile tab
+if (currentView === 'profile') {
+  return e('div', { className: "min-h-screen bg-gradient-card" },
+    e(Navigation),
+    e('div', { id: "profile-container", className: "profile-tab-content" })
+  );
+}
       // Enhanced Dashboard view
       if (currentView === 'dashboard') {
         const now = new Date();
