@@ -1,30 +1,144 @@
-// FuelIQ Meals Tab - Complete JavaScript Module
+// Habbt Nutrition Tab - Complete JavaScript Module
 // Enhanced with Barcode Scanner and AI Suggestions
-
 // USDA API Functions
 const searchFoods = async (query) => {
     if (!query || query.length < 2) return [];
+    
     try {
-        const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&pageSize=10&api_key=DEMO_KEY`);
+        const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&query=${encodeURIComponent(query)}&pageSize=15&dataType=Foundation,SR%20Legacy,Branded`);
         const data = await response.json();
-        return data.foods || [];
+        
+        if (data.foods && data.foods.length > 0) {
+            return data.foods.map(food => ({
+                fdcId: food.fdcId,
+                description: food.description,
+                brandOwner: food.brandOwner,
+                ingredients: food.ingredients,
+                nutrients: food.foodNutrients ? food.foodNutrients.reduce((acc, nutrient) => {
+                    const nutrientName = nutrient.nutrientName.toLowerCase();
+                    if (nutrientName.includes('energy')) acc.calories = nutrient.value || 0;
+                    if (nutrientName.includes('protein')) acc.protein = nutrient.value || 0;
+                    if (nutrientName.includes('carbohydrate')) acc.carbs = nutrient.value || 0;
+                    if (nutrientName.includes('total lipid')) acc.fat = nutrient.value || 0;
+                    if (nutrientName.includes('fiber')) acc.fiber = nutrient.value || 0;
+                    if (nutrientName.includes('sodium')) acc.sodium = nutrient.value || 0;
+                    if (nutrientName.includes('sugars')) acc.sugar = nutrient.value || 0;
+                    return acc;
+                }, {}) : {},
+                dataType: food.dataType || 'Unknown',
+                source: 'usda'
+            }));
+        }
+        
+        return [];
     } catch (error) {
-        console.error('Error searching foods:', error);
+        console.error('USDA API Error:', error);
         return [];
     }
 };
 
-const getFoodDetails = async (fdcId) => {
+// Enhanced Fallback Food Database with More Options
+const FALLBACK_FOODS = {
+    // Proteins
+    'chicken breast': { calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, sodium: 74, sugar: 0 },
+    'salmon': { calories: 208, protein: 20, carbs: 0, fat: 12, fiber: 0, sodium: 82, sugar: 0 },
+    'tuna': { calories: 144, protein: 30, carbs: 0, fat: 1, fiber: 0, sodium: 50, sugar: 0 },
+    'ground beef': { calories: 250, protein: 26, carbs: 0, fat: 15, fiber: 0, sodium: 75, sugar: 0 },
+    'ground turkey': { calories: 200, protein: 27, carbs: 0, fat: 8, fiber: 0, sodium: 90, sugar: 0 },
+    'eggs': { calories: 155, protein: 13, carbs: 1, fat: 11, fiber: 0, sodium: 124, sugar: 1 },
+    'tofu': { calories: 144, protein: 15, carbs: 3, fat: 9, fiber: 2, sodium: 18, sugar: 1 },
+    'greek yogurt': { calories: 100, protein: 17, carbs: 6, fat: 0, fiber: 0, sodium: 60, sugar: 6 },
+    'cottage cheese': { calories: 98, protein: 11, carbs: 3, fat: 4, fiber: 0, sodium: 364, sugar: 3 },
+    'protein powder': { calories: 120, protein: 25, carbs: 3, fat: 1, fiber: 1, sodium: 150, sugar: 1 },
+    
+    // Vegetables
+    'broccoli': { calories: 34, protein: 3, carbs: 7, fat: 0.4, fiber: 3, sodium: 33, sugar: 2 },
+    'spinach': { calories: 23, protein: 3, carbs: 4, fat: 0.4, fiber: 2, sodium: 79, sugar: 0 },
+    'carrots': { calories: 41, protein: 1, carbs: 10, fat: 0.2, fiber: 3, sodium: 69, sugar: 5 },
+    'bell peppers': { calories: 31, protein: 1, carbs: 7, fat: 0.3, fiber: 3, sodium: 4, sugar: 5 },
+    'tomatoes': { calories: 18, protein: 1, carbs: 4, fat: 0.2, fiber: 1, sodium: 5, sugar: 3 },
+    'cucumber': { calories: 16, protein: 1, carbs: 4, fat: 0.1, fiber: 1, sodium: 2, sugar: 2 },
+    'lettuce': { calories: 15, protein: 1, carbs: 3, fat: 0.2, fiber: 1, sodium: 28, sugar: 1 },
+    'onions': { calories: 40, protein: 1, carbs: 9, fat: 0.1, fiber: 2, sodium: 4, sugar: 4 },
+    'mushrooms': { calories: 22, protein: 3, carbs: 3, fat: 0.3, fiber: 1, sodium: 5, sugar: 2 },
+    'zucchini': { calories: 17, protein: 1, carbs: 3, fat: 0.3, fiber: 1, sodium: 8, sugar: 3 },
+    
+    // Fruits
+    'apple': { calories: 52, protein: 0.3, carbs: 14, fat: 0.2, fiber: 2, sodium: 1, sugar: 10 },
+    'banana': { calories: 89, protein: 1, carbs: 23, fat: 0.3, fiber: 3, sodium: 1, sugar: 12 },
+    'orange': { calories: 47, protein: 1, carbs: 12, fat: 0.1, fiber: 2, sodium: 0, sugar: 9 },
+    'berries': { calories: 57, protein: 1, carbs: 14, fat: 0.3, fiber: 8, sodium: 1, sugar: 10 },
+    'grapes': { calories: 69, protein: 1, carbs: 16, fat: 0.2, fiber: 1, sodium: 3, sugar: 16 },
+    'pineapple': { calories: 50, protein: 1, carbs: 13, fat: 0.1, fiber: 1, sodium: 1, sugar: 10 },
+    'strawberries': { calories: 32, protein: 1, carbs: 8, fat: 0.3, fiber: 2, sodium: 1, sugar: 5 },
+    'avocado': { calories: 160, protein: 2, carbs: 9, fat: 15, fiber: 7, sodium: 7, sugar: 1 },
+    
+    // Grains & Starches
+    'brown rice': { calories: 111, protein: 3, carbs: 23, fat: 0.9, fiber: 2, sodium: 5, sugar: 0 },
+    'white rice': { calories: 130, protein: 3, carbs: 28, fat: 0.3, fiber: 0, sodium: 5, sugar: 0 },
+    'quinoa': { calories: 120, protein: 4, carbs: 22, fat: 2, fiber: 3, sodium: 7, sugar: 0 },
+    'oats': { calories: 389, protein: 17, carbs: 66, fat: 7, fiber: 11, sodium: 2, sugar: 1 },
+    'sweet potato': { calories: 86, protein: 2, carbs: 20, fat: 0.1, fiber: 3, sodium: 54, sugar: 4 },
+    'potato': { calories: 77, protein: 2, carbs: 17, fat: 0.1, fiber: 2, sodium: 6, sugar: 1 },
+    'pasta': { calories: 131, protein: 5, carbs: 25, fat: 1, fiber: 2, sodium: 6, sugar: 1 },
+    'bread': { calories: 265, protein: 9, carbs: 49, fat: 3, fiber: 3, sodium: 491, sugar: 5 },
+    
+    // Nuts & Seeds
+    'almonds': { calories: 579, protein: 21, carbs: 22, fat: 50, fiber: 12, sodium: 1, sugar: 4 },
+    'walnuts': { calories: 654, protein: 15, carbs: 14, fat: 65, fiber: 7, sodium: 2, sugar: 3 },
+    'peanut butter': { calories: 588, protein: 25, carbs: 20, fat: 50, fiber: 8, sodium: 17, sugar: 9 },
+    'chia seeds': { calories: 486, protein: 17, carbs: 42, fat: 31, fiber: 34, sodium: 16, sugar: 0 },
+    'flaxseed': { calories: 534, protein: 18, carbs: 29, fat: 42, fiber: 28, sodium: 30, sugar: 2 },
+    
+    // Dairy
+    'milk': { calories: 42, protein: 3, carbs: 5, fat: 1, fiber: 0, sodium: 44, sugar: 5 },
+    'cheese': { calories: 113, protein: 7, carbs: 1, fat: 9, fiber: 0, sodium: 186, sugar: 1 },
+    'yogurt': { calories: 59, protein: 10, carbs: 4, fat: 0.4, fiber: 0, sodium: 46, sugar: 4 },
+    
+    // Oils & Fats
+    'olive oil': { calories: 884, protein: 0, carbs: 0, fat: 100, fiber: 0, sodium: 2, sugar: 0 },
+    'coconut oil': { calories: 862, protein: 0, carbs: 0, fat: 100, fiber: 0, sodium: 0, sugar: 0 },
+    'butter': { calories: 717, protein: 1, carbs: 0, fat: 81, fiber: 0, sodium: 11, sugar: 0 }
+};
+
+// Enhanced Barcode API (Open Food Facts)
+const lookupBarcode = async (barcode) => {
     try {
-        const response = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${fdcId}?api_key=DEMO_KEY`);
-        return await response.json();
+        const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+        const data = await response.json();
+        
+        if (data.status === 1 && data.product) {
+            const product = data.product;
+            const nutrients = product.nutriments || {};
+            
+            return {
+                fdcId: barcode,
+                description: product.product_name || product.product_name_en || 'Unknown Product',
+                brandOwner: product.brands || 'Unknown Brand',
+                ingredients: product.ingredients_text || '',
+                nutrients: {
+                    calories: nutrients['energy-kcal_100g'] || nutrients.energy_100g/4.184 || 0,
+                    protein: nutrients.proteins_100g || 0,
+                    carbs: nutrients.carbohydrates_100g || 0,
+                    fat: nutrients.fat_100g || 0,
+                    fiber: nutrients.fiber_100g || 0,
+                    sodium: nutrients.sodium_100g || 0,
+                    sugar: nutrients.sugars_100g || 0
+                },
+                dataType: 'Barcode',
+                source: 'openfoodfacts',
+                barcode: barcode
+            };
+        }
+        
+        return null;
     } catch (error) {
-        console.error('Error getting food details:', error);
+        console.error('Barcode lookup failed:', error);
         return null;
     }
 };
 
-// Safe Storage Functions with Fallbacks
+// Storage functions with Habbt branding and backward compatibility
 const isLocalStorageAvailable = () => {
     try {
         const test = '__localStorage_test__';
@@ -36,1667 +150,746 @@ const isLocalStorageAvailable = () => {
     }
 };
 
-// In-memory fallback storage
 const memoryStorage = {};
 
-const saveMealData = (date, meals) => {
-    const key = `fueliq_meals_${date}`;
-    const data = JSON.stringify(meals);
+const saveMealData = (date, data) => {
+    const keys = [`habbt_meals_${date}`, `fueliq_meals_${date}`]; // Save to both for compatibility
+    const dataStr = JSON.stringify(data);
     
     if (isLocalStorageAvailable()) {
         try {
-            localStorage.setItem(key, data);
+            keys.forEach(key => localStorage.setItem(key, dataStr));
         } catch (e) {
             console.warn('localStorage failed, using memory storage:', e);
-            memoryStorage[key] = data;
+            keys.forEach(key => memoryStorage[key] = dataStr);
         }
     } else {
-        memoryStorage[key] = data;
+        keys.forEach(key => memoryStorage[key] = dataStr);
     }
 };
 
 const loadMealData = (date) => {
-    const key = `fueliq_meals_${date}`;
+    const keys = [`habbt_meals_${date}`, `fueliq_meals_${date}`]; // Try both keys
     let data = null;
     
     if (isLocalStorageAvailable()) {
         try {
-            data = localStorage.getItem(key);
+            for (const key of keys) {
+                data = localStorage.getItem(key);
+                if (data) break;
+            }
         } catch (e) {
             console.warn('localStorage failed, using memory storage:', e);
-            data = memoryStorage[key];
+            for (const key of keys) {
+                data = memoryStorage[key];
+                if (data) break;
+            }
         }
     } else {
-        data = memoryStorage[key];
+        for (const key of keys) {
+            data = memoryStorage[key];
+            if (data) break;
+        }
     }
     
     return data ? JSON.parse(data) : {
-        breakfast: [], lunch: [], dinner: [], snacks: []
+        breakfast: [],
+        lunch: [],
+        dinner: [],
+        snacks: []
     };
 };
 
-const saveRecentFoods = (foods) => {
-    const key = 'fueliq_recent_foods';
-    const data = JSON.stringify(foods.slice(0, 20));
-    
-    if (isLocalStorageAvailable()) {
-        try {
-            localStorage.setItem(key, data);
-        } catch (e) {
-            console.warn('localStorage failed, using memory storage:', e);
-            memoryStorage[key] = data;
-        }
-    } else {
-        memoryStorage[key] = data;
-    }
-};
-
-const loadRecentFoods = () => {
-    const key = 'fueliq_recent_foods';
-    let data = null;
-    
-    if (isLocalStorageAvailable()) {
-        try {
-            data = localStorage.getItem(key);
-        } catch (e) {
-            console.warn('localStorage failed, using memory storage:', e);
-            data = memoryStorage[key];
-        }
-    } else {
-        data = memoryStorage[key];
-    }
-    
-    return data ? JSON.parse(data) : [];
-};
-
-// Helper Functions
-const formatDate = (date) => {
-    return date.toISOString().split('T')[0];
-};
-
-const calculateNutrition = (foodItems) => {
-    return foodItems.reduce((totals, item) => {
-        const multiplier = item.servingSize / 100;
-        return {
-            calories: totals.calories + (item.calories * multiplier),
-            protein: totals.protein + (item.protein * multiplier),
-            carbs: totals.carbs + (item.carbs * multiplier),
-            fat: totals.fat + (item.fat * multiplier),
-            fiber: totals.fiber + (item.fiber * multiplier)
-        };
-    }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
-};
-
-const extractNutrients = (foodData) => {
-    const nutrients = foodData.foodNutrients || [];
-    const getNutrient = (id) => {
-        const nutrient = nutrients.find(n => n.nutrient && n.nutrient.id === id);
-        return nutrient ? nutrient.amount || 0 : 0;
-    };
-
-    return {
-        calories: getNutrient(1008),
-        protein: getNutrient(1003),
-        carbs: getNutrient(1005),
-        fat: getNutrient(1004),
-        fiber: getNutrient(1079)
-    };
-};
-
-// Barcode Lookup Functions
-const lookupBarcode = async (upc) => {
-    try {
-        // Try OpenFoodFacts first (free, good coverage)
-        const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${upc}.json`);
-        const data = await response.json();
-        
-        if (data.product) {
-            const product = data.product;
-            const nutriments = product.nutriments || {};
-            
-            return {
-                name: product.product_name || product.product_name_en || 'Unknown Product',
-                brand: product.brands || '',
-                upc: product.code || '',
-                calories: nutriments['energy-kcal_100g'] || nutriments['energy-kcal'] || 0,
-                protein: nutriments.proteins_100g || nutriments.proteins || 0,
-                carbs: nutriments.carbohydrates_100g || nutriments.carbohydrates || 0,
-                fat: nutriments.fat_100g || nutriments.fat || 0,
-                fiber: nutriments.fiber_100g || nutriments.fiber || 0,
-                sodium: nutriments.sodium_100g || nutriments.sodium || 0,
-                sugars: nutriments.sugars_100g || nutriments.sugars || 0,
-                image: product.image_url || '',
-                servingSize: 100,
-                source: 'OpenFoodFacts'
-            };
-        }
-        
-        return null;
-    } catch (error) {
-        console.error('Barcode lookup failed:', error);
-        return null;
-    }
-};
-// Enhanced Barcode Lookup with Multiple Sources
-const lookupBarcodeEnhanced = async (upc) => {
-    try {
-        console.log('🔍 Enhanced barcode lookup for:', upc);
-        
-        // Try Open Food Facts first (more reliable for branded products)
-        const openFoodResult = await lookupOpenFoodFacts(upc);
-        if (openFoodResult) {
-            return openFoodResult;
-        }
-        
-        // Try local enhanced database
-        const localResult = await lookupLocalEnhanced(upc);
-        if (localResult) {
-            return localResult;
-        }
-        
-        return null;
-    } catch (error) {
-        console.error('Enhanced barcode lookup failed:', error);
-        return null;
-    }
-};
-
-// Enhanced Open Food Facts lookup
-const lookupOpenFoodFacts = async (upc) => {
-    try {
-        const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${upc}.json`);
-        const data = await response.json();
-        
-        if (data.status === 1 && data.product) {
-            const product = data.product;
-            const nutriments = product.nutriments || {};
-            
-            return {
-                name: product.product_name || product.product_name_en || 'Unknown Product',
-                brand: product.brands || '',
-                upc: product.code || upc,
-                calories: parseNutrient(nutriments['energy-kcal_100g'] || nutriments['energy-kcal']) || 0,
-                protein: parseNutrient(nutriments.proteins_100g || nutriments.proteins) || 0,
-                carbs: parseNutrient(nutriments.carbohydrates_100g || nutriments.carbohydrates) || 0,
-                fat: parseNutrient(nutriments.fat_100g || nutriments.fat) || 0,
-                fiber: parseNutrient(nutriments.fiber_100g || nutriments.fiber) || 0,
-                sodium: parseNutrient(nutriments.sodium_100g || nutriments.sodium) || 0,
-                sugars: parseNutrient(nutriments.sugars_100g || nutriments.sugars) || 0,
-                imageUrl: product.image_url || '',
-                servingSize: 100,
-                source: 'Open Food Facts Enhanced',
-                categories: product.categories || '',
-                ingredients: product.ingredients_text || '',
-                nutritionGrade: product.nutrition_grades || ''
-            };
-        }
-        
-        return null;
-    } catch (error) {
-        console.error('Open Food Facts enhanced lookup failed:', error);
-        return null;
-    }
-};
-
-// Enhanced local database with popular branded products
-const lookupLocalEnhanced = async (upc) => {
-    const enhancedLocalProducts = {
-        // Vital Farms
-        '011110602787': {
-            name: 'Vital Farms Pasture-Raised Large Eggs',
-            brand: 'Vital Farms',
-            upc: '011110602787',
-            calories: 70,
-            protein: 6,
-            carbs: 0,
-            fat: 5,
-            fiber: 0,
-            sodium: 70,
-            sugar: 0,
-            servingSize: 50, // 1 large egg
-            source: 'Enhanced Local Database'
-        },
-        
-        // Eggland's Best
-        '071632004003': {
-            name: 'Eggland\'s Best Large Eggs',
-            brand: 'Eggland\'s Best',
-            upc: '071632004003',
-            calories: 70,
-            protein: 6,
-            carbs: 0,
-            fat: 4,
-            fiber: 0,
-            sodium: 70,
-            sugar: 0,
-            servingSize: 50,
-            source: 'Enhanced Local Database'
-        },
-        
-        // FAGE Greek Yogurt
-        '052776010023': {
-            name: 'FAGE Total 0% Greek Yogurt',
-            brand: 'FAGE',
-            upc: '052776010023',
-            calories: 90,
-            protein: 15,
-            carbs: 6,
-            fat: 0,
-            fiber: 0,
-            sodium: 55,
-            sugar: 6,
-            servingSize: 170,
-            source: 'Enhanced Local Database'
-        },
-        
-        // Chobani Greek Yogurt
-        '894700010045': {
-            name: 'Chobani Plain Non-Fat Greek Yogurt',
-            brand: 'Chobani',
-            upc: '894700010045',
-            calories: 100,
-            protein: 17,
-            carbs: 6,
-            fat: 0,
-            fiber: 0,
-            sodium: 65,
-            sugar: 4,
-            servingSize: 170,
-            source: 'Enhanced Local Database'
-        },
-        
-        // Quaker Oats
-        '030000010204': {
-            name: 'Quaker Old Fashioned Oats',
-            brand: 'Quaker',
-            upc: '030000010204',
-            calories: 150,
-            protein: 5,
-            carbs: 27,
-            fat: 3,
-            fiber: 4,
-            sodium: 0,
-            sugar: 1,
-            servingSize: 40,
-            source: 'Enhanced Local Database'
-        },
-        
-        // Blue Diamond Almonds
-        '041570070802': {
-            name: 'Blue Diamond Whole Natural Almonds',
-            brand: 'Blue Diamond',
-            upc: '041570070802',
-            calories: 170,
-            protein: 6,
-            carbs: 6,
-            fat: 15,
-            fiber: 4,
-            sodium: 0,
-            sugar: 1,
-            servingSize: 28,
-            source: 'Enhanced Local Database'
-        },
-        
-        // Organic Valley Milk
-        '023244020006': {
-            name: 'Organic Valley Whole Milk',
-            brand: 'Organic Valley',
-            upc: '023244020006',
-            calories: 150,
-            protein: 8,
-            carbs: 12,
-            fat: 8,
-            fiber: 0,
-            sodium: 120,
-            sugar: 12,
-            servingSize: 240,
-            source: 'Enhanced Local Database'
-        },
-        
-        // Kind Bars
-        '602652171017': {
-            name: 'KIND Dark Chocolate Nuts & Sea Salt',
-            brand: 'KIND',
-            upc: '602652171017',
-            calories: 200,
-            protein: 6,
-            carbs: 16,
-            fat: 16,
-            fiber: 7,
-            sodium: 125,
-            sugar: 5,
-            servingSize: 40,
-            source: 'Enhanced Local Database'
-        },
-        
-        // Starbucks Coffee
-        '762111188359': {
-            name: 'Starbucks Pike Place Roast Ground Coffee',
-            brand: 'Starbucks',
-            upc: '762111188359',
-            calories: 5,
-            protein: 0,
-            carbs: 0,
-            fat: 0,
-            fiber: 0,
-            sodium: 0,
-            sugar: 0,
-            servingSize: 6, // 1 cup brewed
-            source: 'Enhanced Local Database'
-        },
-        
-        // Clif Bar
-        '722252100016': {
-            name: 'CLIF Bar Chocolate Chip',
-            brand: 'CLIF',
-            upc: '722252100016',
-            calories: 250,
-            protein: 9,
-            carbs: 45,
-            fat: 5,
-            fiber: 4,
-            sodium: 150,
-            sugar: 21,
-            servingSize: 68,
-            source: 'Enhanced Local Database'
-        }
-    };
-    
-    const product = enhancedLocalProducts[upc];
-    if (product) {
-        console.log('✅ Found in enhanced local database:', product.name);
-        return product;
-    }
-    
-    return null;
-};
-
-// Enhanced food search for USDA + Open Food Facts
-const searchFoodsEnhanced = async (query) => {
-    if (!query || query.length < 2) return [];
-    
-    try {
-        console.log('🔍 Enhanced food search for:', query);
-        
-        // Search both USDA and Open Food Facts in parallel
-        const [usdaResults, openFoodResults] = await Promise.allSettled([
-            searchFoodsUSDA(query),
-            searchOpenFoodFactsByName(query)
-        ]);
-        
-        const allResults = [];
-        
-        // Add USDA results
-        if (usdaResults.status === 'fulfilled' && usdaResults.value) {
-            allResults.push(...usdaResults.value.map(food => ({
-                ...food,
-                source: 'USDA',
-                priority: 1
-            })));
-        }
-        
-        // Add Open Food Facts results
-        if (openFoodResults.status === 'fulfilled' && openFoodResults.value) {
-            allResults.push(...openFoodResults.value.map(food => ({
-                ...food,
-                source: 'Open Food Facts',
-                priority: 2
-            })));
-        }
-        
-        // Remove duplicates and sort by relevance
-        const uniqueResults = removeDuplicateFoods(allResults, query);
-        const sortedResults = sortFoodsByRelevance(uniqueResults, query);
-        
-        console.log(`✅ Found ${sortedResults.length} results from multiple sources`);
-        return sortedResults.slice(0, 15); // Limit to top 15 results
-        
-    } catch (error) {
-        console.error('Enhanced food search failed:', error);
-        // Fallback to original USDA search
-        return await searchFoods(query);
-    }
-};
-
-// USDA search (your existing function, renamed)
-const searchFoodsUSDA = async (query) => {
-    return await searchFoods(query); // Use your existing function
-};
-
-// Open Food Facts text search
-const searchOpenFoodFactsByName = async (query) => {
-    try {
-        const searchUrl = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=10`;
-        
-        const response = await fetch(searchUrl);
-        const data = await response.json();
-        
-        if (!data.products || data.products.length === 0) {
-            return [];
-        }
-        
-        return data.products.map(product => ({
-            fdcId: `off_${product.code}`,
-            description: cleanProductName(product.product_name || product.product_name_en || 'Unknown Product'),
-            brandOwner: product.brands || '',
-            dataType: 'Branded Food',
-            upc: product.code,
-            nutrients: {
-                calories: parseNutrient(product.nutriments?.energy_kcal),
-                protein: parseNutrient(product.nutriments?.proteins),
-                carbs: parseNutrient(product.nutriments?.carbohydrates),
-                fat: parseNutrient(product.nutriments?.fat),
-                fiber: parseNutrient(product.nutriments?.fiber)
-            }
-        })).filter(product => product.description !== 'Unknown Product');
-        
-    } catch (error) {
-        console.error('Open Food Facts text search failed:', error);
-        return [];
-    }
-};
-
-// Helper functions
-const parseNutrient = (value, defaultValue = 0) => {
-    const num = parseFloat(value);
-    return isNaN(num) ? defaultValue : Math.round(num * 10) / 10;
-};
-
-const cleanProductName = (name) => {
-    return name
-        .replace(/\s+/g, ' ')
-        .replace(/[^\w\s\-&'()]/g, '')
-        .trim()
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-};
-
-const removeDuplicateFoods = (results, query) => {
-    const seen = new Set();
-    return results.filter(result => {
-        const key = result.description.toLowerCase().trim();
-        if (seen.has(key)) {
-            return false;
-        }
-        seen.add(key);
-        return true;
-    });
-};
-
-const sortFoodsByRelevance = (results, query) => {
-    const queryLower = query.toLowerCase();
-    
-    return results.map(result => {
-        let score = 0;
-        const descLower = result.description.toLowerCase();
-        const brandLower = (result.brandOwner || '').toLowerCase();
-        
-        // Exact match
-        if (descLower === queryLower) score += 100;
-        // Starts with query
-        else if (descLower.startsWith(queryLower)) score += 80;
-        // Contains query
-        else if (descLower.includes(queryLower)) score += 60;
-        
-        // Brand match
-        if (brandLower.includes(queryLower)) score += 40;
-        
-        // Branded product bonus
-        if (result.brandOwner && result.brandOwner.trim()) score += 20;
-        
-        // Complete nutrition data bonus
-        if (result.nutrients && Object.values(result.nutrients).some(v => v > 0)) score += 10;
-        
-        // Source priority
-        if (result.priority) score += (3 - result.priority) * 5;
-        
-        return { ...result, relevanceScore: score };
-    }).sort((a, b) => b.relevanceScore - a.relevanceScore);
-};
-// AI Suggestions Component
-const AISuggestions = ({ currentMeals, userGoals, currentDate }) => {
-    const [suggestions, setSuggestions] = React.useState([]);
-    const [isVisible, setIsVisible] = React.useState(true);
-
-    React.useEffect(() => {
-        generateAISuggestions();
-    }, [currentMeals, currentDate]);
-
-    const generateAISuggestions = () => {
-        const allFoods = [...currentMeals.breakfast, ...currentMeals.lunch, ...currentMeals.dinner, ...currentMeals.snacks];
-        const currentTotals = calculateNutrition(allFoods);
-        const timeOfDay = new Date().getHours();
-        const isToday = formatDate(new Date()) === formatDate(currentDate);
-        
-        const newSuggestions = [];
-
-        // Real-time calorie guidance
-        const remainingCalories = userGoals.calories - currentTotals.calories;
-        const remainingMeals = getRemainingMeals(currentMeals, timeOfDay);
-        
-        if (isToday && remainingCalories > 0 && remainingMeals.length > 0) {
-            const caloriesPerMeal = Math.round(remainingCalories / remainingMeals.length);
-            newSuggestions.push({
-                type: 'calorie-guidance',
-                icon: '🎯',
-                title: 'Calorie Distribution',
-                message: `You have ${remainingCalories} calories left for ${remainingMeals.join(' & ')}. Aim for ~${caloriesPerMeal} calories per meal.`,
-                priority: 'high',
-                action: 'plan-remaining'
-            });
-        }
-
-        // Macro imbalance warnings
-        const proteinPercentage = (currentTotals.protein * 4) / currentTotals.calories;
-        if (currentTotals.calories > 500 && proteinPercentage < 0.15) {
-            newSuggestions.push({
-                type: 'macro-warning',
-                icon: '🥩',
-                title: 'Low Protein Alert',
-                message: `Only ${Math.round(proteinPercentage * 100)}% of calories from protein. Add lean protein like chicken, fish, or Greek yogurt.`,
-                priority: 'medium',
-                action: 'suggest-protein'
-            });
-        }
-
-        // Fat intake analysis
-        const fatPercentage = (currentTotals.fat * 9) / currentTotals.calories;
-        if (currentTotals.calories > 500 && fatPercentage > 0.4) {
-            newSuggestions.push({
-                type: 'macro-warning',
-                icon: '🥑',
-                title: 'High Fat Intake',
-                message: `${Math.round(fatPercentage * 100)}% calories from fat. Consider lean proteins and vegetables for remaining meals.`,
-                priority: 'medium',
-                action: 'suggest-lowfat'
-            });
-        }
-
-        // Historical pattern analysis
-        const historicalSuggestions = analyzeRecentPatterns();
-        newSuggestions.push(...historicalSuggestions);
-
-        // Time-based suggestions
-        if (isToday) {
-            const timeSuggestions = getTimeBasedSuggestions(timeOfDay, currentMeals);
-            newSuggestions.push(...timeSuggestions);
-        }
-
-        // Meal completion reminders
-        const completionSuggestions = getMealCompletionSuggestions(currentMeals, timeOfDay, isToday);
-        newSuggestions.push(...completionSuggestions);
-
-        setSuggestions(newSuggestions.slice(0, 3)); // Limit to top 3 suggestions
-    };
-
-    const getRemainingMeals = (meals, hour) => {
-        const remaining = [];
-        if (meals.breakfast.length === 0 && hour < 11) remaining.push('breakfast');
-        if (meals.lunch.length === 0 && hour < 16) remaining.push('lunch'); 
-        if (meals.dinner.length === 0 && hour < 22) remaining.push('dinner');
-        return remaining;
-    };
-
-    const analyzeRecentPatterns = () => {
-        const suggestions = [];
-        const last3Days = [];
-        
-        // Get last 3 days of data
-        for (let i = 1; i <= 3; i++) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const dateStr = formatDate(date);
-            const dayMeals = loadMealData(dateStr);
-            const dayFoods = [...dayMeals.breakfast, ...dayMeals.lunch, ...dayMeals.dinner, ...dayMeals.snacks];
-            if (dayFoods.length > 0) {
-                last3Days.push(calculateNutrition(dayFoods));
-            }
-        }
-
-        if (last3Days.length >= 2) {
-            const avgProtein = last3Days.reduce((sum, day) => sum + day.protein, 0) / last3Days.length;
-            const avgFat = last3Days.reduce((sum, day) => sum + day.fat, 0) / last3Days.length;
-            const avgCalories = last3Days.reduce((sum, day) => sum + day.calories, 0) / last3Days.length;
-
-            // Protein trend analysis
-            if (avgProtein < userGoals.protein * 0.8) {
-                suggestions.push({
-                    type: 'historical-pattern',
-                    icon: '📊',
-                    title: 'Protein Pattern Alert',
-                    message: `You've averaged ${Math.round(avgProtein)}g protein vs ${userGoals.protein}g goal over 3 days. Focus on protein-rich foods today.`,
-                    priority: 'medium',
-                    action: 'boost-protein'
-                });
-            }
-
-            // Fat trend analysis  
-            if (avgFat > userGoals.fat * 1.2) {
-                suggestions.push({
-                    type: 'historical-pattern',
-                    icon: '⚖️',
-                    title: 'Fat Intake Pattern',
-                    message: `High fat intake lately (avg ${Math.round(avgFat)}g vs ${userGoals.fat}g goal). Try lean proteins and steamed vegetables.`,
-                    priority: 'medium',
-                    action: 'reduce-fat'
-                });
-            }
-
-            // Calorie trend analysis
-            if (avgCalories < userGoals.calories * 0.8) {
-                suggestions.push({
-                    type: 'historical-pattern',
-                    icon: '⚠️',
-                    title: 'Low Calorie Pattern',
-                    message: `You've been under-eating (avg ${Math.round(avgCalories)} vs ${userGoals.calories} calories). This can slow metabolism.`,
-                    priority: 'high',
-                    action: 'increase-calories'
-                });
-            }
-        }
-
-        return suggestions;
-    };
-
-    const getTimeBasedSuggestions = (hour, meals) => {
-        const suggestions = [];
-        
-        // Morning suggestions (6-11 AM)
-        if (hour >= 6 && hour <= 11 && meals.breakfast.length === 0) {
-            suggestions.push({
-                type: 'time-based',
-                icon: '🌅',
-                title: 'Good Morning!',
-                message: 'Starting your day with protein helps stabilize blood sugar and energy levels. Try eggs, Greek yogurt, or protein oats.',
-                priority: 'low',
-                action: 'suggest-breakfast'
-            });
-        }
-
-        // Afternoon suggestions (12-5 PM)
-        if (hour >= 12 && hour <= 17 && meals.lunch.length === 0) {
-            suggestions.push({
-                type: 'time-based', 
-                icon: '☀️',
-                title: 'Lunch Time Reminder',
-                message: 'Your body needs fuel for the afternoon. A balanced lunch with protein and complex carbs will maintain your energy.',
-                priority: 'medium',
-                action: 'suggest-lunch'
-            });
-        }
-
-        // Evening suggestions (6-9 PM)
-        if (hour >= 18 && hour <= 21 && meals.dinner.length === 0) {
-            const remainingCals = userGoals.calories - calculateNutrition([...meals.breakfast, ...meals.lunch, ...meals.snacks]).calories;
-            suggestions.push({
-                type: 'time-based',
-                icon: '🌆', 
-                title: 'Dinner Planning',
-                message: `You have ${Math.round(remainingCals)} calories for dinner. Consider lean protein with vegetables for better sleep quality.`,
-                priority: 'medium',
-                action: 'suggest-dinner'
-            });
-        }
-
-        return suggestions;
-    };
-
-    const getMealCompletionSuggestions = (meals, hour, isToday) => {
-        const suggestions = [];
-        
-        if (!isToday) return suggestions;
-
-        // Check for missed meals
-        if (hour > 10 && meals.breakfast.length === 0) {
-            suggestions.push({
-                type: 'completion',
-                icon: '⏰',
-                title: 'Breakfast Missed',
-                message: "It's getting late for breakfast. Even a quick protein shake can jumpstart your metabolism.",
-                priority: 'low',
-                action: 'quick-breakfast'
-            });
-        }
-
-        if (hour > 14 && meals.lunch.length === 0) {
-            suggestions.push({
-                type: 'completion',
-                icon: '🚨',
-                title: 'Lunch Alert',
-                message: "You haven't had lunch yet. Your energy and focus may be declining. Quick options: salad with protein, wrap, or leftovers.",
-                priority: 'high',
-                action: 'urgent-lunch'
-            });
-        }
-
-        return suggestions;
-    };
-
-    const handleSuggestionAction = (action) => {
-        // These would trigger specific food suggestions or quick-add options
-        switch (action) {
-            case 'suggest-protein':
-                console.log('Suggesting protein foods...');
-                break;
-            case 'suggest-lowfat':
-                console.log('Suggesting low-fat options...');
-                break;
-            case 'plan-remaining':
-                console.log('Planning remaining meals...');
-                break;
-            default:
-                console.log('Action:', action);
-        }
-    };
-
-    if (!isVisible || suggestions.length === 0) {
-        return null;
-    }
-
-    return React.createElement('div', { className: 'bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 mb-6 border border-purple-200' },
-        React.createElement('div', { className: 'flex justify-between items-center mb-3' },
-            React.createElement('h3', { className: 'text-lg font-bold text-purple-800 flex items-center gap-2' },
-                React.createElement('span', { className: 'text-xl' }, '🤖'),
-                'AI Nutrition Coach'
-            ),
-            React.createElement('button', {
-                onClick: () => setIsVisible(false),
-                className: 'text-purple-600 hover:text-purple-800 text-sm'
-            }, '✕')
-        ),
-
-        React.createElement('div', { className: 'space-y-3' },
-            ...suggestions.map((suggestion, index) =>
-                React.createElement('div', {
-                    key: index,
-                    className: `p-3 rounded-lg border-l-4 ${
-                        suggestion.priority === 'high' ? 'border-red-400 bg-red-50' :
-                        suggestion.priority === 'medium' ? 'border-yellow-400 bg-yellow-50' :
-                        'border-blue-400 bg-blue-50'
-                    }`
-                },
-                    React.createElement('div', { className: 'flex items-start justify-between' },
-                        React.createElement('div', { className: 'flex-1' },
-                            React.createElement('div', { className: 'flex items-center gap-2 mb-1' },
-                                React.createElement('span', { className: 'text-lg' }, suggestion.icon),
-                                React.createElement('h4', { 
-                                    className: `font-semibold ${
-                                        suggestion.priority === 'high' ? 'text-red-700' :
-                                        suggestion.priority === 'medium' ? 'text-yellow-700' :
-                                        'text-blue-700'
-                                    }`
-                                }, suggestion.title)
-                            ),
-                            React.createElement('p', { 
-                                className: `text-sm ${
-                                    suggestion.priority === 'high' ? 'text-red-600' :
-                                    suggestion.priority === 'medium' ? 'text-yellow-600' :
-                                    'text-blue-600'
-                                }`
-                            }, suggestion.message)
-                        ),
-                        suggestion.action && React.createElement('button', {
-                            onClick: () => handleSuggestionAction(suggestion.action),
-                            className: `ml-3 px-3 py-1 text-xs font-semibold rounded-full ${
-                                suggestion.priority === 'high' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
-                                suggestion.priority === 'medium' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' :
-                                'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                            }`
-                        }, 'Help')
-                    )
-                )
-            )
-        )
-    );
-};
-
-// Enhanced Barcode Scanner Component with Camera Support
-const BarcodeScanner = ({ onBarcodeFound, onClose }) => {
-    const [manualUPC, setManualUPC] = React.useState('');
-    const [lookupLoading, setLookupLoading] = React.useState(false);
-    const [lastError, setLastError] = React.useState('');
-    const [cameraActive, setCameraActive] = React.useState(false);
-    const [stream, setStream] = React.useState(null);
+// Enhanced camera/scanner component
+const CameraScanner = ({ onScan, onClose }) => {
+    const [isScanning, setIsScanning] = React.useState(false);
+    const [manualBarcode, setManualBarcode] = React.useState('');
+    const [error, setError] = React.useState('');
     const videoRef = React.useRef(null);
+    const streamRef = React.useRef(null);
 
-    // Start camera for scanning
-    const startCamera = async () => {
-        try {
-            setLastError('');
-            setCameraActive(true);
-
-            // Request camera access
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { 
-                    facingMode: 'environment', // Use back camera on mobile
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                }
-            });
-
-            setStream(mediaStream);
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
-                await videoRef.current.play();
-            }
-
-            // Simulate barcode detection (in real app you'd use a proper library)
-            setTimeout(() => {
-                if (cameraActive) {
-                    // Simulate finding Vital Farms eggs barcode
-                    handleBarcodeDetected('011110602787');
-                }
-            }, 3000);
-
-        } catch (error) {
-            console.error('Camera access failed:', error);
-            setLastError('Camera access denied. Please use manual entry below.');
-            setCameraActive(false);
-        }
-    };
-
-    // Stop camera
-    const stopCamera = () => {
-        setCameraActive(false);
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            setStream(null);
-        }
-        if (videoRef.current) {
-            videoRef.current.srcObject = null;
-        }
-    };
-
-    // Clean up on unmount
     React.useEffect(() => {
         return () => {
-            stopCamera();
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+            }
         };
     }, []);
 
-    const handleBarcodeDetected = async (upc) => {
-        if (!upc) return;
-        
-        setLookupLoading(true);
-        setLastError('');
-        stopCamera(); // Stop camera when barcode found
-        
+    const startCamera = async () => {
         try {
-            // Try enhanced lookup first
-            let productData = await lookupBarcodeEnhanced(upc);
+            setError('');
+            setIsScanning(true);
             
-            // Fallback to original lookup
-            if (!productData) {
-                productData = await lookupBarcode(upc);
-            }
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment' }
+            });
             
-            if (productData) {
-                // Add unique ID and format for meals system
-                const foodItem = {
-                    id: Date.now(),
-                    fdcId: productData.upc || productData.code, // Use UPC as ID
-                    name: `${productData.brand ? productData.brand + ' ' : ''}${productData.name}`,
-                    servingSize: productData.servingSize || 100,
-                    calories: productData.calories || 0,
-                    protein: productData.protein || 0,
-                    carbs: productData.carbs || 0,
-                    fat: productData.fat || 0,
-                    fiber: productData.fiber || 0,
-                    source: productData.source,
-                    upc: productData.upc || productData.code,
-                    image: productData.image || productData.imageUrl
-                };
-                
-                onBarcodeFound(foodItem);
-            } else {
-                setLastError('Product not found in database. Try manual search.');
+            streamRef.current = stream;
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
             }
-        } catch (error) {
-            console.error('Barcode lookup error:', error);
-            setLastError('Failed to lookup product. Try manual search.');
-        } finally {
-            setLookupLoading(false);
+        } catch (err) {
+            console.error('Camera access failed:', err);
+            setError('Camera access denied. Please allow camera permission and try again.');
+            setIsScanning(false);
         }
     };
 
-    const handleManualLookup = async () => {
-        if (!manualUPC || manualUPC.length < 8) {
-            setLastError('Please enter a valid UPC/barcode');
-            return;
+    const stopCamera = () => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
         }
-        
-        await handleBarcodeDetected(manualUPC);
+        setIsScanning(false);
     };
 
-    return React.createElement('div', { 
-        className: 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50' 
-    },
-        React.createElement('div', { 
-            className: 'bg-white rounded-xl w-full max-w-md overflow-hidden' 
-        },
-            // Header
-            React.createElement('div', { className: 'bg-gradient-to-r from-orange-500 to-red-500 text-white p-4' },
-                React.createElement('div', { className: 'flex justify-between items-center' },
-                    React.createElement('h3', { className: 'text-xl font-bold' }, '📱 Barcode Scanner'),
-                    React.createElement('button', { 
-                        onClick: () => {
-                            stopCamera();
-                            onClose();
-                        },
-                        className: 'text-white hover:text-gray-200 text-xl font-bold' 
-                    }, '×')
-                )
-            ),
+    const simulateScan = () => {
+        const mockBarcodes = [
+            '0123456789012',
+            '0737628064502', // Cheerios
+            '0016000275157', // Coca-Cola
+            '0041196891171'  // Kraft Mac & Cheese
+        ];
+        const randomBarcode = mockBarcodes[Math.floor(Math.random() * mockBarcodes.length)];
+        onScan(randomBarcode);
+        onClose();
+    };
 
-            // Content
-            React.createElement('div', { className: 'p-4 space-y-4' },
-                
-                // Camera Section
-                React.createElement('div', { className: 'space-y-3' },
-                    React.createElement('h4', { className: 'font-semibold text-gray-800' }, '📷 Camera Scanner'),
-                    
-                    // Video Element
-                    React.createElement('div', { className: 'relative bg-gray-900 rounded-lg overflow-hidden' },
-                        React.createElement('video', {
-                            ref: videoRef,
-                            className: 'w-full h-48 object-cover',
-                            playsInline: true,
-                            muted: true
-                        }),
-                        
-                        // Scanning Overlay
-                        React.createElement('div', { className: 'absolute inset-0 flex items-center justify-center pointer-events-none' },
-                            React.createElement('div', { className: 'border-2 border-red-500 w-32 h-20 rounded-lg relative' },
-                                React.createElement('div', { className: 'absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-red-500' }),
-                                React.createElement('div', { className: 'absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-red-500' }),
-                                React.createElement('div', { className: 'absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-red-500' }),
-                                React.createElement('div', { className: 'absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-red-500' })
-                            )
-                        ),
-                        
-                        // Status Overlay
-                        !cameraActive && React.createElement('div', { className: 'absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75' },
-                            React.createElement('p', { className: 'text-white text-center' }, 'Camera not active')
-                        )
-                    ),
-                    
-                    // Camera Controls
-                    React.createElement('div', { className: 'flex gap-2' },
-                        React.createElement('button', {
-                            onClick: startCamera,
-                            disabled: cameraActive || lookupLoading,
-                            className: 'flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white py-2 px-4 rounded-lg font-semibold'
-                        }, cameraActive ? '📹 Camera Active' : '📷 Start Camera'),
-                        
-                        React.createElement('button', {
-                            onClick: stopCamera,
-                            disabled: !cameraActive,
-                            className: 'flex-1 bg-red-500 hover:bg-red-600 disabled:bg-gray-300 text-white py-2 px-4 rounded-lg font-semibold'
-                        }, '⏹️ Stop Camera')
-                    )
-                ),
-
-                // Manual Entry Section (keep your existing code)
-                React.createElement('div', { className: 'border-t border-gray-200 pt-4 space-y-3' },
-                    React.createElement('h4', { className: 'font-semibold text-gray-800' }, '📝 Manual Entry'),
-                    React.createElement('input', {
-                        type: 'text',
-                        placeholder: 'Enter UPC/barcode manually...',
-                        value: manualUPC,
-                        onChange: (e) => setManualUPC(e.target.value),
-                        className: 'w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500'
-                    }),
-                    React.createElement('button', {
-                        onClick: handleManualLookup,
-                        disabled: lookupLoading || !manualUPC,
-                        className: 'w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white py-3 px-4 rounded-lg font-semibold flex items-center justify-center gap-2'
-                    },
-                        lookupLoading ? 
-                            React.createElement('div', { className: 'animate-spin rounded-full h-4 w-4 border-b-2 border-white' }) :
-                            React.createElement('span', null, '🔍'),
-                        lookupLoading ? 'Looking up...' : 'Lookup Product'
-                    )
-                ),
-
-                // Error Display (keep your existing code)
-                lastError && React.createElement('div', { 
-                    className: 'bg-red-50 border border-red-200 rounded-lg p-3' 
-                },
-                    React.createElement('p', { className: 'text-red-700 text-sm' }, lastError)
-                ),
-
-                // Instructions (keep your existing code)
-                React.createElement('div', { className: 'bg-blue-50 border border-blue-200 rounded-lg p-3' },
-                    React.createElement('h5', { className: 'font-semibold text-blue-800 mb-2' }, '💡 Tips:'),
-                    React.createElement('ul', { className: 'text-sm text-blue-700 space-y-1' },
-                        React.createElement('li', null, '• Use camera to scan barcode automatically'),
-                        React.createElement('li', null, '• Or find barcode on food packaging and type numbers'),
-                        React.createElement('li', null, '• Most food products have UPC codes'),
-                        React.createElement('li', null, '• If not found, try manual search instead')
-                    )
-                )
-            )
-        )
-    );
-};
-
-// Enhanced Food Search Component
-const EnhancedFoodSearch = ({ onAddFood, onClose }) => {
-    const [activeTab, setActiveTab] = React.useState('search');
-    const [query, setQuery] = React.useState('');
-    const [results, setResults] = React.useState([]);
-    const [loading, setLoading] = React.useState(false);
-    const [recentFoods, setRecentFoods] = React.useState(loadRecentFoods());
-    const [showBarcodeScanner, setShowBarcodeScanner] = React.useState(false);
-
-    React.useEffect(() => {
-        const searchTimeout = setTimeout(async () => {
-            if (query.length >= 2) {
-                setLoading(true);
-const foods = await searchFoodsEnhanced(query);                
-                setResults(foods);
-                setLoading(false);
-            } else {
-                setResults([]);
-            }
-        }, 300);
-
-        return () => clearTimeout(searchTimeout);
-    }, [query]);
-
-    const handleAddFood = async (food, servingSize = 100) => {
-    // If it's a barcode scanned item or enhanced search result, use it directly
-    if (food.upc || food.source || (food.nutrients && typeof food.nutrients === 'object')) {
-        // Handle enhanced food items (barcode, Open Food Facts, etc.)
-        let foodItem;
-        
-        if (food.nutrients) {
-            // Enhanced search result with nutrients object
-            foodItem = {
-                id: Date.now(),
-                fdcId: food.fdcId,
-                name: food.description || food.name,
-                servingSize: servingSize,
-                calories: food.nutrients.calories || 0,
-                protein: food.nutrients.protein || 0,
-                carbs: food.nutrients.carbs || 0,
-                fat: food.nutrients.fat || 0,
-                fiber: food.nutrients.fiber || 0
-            };
-        } else {
-            // Barcode scanned item with direct nutrition values
-            foodItem = {
-                id: Date.now(),
-                fdcId: food.fdcId || food.upc,
-                name: food.name || food.description,
-                servingSize: servingSize,
-                calories: food.calories || 0,
-                protein: food.protein || 0,
-                carbs: food.carbs || 0,
-                fat: food.fat || 0,
-                fiber: food.fiber || 0
-            };
+    const handleManualEntry = () => {
+        if (manualBarcode.trim()) {
+            onScan(manualBarcode.trim());
+            onClose();
         }
-        
-        const updatedRecent = [foodItem, ...recentFoods.filter(f => f.fdcId !== foodItem.fdcId)];
-        setRecentFoods(updatedRecent);
-        saveRecentFoods(updatedRecent);
-        onAddFood(foodItem);
-        onClose();
-        return;
-    }
-
-    // Otherwise, use existing USDA lookup logic for original USDA results
-    const details = await getFoodDetails(food.fdcId);
-    if (details) {
-        const nutrients = extractNutrients(details);
-        const foodItem = {
-            id: Date.now(),
-            fdcId: food.fdcId,
-            name: food.description,
-            servingSize: servingSize,
-            ...nutrients
-        };
-        
-        const updatedRecent = [foodItem, ...recentFoods.filter(f => f.fdcId !== food.fdcId)];
-        setRecentFoods(updatedRecent);
-        saveRecentFoods(updatedRecent);
-        
-        onAddFood(foodItem);
-        onClose();
-    }
-};
-    const handleBarcodeFound = (foodItem) => {
-        setShowBarcodeScanner(false);
-        handleAddFood(foodItem);
     };
 
     return React.createElement('div', { 
         className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50' 
     },
         React.createElement('div', { 
-            className: 'bg-white rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col' 
+            className: 'bg-white rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto flex flex-col' 
         },
             React.createElement('div', { className: 'flex justify-between items-center mb-4' },
-                React.createElement('h3', { className: 'text-xl font-bold text-gradient' }, 'Add Food'),
+                React.createElement('h3', { className: 'text-xl font-bold text-gray-800' }, 'Barcode Scanner'),
                 React.createElement('button', { 
                     onClick: onClose,
                     className: 'text-gray-500 hover:text-gray-700 text-xl font-bold' 
                 }, '×')
             ),
 
-            // Tab Navigation
-            React.createElement('div', { className: 'flex gap-2 mb-4 border-b border-gray-200' },
-                React.createElement('button', {
-                    onClick: () => setActiveTab('search'),
-                    className: `px-4 py-2 font-semibold transition-colors ${
-                        activeTab === 'search' 
-                            ? 'border-b-2 border-orange-500 text-orange-600' 
-                            : 'text-gray-600 hover:text-gray-800'
-                    }`
-                }, '🔍 Search'),
-                React.createElement('button', {
-                    onClick: () => setActiveTab('barcode'),
-                    className: `px-4 py-2 font-semibold transition-colors ${
-                        activeTab === 'barcode' 
-                            ? 'border-b-2 border-orange-500 text-orange-600' 
-                            : 'text-gray-600 hover:text-gray-800'
-                    }`
-                }, '📱 Barcode'),
-                React.createElement('button', {
-                    onClick: () => setActiveTab('recent'),
-                    className: `px-4 py-2 font-semibold transition-colors ${
-                        activeTab === 'recent' 
-                            ? 'border-b-2 border-orange-500 text-orange-600' 
-                            : 'text-gray-600 hover:text-gray-800'
-                    }`
-                }, '⏰ Recent')
+            React.createElement('div', { className: 'mb-4 p-3 bg-blue-50 rounded-lg' },
+                React.createElement('p', { className: 'text-blue-800 text-sm' },
+                    '📷 Point camera at barcode or enter manually below'
+                )
             ),
 
-            // Tab Content
-            React.createElement('div', { className: 'flex-1 overflow-y-auto' },
-                
-                // Search Tab
-                activeTab === 'search' && React.createElement('div', null,
-                    React.createElement('input', {
-                        type: 'text',
-                        placeholder: 'Search for foods...',
-                        value: query,
-                        onChange: (e) => setQuery(e.target.value),
-                        className: 'w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-orange-500'
+            !isScanning ? 
+                React.createElement('div', { className: 'text-center space-y-3' },
+                    React.createElement('div', { className: 'w-32 h-32 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4' },
+                        React.createElement('span', { className: 'text-4xl' }, '📷')
+                    ),
+                    React.createElement('button', {
+                        onClick: startCamera,
+                        className: 'w-full bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white px-6 py-3 rounded-lg font-semibold mb-2 transition-all duration-200'
+                    }, '📷 Start Camera'),
+                    
+                    React.createElement('button', {
+                        onClick: simulateScan,
+                        className: 'w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200'
+                    }, '🎯 Demo Scan (Random Product)')
+                ) :
+                React.createElement('div', { className: 'relative' },
+                    React.createElement('video', {
+                        ref: videoRef,
+                        autoPlay: true,
+                        playsInline: true,
+                        className: 'w-full h-48 bg-black rounded-lg object-cover'
                     }),
-
-                    loading && React.createElement('div', { className: 'text-center py-8' },
-                        React.createElement('div', { className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto' })
+                    React.createElement('div', { className: 'absolute inset-0 flex items-center justify-center' },
+                        React.createElement('div', { className: 'w-32 h-20 border-2 border-blue-500 rounded-lg' })
                     ),
-
-                    !loading && results.length > 0 && React.createElement('div', { className: 'space-y-2' },
-                        ...results.map(food =>
-                            React.createElement('div', { 
-                                key: food.fdcId,
-                                className: 'flex justify-between items-center p-3 border border-gray-200 rounded-lg hover:border-orange-300 cursor-pointer'
-                            },
-                                React.createElement('div', null,
-                                    React.createElement('div', { className: 'font-semibold text-gray-800' }, food.description),
-                                    React.createElement('div', { className: 'text-sm text-gray-600' }, food.brandOwner || 'Generic Food')
-                                ),
-                                React.createElement('button', { 
-                                    onClick: () => handleAddFood(food),
-                                    className: 'bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-all' 
-                                }, 'Add')
-                            )
+                    React.createElement('div', { className: 'text-center mt-3' },
+                        React.createElement('p', { className: 'text-sm text-gray-600 mb-3' }, 'Point camera at barcode'),
+                        React.createElement('div', { className: 'flex gap-2 justify-center' },
+                            React.createElement('button', {
+                                onClick: simulateScan,
+                                className: 'bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white px-4 py-2 rounded-lg'
+                            }, 'Simulate Scan'),
+                            React.createElement('button', {
+                                onClick: stopCamera,
+                                className: 'bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg'
+                            }, 'Stop')
                         )
-                    ),
-
-                    !loading && query.length >= 2 && results.length === 0 && 
-                    React.createElement('div', { className: 'text-center py-8 text-gray-500' }, 'No foods found. Try a different search term.')
-                ),
-
-                // Barcode Tab
-                activeTab === 'barcode' && React.createElement('div', { className: 'space-y-4' },
-                    React.createElement('div', { className: 'text-center py-8' },
-                        React.createElement('div', { className: 'text-6xl mb-4' }, '📱'),
-                        React.createElement('h4', { className: 'text-xl font-bold text-gray-800 mb-2' }, 'Barcode Scanner'),
-                        React.createElement('p', { className: 'text-gray-600 mb-6' }, 
-                            'Quickly add foods by scanning their barcode'
-                        ),
-                        React.createElement('button', {
-                            onClick: () => setShowBarcodeScanner(true),
-                            className: 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg transform hover:scale-105 transition-all'
-                        }, '📷 Open Scanner')
                     )
                 ),
 
-                // Recent Tab
-                activeTab === 'recent' && React.createElement('div', null,
-                    recentFoods.length === 0 ? 
-                        React.createElement('div', { className: 'text-center py-8 text-gray-500' },
-                            React.createElement('div', { className: 'text-4xl mb-2' }, '🕐'),
-                            'No recent foods yet'
-                        ) :
-                        React.createElement('div', { className: 'space-y-2' },
-                            ...recentFoods.map(food =>
-                                React.createElement('div', { 
-                                    key: food.fdcId || food.id,
-                                    className: 'flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer'
-                                },
-                                    React.createElement('div', null,
-                                        React.createElement('div', { className: 'font-semibold text-gray-800' }, food.name),
-                                        React.createElement('div', { className: 'text-sm text-gray-600' }, 
-                                            `${Math.round(food.calories)} cal per 100g${food.source ? ` • ${food.source}` : ''}`
-                                        )
-                                    ),
-                                    React.createElement('button', { 
-                                        onClick: () => handleAddFood(food),
-                                        className: 'bg-orange-500 text-white px-3 py-1 rounded-lg text-sm' 
-                                    }, 'Add')
+            error && React.createElement('div', { className: 'bg-red-50 border border-red-200 rounded-lg p-3 mb-4' },
+                React.createElement('p', { className: 'text-red-700 text-sm' }, error)
+            ),
+
+            React.createElement('div', { className: 'border-t pt-4 mt-4' },
+                React.createElement('h4', { className: 'font-semibold text-gray-700 mb-3' }, 'Or enter manually:'),
+                React.createElement('div', { className: 'flex gap-2' },
+                    React.createElement('input', {
+                        type: 'text',
+                        value: manualBarcode,
+                        onChange: (e) => setManualBarcode(e.target.value),
+                        placeholder: 'Enter barcode number',
+                        className: 'flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200'
+                    }),
+                    React.createElement('button', {
+                        onClick: handleManualEntry,
+                        disabled: !manualBarcode.trim(),
+                        className: 'bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg'
+                    }, 'Add')
+                )
+            )
+        )
+    );
+};
+
+// Enhanced food search with better UX
+const FoodSearchComponent = ({ onAddFood, mealType }) => {
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const [searchResults, setSearchResults] = React.useState([]);
+    const [loading, setLoading] = React.useState(false);
+    const [showScanner, setShowScanner] = React.useState(false);
+    const [nutritionData, setNutritionData] = React.useState(null);
+
+    const handleSearch = async (query) => {
+        if (query.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const results = await searchFoods(query);
+            
+            if (results.length === 0) {
+                const fallbackKeys = Object.keys(FALLBACK_FOODS).filter(key => 
+                    key.toLowerCase().includes(query.toLowerCase())
+                );
+                
+                const fallbackResults = fallbackKeys.map(key => ({
+                    fdcId: `fallback_${key}`,
+                    description: key.charAt(0).toUpperCase() + key.slice(1),
+                    brandOwner: 'Habbt Database',
+                    nutrients: FALLBACK_FOODS[key],
+                    dataType: 'Fallback',
+                    source: 'fallback'
+                }));
+                
+                setSearchResults(fallbackResults);
+            } else {
+                setSearchResults(results);
+            }
+        } catch (error) {
+            console.error('Search failed:', error);
+            setSearchResults([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleBarcodeScan = async (barcode) => {
+        setLoading(true);
+        try {
+            const product = await lookupBarcode(barcode);
+            if (product) {
+                setSearchResults([product]);
+                setSearchQuery(product.description);
+            } else {
+                alert('Product not found. Please try manual entry.');
+            }
+        } catch (error) {
+            console.error('Barcode lookup failed:', error);
+            alert('Barcode lookup failed. Please try manual entry.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    React.useEffect(() => {
+        const debounceTimer = setTimeout(() => {
+            handleSearch(searchQuery);
+        }, 300);
+
+        return () => clearTimeout(debounceTimer);
+    }, [searchQuery]);
+
+    const addFood = (food, servingSize = 100) => {
+        const foodItem = {
+            id: Date.now() + Math.random(),
+            name: food.description,
+            brand: food.brandOwner || '',
+            calories: Math.round((food.nutrients.calories || 0) * (servingSize / 100)),
+            protein: Math.round((food.nutrients.protein || 0) * (servingSize / 100) * 10) / 10,
+            carbs: Math.round((food.nutrients.carbs || 0) * (servingSize / 100) * 10) / 10,
+            fat: Math.round((food.nutrients.fat || 0) * (servingSize / 100) * 10) / 10,
+            fiber: Math.round((food.nutrients.fiber || 0) * (servingSize / 100) * 10) / 10,
+            sodium: Math.round((food.nutrients.sodium || 0) * (servingSize / 100)),
+            sugar: Math.round((food.nutrients.sugar || 0) * (servingSize / 100) * 10) / 10,
+            servingSize: servingSize,
+            fdcId: food.fdcId,
+            source: food.source || 'usda',
+            barcode: food.barcode || null,
+            timestamp: new Date().toISOString()
+        };
+
+        onAddFood(mealType, foodItem);
+        setSearchQuery('');
+        setSearchResults([]);
+    };
+
+    return React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-white/20' },
+        React.createElement('div', { className: 'flex flex-col space-y-4' },
+            React.createElement('div', { className: 'flex space-x-2' },
+                React.createElement('input', {
+                    type: 'text',
+                    value: searchQuery,
+                    onChange: (e) => setSearchQuery(e.target.value),
+                    placeholder: 'Search foods (e.g., chicken breast, apple)...',
+                    className: 'flex-1 px-4 py-3 bg-white/70 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 font-medium'
+                }),
+                React.createElement('button', {
+                    onClick: () => setShowScanner(true),
+                    className: 'px-4 py-3 bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white rounded-xl font-semibold shadow-lg transform hover:scale-105 transition-all duration-200'
+                }, '📷')
+            ),
+
+            loading && React.createElement('div', { className: 'text-center py-4' },
+                React.createElement('div', { className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto' }),
+                React.createElement('p', { className: 'text-gray-600 mt-2' }, 'Searching...')
+            ),
+
+            searchResults.length > 0 && React.createElement('div', { className: 'max-h-80 overflow-y-auto space-y-2' },
+                ...searchResults.map(food => 
+                    React.createElement('div', { 
+                        key: food.fdcId,
+                        className: 'border border-gray-200 rounded-xl p-3 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 cursor-pointer'
+                    },
+                        React.createElement('div', { className: 'flex justify-between items-start' },
+                            React.createElement('div', { className: 'flex-1' },
+                                React.createElement('h4', { className: 'font-semibold text-gray-800' }, food.description),
+                                food.brandOwner && React.createElement('p', { className: 'text-sm text-gray-600' }, food.brandOwner),
+                                React.createElement('div', { className: 'text-xs text-gray-500 mt-1' },
+                                    `${Math.round(food.nutrients.calories || 0)} cal, ${Math.round(food.nutrients.protein || 0)}g protein per 100g`
+                                ),
+                                React.createElement('div', { className: 'text-xs font-medium mt-1' },
+                                    React.createElement('span', { 
+                                        className: `px-2 py-1 rounded-full ${
+                                            food.source === 'usda' ? 'bg-green-100 text-green-700' :
+                                            food.source === 'openfoodfacts' ? 'bg-blue-100 text-blue-700' :
+                                            'bg-gray-100 text-gray-700'
+                                        }`
+                                    }, food.dataType || 'Unknown')
                                 )
-                            )
+                            ),
+                            React.createElement('button', {
+                                onClick: () => addFood(food),
+                                className: 'ml-4 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-sm rounded-lg font-semibold shadow-md transform hover:scale-105 transition-all duration-200'
+                            }, 'Add')
                         )
+                    )
                 )
             ),
 
-            // Barcode Scanner Modal
-            showBarcodeScanner && React.createElement(BarcodeScanner, {
-                onBarcodeFound: handleBarcodeFound,
-                onClose: () => setShowBarcodeScanner(false)
+            showScanner && React.createElement(CameraScanner, {
+                onScan: handleBarcodeScan,
+                onClose: () => setShowScanner(false)
             })
         )
     );
 };
 
-// Food Item Component - CORRECTED VERSION
-const FoodItem = ({ food, onRemove, onUpdateServing }) => {
-    // Helper function to get calories from multiple possible fields
-    // Enhanced getCalories function with macro-based calculation
-const getCalories = (food) => {
-    // First, try to get calories from various possible fields
-    let calories = food.calories || 
-                  food.energy || 
-                  food.kcal || 
-                  food.energy_kcal || 
-                  (food.nutrients && food.nutrients.calories) ||
-                  (food.nutrients && food.nutrients.energy) ||
-                  (food.nutriments && food.nutriments['energy-kcal']) ||
-                  (food.nutriments && food.nutriments.energy_kcal) ||
-                  0;
-    
-    // If no calorie data found, calculate from macros
-    if (calories === 0 && (food.protein || food.carbs || food.fat)) {
-        const protein = food.protein || 0;
-        const carbs = food.carbs || 0;
-        const fat = food.fat || 0;
-        
-        // Standard calorie calculation: Protein=4cal/g, Carbs=4cal/g, Fat=9cal/g
-        calories = (protein * 4) + (carbs * 4) + (fat * 9);
-        
-        console.log('🔢 Calculated calories from macros:', {
-            protein: `${protein}g × 4 = ${protein * 4} cal`,
-            carbs: `${carbs}g × 4 = ${carbs * 4} cal`, 
-            fat: `${fat}g × 9 = ${fat * 9} cal`,
-            total: `${calories} calories`
-        });
-    }
-    
-    console.log('🔍 Calorie lookup for', food.name, ':', {
-        food_calories: food.calories,
-        food_energy: food.energy,
-        final_calories: calories,
-        calculated: calories > (food.calories || 0)
-    });
-    
-    return calories;
-};
-
-    const [serving, setServing] = React.useState(1);
-    
-    const handleServingChange = (newServing) => {
-        setServing(newServing);
-        onUpdateServing(food.id, newServing);
+// Enhanced macro display with better visuals
+const MacroDisplay = ({ meals }) => {
+    const calculateTotals = () => {
+        const allFoods = [...meals.breakfast, ...meals.lunch, ...meals.dinner, ...meals.snacks];
+        return allFoods.reduce((totals, food) => ({
+            calories: totals.calories + (food.calories || 0),
+            protein: totals.protein + (food.protein || 0),
+            carbs: totals.carbs + (food.carbs || 0),
+            fat: totals.fat + (food.fat || 0),
+            fiber: totals.fiber + (food.fiber || 0),
+            sodium: totals.sodium + (food.sodium || 0),
+            sugar: totals.sugar + (food.sugar || 0)
+        }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sodium: 0, sugar: 0 });
     };
 
-    const multiplier = (serving * (food.servingSize || 100)) / 100;
+    const totals = calculateTotals();
+    const goals = getGoals();
 
-    return React.createElement('div', { className: 'bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow' },
-        React.createElement('div', { className: 'flex justify-between items-start mb-2' },
-            React.createElement('h4', { className: 'font-semibold text-gray-800 flex-1' }, food.name),
-            React.createElement('button', { 
-                onClick: () => onRemove(food.id),
-                className: 'text-red-500 hover:text-red-700 ml-2' 
-            }, '×')
-        ),
-        React.createElement('div', { className: 'flex items-center gap-4 mb-3' },
-            React.createElement('input', {
-                type: 'number',
-                value: serving,
-                onChange: (e) => handleServingChange(Number(e.target.value)),
-                className: 'w-20 p-1 border border-gray-300 rounded text-sm',
-                min: '0.1',
-                step: '0.1'
-            }),
-            React.createElement('span', { className: 'text-sm text-gray-600' }, 'servings')
-        ),
-        React.createElement('div', { className: 'grid grid-cols-2 gap-4 text-sm' },
-            React.createElement('div', null,
-                React.createElement('span', { className: 'text-gray-600' }, 'Calories: '),
-                React.createElement('span', { className: 'font-semibold' }, Math.round(getCalories(food) * multiplier))
-            ),
-            React.createElement('div', null,
-                React.createElement('span', { className: 'text-gray-600' }, 'Protein: '),
-                React.createElement('span', { className: 'font-semibold' }, `${Math.round(food.protein * multiplier)}g`)
-            ),
-            React.createElement('div', null,
-                React.createElement('span', { className: 'text-gray-600' }, 'Carbs: '),
-                React.createElement('span', { className: 'font-semibold' }, `${Math.round(food.carbs * multiplier)}g`)
-            ),
-            React.createElement('div', null,
-                React.createElement('span', { className: 'text-gray-600' }, 'Fat: '),
-                React.createElement('span', { className: 'font-semibold' }, `${Math.round(food.fat * multiplier)}g`)
-            )
-        )
-    );
-};
-
-// Progress Bar Component
-const ProgressBar = ({ label, current, goal, unit, color = 'orange' }) => {
-    const percentage = goal > 0 ? Math.min((current / goal) * 100, 100) : 0;
-    const colorClasses = {
-        orange: 'bg-orange-500',
-        red: 'bg-red-500',
-        green: 'bg-green-500',
-        blue: 'bg-blue-500'
+    const getProgressColor = (current, goal) => {
+        if (!goal) return 'bg-gray-300';
+        const percentage = (current / goal) * 100;
+        if (percentage < 50) return 'bg-red-400';
+        if (percentage < 80) return 'bg-yellow-400';
+        if (percentage <= 110) return 'bg-green-400';
+        return 'bg-blue-400';
     };
 
-    return React.createElement('div', { className: 'mb-4' },
-        React.createElement('div', { className: 'flex justify-between items-center mb-2' },
-            React.createElement('span', { className: 'font-semibold text-gray-700' }, label),
-            React.createElement('span', { className: 'text-sm text-gray-600' }, 
-                `${Math.round(current)}${unit} / ${Math.round(goal)}${unit}`
-            )
+    const getProgressPercentage = (current, goal) => {
+        if (!goal) return 0;
+        return Math.min((current / goal) * 100, 100);
+    };
+
+    return React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20' },
+        React.createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4 flex items-center' },
+            React.createElement('span', { className: 'mr-2 text-2xl' }, '📊'),
+            'Daily Nutrition Summary'
         ),
-        React.createElement('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
-            React.createElement('div', { 
-                className: `h-3 rounded-full transition-all duration-500 ${colorClasses[color]}`,
-                style: { width: `${percentage}%` }
-            })
-        )
-    );
-};
 
-// Meal Section Component
-const MealSection = ({ title, foods, onAddFood, onRemoveFood, onUpdateServing, icon }) => {
-    const [showSearch, setShowSearch] = React.useState(false);
-    const totalNutrition = calculateNutrition(foods);
-
-    return React.createElement('div', { className: 'bg-white rounded-xl p-6 shadow-lg border border-gray-100' },
-        React.createElement('div', { className: 'flex justify-between items-center mb-4' },
-            React.createElement('div', { className: 'flex items-center gap-3' },
-                React.createElement('span', { className: 'text-2xl' }, icon),
-                React.createElement('h3', { className: 'text-xl font-bold text-gray-800' }, title),
-                foods.length > 0 && React.createElement('span', { className: 'bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-sm font-semibold' }, 
-                    `${Math.round(totalNutrition.calories)} cal`
+        React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mb-6' },
+            React.createElement('div', { className: 'text-center p-4 bg-gradient-to-br from-blue-50 to-teal-50 rounded-xl border border-blue-200' },
+                React.createElement('div', { className: 'text-2xl font-bold text-blue-600' }, Math.round(totals.calories)),
+                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Calories'),
+                goals.calories && React.createElement('div', { className: 'text-xs text-blue-600 mt-1' }, 
+                    `Goal: ${goals.calories}`
                 )
             ),
-            React.createElement('button', { 
-                onClick: () => setShowSearch(true),
-                className: 'bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-all font-semibold' 
-            }, '+ Add Food')
+            React.createElement('div', { className: 'text-center p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-xl border border-red-200' },
+                React.createElement('div', { className: 'text-2xl font-bold text-red-600' }, `${Math.round(totals.protein)}g`),
+                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Protein'),
+                goals.protein && React.createElement('div', { className: 'text-xs text-red-600 mt-1' }, 
+                    `Goal: ${goals.protein}g`
+                )
+            ),
+            React.createElement('div', { className: 'text-center p-4 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border border-yellow-200' },
+                React.createElement('div', { className: 'text-2xl font-bold text-yellow-600' }, `${Math.round(totals.carbs)}g`),
+                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Carbs'),
+                goals.carbs && React.createElement('div', { className: 'text-xs text-yellow-600 mt-1' }, 
+                    `Goal: ${goals.carbs}g`
+                )
+            ),
+            React.createElement('div', { className: 'text-center p-4 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border border-purple-200' },
+                React.createElement('div', { className: 'text-2xl font-bold text-purple-600' }, `${Math.round(totals.fat)}g`),
+                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Fat'),
+                goals.fat && React.createElement('div', { className: 'text-xs text-purple-600 mt-1' }, 
+                    `Goal: ${goals.fat}g`
+                )
+            )
         ),
 
-        foods.length === 0 ? 
-            React.createElement('div', { className: 'text-center py-8 text-gray-400' },
-                React.createElement('p', null, 'No foods logged yet'),
-                React.createElement('p', { className: 'text-sm' }, 'Tap "Add Food" to get started')
-            ) :
-            React.createElement('div', { className: 'space-y-3' },
-                ...foods.map(food =>
-                    React.createElement(FoodItem, {
-                        key: food.id,
-                        food: food,
-                        onRemove: onRemoveFood,
-                        onUpdateServing: onUpdateServing
+        // Progress bars
+        goals.calories && React.createElement('div', { className: 'space-y-3' },
+            React.createElement('div', null,
+                React.createElement('div', { className: 'flex justify-between text-sm mb-1' },
+                    React.createElement('span', null, 'Calories'),
+                    React.createElement('span', null, `${Math.round(totals.calories)}/${goals.calories}`)
+                ),
+                React.createElement('div', { className: 'w-full bg-gray-200 rounded-full h-2' },
+                    React.createElement('div', {
+                        className: `h-2 rounded-full transition-all duration-500 ${getProgressColor(totals.calories, goals.calories)}`,
+                        style: { width: `${getProgressPercentage(totals.calories, goals.calories)}%` }
                     })
                 )
             ),
+            
+            goals.protein && React.createElement('div', null,
+                React.createElement('div', { className: 'flex justify-between text-sm mb-1' },
+                    React.createElement('span', null, 'Protein'),
+                    React.createElement('span', null, `${Math.round(totals.protein)}g/${goals.protein}g`)
+                ),
+                React.createElement('div', { className: 'w-full bg-gray-200 rounded-full h-2' },
+                    React.createElement('div', {
+                        className: `h-2 rounded-full transition-all duration-500 ${getProgressColor(totals.protein, goals.protein)}`,
+                        style: { width: `${getProgressPercentage(totals.protein, goals.protein)}%` }
+                    })
+                )
+            )
+        ),
 
-        showSearch && React.createElement(EnhancedFoodSearch, {
-            onAddFood: (food) => {
-                onAddFood(food);
-                setShowSearch(false);
-            },
-            onClose: () => setShowSearch(false)
-        })
+        React.createElement('div', { className: 'mt-4 pt-4 border-t border-gray-200' },
+            React.createElement('div', { className: 'grid grid-cols-3 gap-4 text-center text-sm' },
+                React.createElement('div', null,
+                    React.createElement('div', { className: 'font-semibold text-green-600' }, `${Math.round(totals.fiber)}g`),
+                    React.createElement('div', { className: 'text-gray-600' }, 'Fiber')
+                ),
+                React.createElement('div', null,
+                    React.createElement('div', { className: 'font-semibold text-cyan-600' }, `${Math.round(totals.sodium)}mg`),
+                    React.createElement('div', { className: 'text-gray-600' }, 'Sodium')
+                ),
+                React.createElement('div', null,
+                    React.createElement('div', { className: 'font-semibold text-pink-600' }, `${Math.round(totals.sugar)}g`),
+                    React.createElement('div', { className: 'text-gray-600' }, 'Sugar')
+                )
+            )
+        )
     );
 };
 
-// Main Meals Component
-const MealsTab = () => {
-    const [currentDate, setCurrentDate] = React.useState(new Date());
-    const [meals, setMeals] = React.useState(loadMealData(formatDate(currentDate)));
+// Enhanced meal section with better styling
+const MealSection = ({ title, foods, onRemoveFood, onAddFood, mealType, emoji }) => {
+    const [showSearch, setShowSearch] = React.useState(false);
 
-    // Load user goals safely from localStorage (fallback to defaults)
-const loadUserGoals = () => {
-    const defaultGoals = {
-        calories: 2000,
-        protein: 150,
-        carbs: 250,
-        fat: 67
-    };
+    const mealCalories = foods.reduce((sum, food) => sum + (food.calories || 0), 0);
+    const mealProtein = foods.reduce((sum, food) => sum + (food.protein || 0), 0);
 
-    if (isLocalStorageAvailable()) {
-        try {
-            // Try multiple possible keys and formats
-            let data = localStorage.getItem('fueliq_user_goals');
-            if (!data) {
-                data = localStorage.getItem('fueliq_user_profile');
-            }
-            
-            if (data) {
-                const parsed = JSON.parse(data);
-                
-                // Handle different possible formats
-                const goals = {
-                    calories: parsed.calories || parsed.dailyCalories || defaultGoals.calories,
-                    protein: parsed.protein || defaultGoals.protein,
-                    carbs: parsed.carbs || parsed.carbohydrates || defaultGoals.carbs,
-                    fat: parsed.fat || defaultGoals.fat
-                };
-                
-                console.log('✅ Loaded user goals:', goals);
-                return goals;
-            }
-            
-            return defaultGoals;
-        } catch (e) {
-            console.warn('Failed to load user goals from localStorage:', e);
-            return defaultGoals;
-        }
-    } else {
-        return defaultGoals;
+    return React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 overflow-hidden' },
+        React.createElement('div', { className: 'bg-gradient-to-r from-blue-500 via-blue-600 to-teal-600 text-white p-4' },
+            React.createElement('div', { className: 'flex justify-between items-center' },
+                React.createElement('h3', { className: 'text-lg font-bold flex items-center' },
+                    React.createElement('span', { className: 'mr-2 text-xl' }, emoji),
+                    title
+                ),
+                React.createElement('div', { className: 'text-right text-sm' },
+                    React.createElement('div', null, `${Math.round(mealCalories)} cal`),
+                    React.createElement('div', null, `${Math.round(mealProtein)}g protein`)
+                )
+            ),
+            React.createElement('button', {
+                onClick: () => setShowSearch(!showSearch),
+                className: 'mt-3 w-full px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition-all duration-200 backdrop-blur-sm'
+            }, `${showSearch ? '✕ Close' : '+ Add Food'}`)
+        ),
+
+        showSearch && React.createElement('div', { className: 'p-4 border-b border-gray-200' },
+            React.createElement(FoodSearchComponent, {
+                onAddFood: onAddFood,
+                mealType: mealType
+            })
+        ),
+
+        React.createElement('div', { className: 'p-4' },
+            foods.length === 0 ? 
+                React.createElement('p', { className: 'text-gray-500 text-center py-8' }, `No foods added to ${title.toLowerCase()} yet`) :
+                React.createElement('div', { className: 'space-y-3' },
+                    ...foods.map(food => 
+                        React.createElement('div', { 
+                            key: food.id,
+                            className: 'flex justify-between items-start p-3 bg-gray-50 rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-200'
+                        },
+                            React.createElement('div', { className: 'flex-1' },
+                                React.createElement('h4', { className: 'font-semibold text-gray-800' }, food.name),
+                                food.brand && React.createElement('p', { className: 'text-sm text-gray-600' }, food.brand),
+                                React.createElement('div', { className: 'text-sm text-gray-700 mt-1' },
+                                    `${food.calories} cal • ${food.protein}g protein • ${food.carbs}g carbs • ${food.fat}g fat`
+                                ),
+                                food.servingSize && food.servingSize !== 100 && React.createElement('div', { className: 'text-xs text-gray-500 mt-1' },
+                                    `Serving: ${food.servingSize}g`
+                                )
+                            ),
+                            React.createElement('button', {
+                                onClick: () => onRemoveFood(mealType, food.id),
+                                className: 'ml-4 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-sm rounded-lg font-medium transition-all duration-200'
+                            }, 'Remove')
+                        )
+                    )
+                )
+        )
+    );
+};
+
+// Get user goals from profile
+const getGoals = () => {
+    try {
+        const habbtProfile = JSON.parse(localStorage.getItem('habbt_profile_data') || '{}');
+        const fueliqProfile = JSON.parse(localStorage.getItem('fueliq_profile_data') || '{}'); // Fallback
+        const profile = habbtProfile.goals || fueliqProfile.goals || {};
+        
+        return {
+            calories: profile.calories || 2000,
+            protein: profile.protein || 150,
+            carbs: profile.carbs || 250,
+            fat: profile.fat || 67
+        };
+    } catch (e) {
+        return { calories: 2000, protein: 150, carbs: 250, fat: 67 };
     }
 };
 
-    const userGoals = loadUserGoals();
-    const dailyGoals = {
-    calories: userGoals.calories || 2000,
-    protein: userGoals.protein || 150,
-    carbs: userGoals.carbs || 250,
-    fat: userGoals.fat || 67
+// AI meal suggestions based on current intake
+const AITips = ({ meals }) => {
+    const totals = Object.values(meals).flat().reduce((acc, food) => ({
+        calories: acc.calories + (food.calories || 0),
+        protein: acc.protein + (food.protein || 0),
+        carbs: acc.carbs + (food.carbs || 0),
+        fat: acc.fat + (food.fat || 0)
+    }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+    const goals = getGoals();
+    const suggestions = [];
+
+    if (totals.protein < goals.protein * 0.8) {
+        suggestions.push({
+            type: 'protein',
+            message: `You're ${Math.round(goals.protein - totals.protein)}g short on protein. Try adding Greek yogurt, chicken breast, or protein powder.`,
+            icon: '🥩'
+        });
+    }
+
+    if (totals.calories < goals.calories * 0.6) {
+        suggestions.push({
+            type: 'calories',
+            message: `Your intake is quite low at ${Math.round(totals.calories)} calories. Consider adding healthy fats like nuts or avocado.`,
+            icon: '🥑'
+        });
+    }
+
+    if (totals.carbs < goals.carbs * 0.5 && totals.protein > goals.protein * 0.8) {
+        suggestions.push({
+            type: 'carbs',
+            message: 'Great protein intake! Add some complex carbs like quinoa or sweet potato for energy.',
+            icon: '🍠'
+        });
+    }
+
+    if (suggestions.length === 0) {
+        suggestions.push({
+            type: 'positive',
+            message: 'Your nutrition is looking balanced! Keep up the great habits! 🌟',
+            icon: '✨'
+        });
+    }
+
+    return React.createElement('div', { className: 'bg-gradient-to-r from-blue-50 to-teal-50 rounded-2xl p-4 border border-blue-200' },
+        React.createElement('h3', { className: 'text-lg font-bold text-blue-800 mb-3 flex items-center' },
+            React.createElement('span', { className: 'mr-2 text-xl' }, '🤖'),
+            'AI Nutrition Coach'
+        ),
+        React.createElement('div', { className: 'space-y-2' },
+            ...suggestions.map((tip, index) => 
+                React.createElement('div', { 
+                    key: index,
+                    className: 'flex items-start space-x-3 p-3 bg-white/60 rounded-lg'
+                },
+                    React.createElement('span', { className: 'text-lg' }, tip.icon),
+                    React.createElement('p', { className: 'text-sm text-blue-700 leading-relaxed' }, tip.message)
+                )
+            )
+        )
+    );
 };
 
+// Main nutrition component
+const NutritionTracker = () => {
+    const [currentDate, setCurrentDate] = React.useState(new Date().toISOString().split('T')[0]);
+    const [meals, setMeals] = React.useState(loadMealData(currentDate));
+
     React.useEffect(() => {
-        const dateStr = formatDate(currentDate);
-        setMeals(loadMealData(dateStr));
+        setMeals(loadMealData(currentDate));
     }, [currentDate]);
 
     React.useEffect(() => {
-        saveMealData(formatDate(currentDate), meals);
+        saveMealData(currentDate, meals);
     }, [meals, currentDate]);
 
-    const addFoodToMeal = (mealType, food) => {
+    const addFood = (mealType, food) => {
         setMeals(prev => ({
             ...prev,
             [mealType]: [...prev[mealType], food]
         }));
     };
 
-    const removeFoodFromMeal = (mealType, foodId) => {
+    const removeFood = (mealType, foodId) => {
         setMeals(prev => ({
             ...prev,
             [mealType]: prev[mealType].filter(food => food.id !== foodId)
         }));
     };
 
-    const updateFoodServing = (mealType, foodId, newServing) => {
-        setMeals(prev => ({
-            ...prev,
-            [mealType]: prev[mealType].map(food => 
-                food.id === foodId ? { ...food, servingSize: newServing } : food
-            )
-        }));
-    };
-
-    const allFoods = [...meals.breakfast, ...meals.lunch, ...meals.dinner, ...meals.snacks];
-    const dailyTotals = calculateNutrition(allFoods);
-
-    const changeDate = (days) => {
+    const navigateDate = (direction) => {
         const newDate = new Date(currentDate);
-        newDate.setDate(newDate.getDate() + days);
-        setCurrentDate(newDate);
+        newDate.setDate(newDate.getDate() + direction);
+        setCurrentDate(newDate.toISOString().split('T')[0]);
     };
 
-    const isToday = formatDate(currentDate) === formatDate(new Date());
+    const isToday = currentDate === new Date().toISOString().split('T')[0];
 
-    return React.createElement('div', { className: 'max-w-6xl mx-auto p-6' },
-        // Header
-        React.createElement('div', { className: 'bg-orange-500 rounded-xl p-6 mb-6 text-white' },
-            React.createElement('div', { className: 'flex justify-between items-center mb-4' },
-                React.createElement('h1', { className: 'text-3xl font-bold' }, 'Daily Nutrition'),
-                React.createElement('div', { className: 'flex items-center gap-4' },
-                    React.createElement('button', { 
-                        onClick: () => changeDate(-1),
-                        className: 'bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors' 
-                    }, '‹'),
-                    React.createElement('span', { className: 'font-semibold text-lg' }, 
-                        isToday ? 'Today' : currentDate.toLocaleDateString()
-                    ),
-                    React.createElement('button', { 
-                        onClick: () => changeDate(1),
-                        className: 'bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors' 
-                    }, '›')
+    return React.createElement('div', { className: 'min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-cyan-50' },
+        React.createElement('div', { className: 'max-w-7xl mx-auto p-6' },
+            // Header
+            React.createElement('div', { className: 'bg-gradient-to-r from-blue-600 to-teal-600 rounded-3xl shadow-2xl p-8 mb-8 text-white' },
+                React.createElement('div', { className: 'text-center' },
+                    React.createElement('h1', { className: 'text-4xl font-bold mb-2' }, '🍽️ Nutrition Habits'),
+                    React.createElement('p', { className: 'text-xl opacity-90 mb-4' }, 'Track your daily nutrition for better habits'),
+                    
+                    // Date Navigation
+                    React.createElement('div', { className: 'flex items-center justify-center space-x-4 mt-6' },
+                        React.createElement('button', {
+                            onClick: () => navigateDate(-1),
+                            className: 'px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-all duration-200 backdrop-blur-sm'
+                        }, '← Previous'),
+                        React.createElement('div', { className: 'px-6 py-2 bg-white/20 rounded-lg backdrop-blur-sm' },
+                            React.createElement('input', {
+                                type: 'date',
+                                value: currentDate,
+                                onChange: (e) => setCurrentDate(e.target.value),
+                                max: new Date().toISOString().split('T')[0],
+                                className: 'bg-transparent text-white font-semibold focus:outline-none'
+                            })
+                        ),
+                        React.createElement('button', {
+                            onClick: () => navigateDate(1),
+                            disabled: isToday,
+                            className: `px-4 py-2 ${isToday ? 'bg-gray-500 cursor-not-allowed' : 'bg-white/20 hover:bg-white/30'} rounded-lg font-semibold transition-all duration-200 backdrop-blur-sm`
+                        }, 'Next →')
+                    )
                 )
             ),
-            
-            // Daily Summary
-            React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4' },
-                React.createElement('div', { className: 'text-center' },
-                    React.createElement('div', { className: 'text-2xl font-bold' }, Math.round(dailyTotals.calories)),
-                    React.createElement('div', { className: 'text-sm opacity-90' }, `/ ${dailyGoals.calories} calories`)
-                ),
-                React.createElement('div', { className: 'text-center' },
-                    React.createElement('div', { className: 'text-2xl font-bold' }, `${Math.round(dailyTotals.protein)}g`),
-                    React.createElement('div', { className: 'text-sm opacity-90' }, `/ ${dailyGoals.protein}g protein`)
-                ),
-                React.createElement('div', { className: 'text-center' },
-                    React.createElement('div', { className: 'text-2xl font-bold' }, `${Math.round(dailyTotals.carbs)}g`),
-                    React.createElement('div', { className: 'text-sm opacity-90' }, `/ ${dailyGoals.carbs}g carbs`)
-                ),
-                React.createElement('div', { className: 'text-center' },
-                    React.createElement('div', { className: 'text-2xl font-bold' }, `${Math.round(dailyTotals.fat)}g`),
-                    React.createElement('div', { className: 'text-sm opacity-90' }, `/ ${dailyGoals.fat}g fat`)
-                )
+
+            // Macro Summary and AI Tips
+            React.createElement('div', { className: 'grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8' },
+                React.createElement(MacroDisplay, { meals }),
+                React.createElement(AITips, { meals })
+            ),
+
+            // Meal Sections
+            React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6' },
+                React.createElement(MealSection, {
+                    title: 'Breakfast',
+                    foods: meals.breakfast,
+                    onRemoveFood: removeFood,
+                    onAddFood: addFood,
+                    mealType: 'breakfast',
+                    emoji: '🌅'
+                }),
+                React.createElement(MealSection, {
+                    title: 'Lunch',
+                    foods: meals.lunch,
+                    onRemoveFood: removeFood,
+                    onAddFood: addFood,
+                    mealType: 'lunch',
+                    emoji: '☀️'
+                }),
+                React.createElement(MealSection, {
+                    title: 'Dinner',
+                    foods: meals.dinner,
+                    onRemoveFood: removeFood,
+                    onAddFood: addFood,
+                    mealType: 'dinner',
+                    emoji: '🌙'
+                }),
+                React.createElement(MealSection, {
+                    title: 'Snacks',
+                    foods: meals.snacks,
+                    onRemoveFood: removeFood,
+                    onAddFood: addFood,
+                    mealType: 'snacks',
+                    emoji: '🍿'
+                })
             )
-        ),
-
-        // AI Suggestions
-        React.createElement(AISuggestions, {
-            currentMeals: meals,
-            userGoals: dailyGoals,
-            currentDate: currentDate
-        }),
-
-        // Progress Bars
-        React.createElement('div', { className: 'bg-white rounded-xl p-6 mb-6 shadow-lg' },
-            React.createElement('h2', { className: 'text-xl font-bold text-gray-800 mb-4' }, 'Daily Progress'),
-            React.createElement(ProgressBar, { 
-                label: 'Calories', 
-                current: dailyTotals.calories, 
-                goal: dailyGoals.calories, 
-                unit: '', 
-                color: 'orange' 
-            }),
-            React.createElement(ProgressBar, { 
-                label: 'Protein', 
-                current: dailyTotals.protein, 
-                goal: dailyGoals.protein, 
-                unit: 'g', 
-                color: 'red' 
-            }),
-            React.createElement(ProgressBar, { 
-                label: 'Carbohydrates', 
-                current: dailyTotals.carbs, 
-                goal: dailyGoals.carbs, 
-                unit: 'g', 
-                color: 'blue' 
-            }),
-            React.createElement(ProgressBar, { 
-                label: 'Fat', 
-                current: dailyTotals.fat, 
-                goal: dailyGoals.fat, 
-                unit: 'g', 
-                color: 'green' 
-            })
-        ),
-
-        // Meals Grid
-        React.createElement('div', { className: 'grid md:grid-cols-2 gap-6' },
-            React.createElement(MealSection, {
-                title: 'Breakfast',
-                icon: '🍳',
-                foods: meals.breakfast,
-                onAddFood: (food) => addFoodToMeal('breakfast', food),
-                onRemoveFood: (foodId) => removeFoodFromMeal('breakfast', foodId),
-                onUpdateServing: (foodId, serving) => updateFoodServing('breakfast', foodId, serving)
-            }),
-            React.createElement(MealSection, {
-                title: 'Lunch',
-                icon: '🥪',
-                foods: meals.lunch,
-                onAddFood: (food) => addFoodToMeal('lunch', food),
-                onRemoveFood: (foodId) => removeFoodFromMeal('lunch', foodId),
-                onUpdateServing: (foodId, serving) => updateFoodServing('lunch', foodId, serving)
-            }),
-            React.createElement(MealSection, {
-                title: 'Dinner',
-                icon: '🍽️',
-                foods: meals.dinner,
-                onAddFood: (food) => addFoodToMeal('dinner', food),
-                onRemoveFood: (foodId) => removeFoodFromMeal('dinner', foodId),
-                onUpdateServing: (foodId, serving) => updateFoodServing('dinner', foodId, serving)
-            }),
-            React.createElement(MealSection, {
-                title: 'Snacks',
-                icon: '🍎',
-                foods: meals.snacks,
-                onAddFood: (food) => addFoodToMeal('snacks', food),
-                onRemoveFood: (foodId) => removeFoodFromMeal('snacks', foodId),
-                onUpdateServing: (foodId, serving) => updateFoodServing('snacks', foodId, serving)
-            })
         )
     );
 };
 
-// Render function for integration
-const renderMealsTab = (containerId) => {
-    ReactDOM.render(React.createElement(MealsTab), document.getElementById(containerId));
+// Export for integration with both Habbt and FuelIQ (backward compatibility)
+const renderNutritionTab = (containerId) => {
+    const container = document.getElementById(containerId);
+    if (container) {
+        ReactDOM.render(React.createElement(NutritionTracker), container);
+    }
 };
 
-// Export for integration with your existing app
-window.FuelIQMeals = {
-    MealsTab,
-    renderMealsTab,
-    cleanup: () => {} // Add cleanup function for integration
+// Make available globally with both naming conventions
+window.HabbtNutrition = {
+    NutritionTracker,
+    renderNutritionTab
 };
 
-console.log('✅ Enhanced FuelIQ Meals tab loaded with barcode scanner and AI suggestions');
+// Backward compatibility
+window.FuelIQMeals = window.HabbtNutrition;
+
+console.log('✅ Habbt Nutrition tab loaded - Complete rebranded version with beautiful blue-teal design');
