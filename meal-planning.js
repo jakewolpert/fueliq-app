@@ -38,7 +38,7 @@ const searchFoodsForPlanning = async (query) => {
 };
 
 // Enhanced Fallback Food Database with More Options
-const FALLBACK_FOODS = {
+const PLANNING_FALLBACK_FOODS = {
     // Proteins
     'chicken breast': { calories: 165, protein: 31, carbs: 0, fat: 3.6, fiber: 0, sodium: 74, sugar: 0 },
     'salmon': { calories: 208, protein: 20, carbs: 0, fat: 12, fiber: 0, sodium: 82, sugar: 0 },
