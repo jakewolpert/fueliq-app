@@ -1,13 +1,13 @@
-// Enhanced FuelIQ Smart Pantry Module with Receipt OCR
-// Replace your existing pantry-tab.js with this enhanced version
+// Enhanced Habbt Smart Pantry Module with Receipt OCR
+// Complete rebranded version with beautiful blue-teal design
 
 (function() {
     // Prevent multiple loading
-    if (window.FuelIQPantry) {
+    if (window.HabbtPantry) {
         return;
     }
 
-    // Safe Storage Functions (unchanged)
+    // Safe Storage Functions (updated for Habbt with backward compatibility)
     const isLocalStorageAvailable = () => {
         try {
             const test = '__localStorage_test__';
@@ -22,34 +22,43 @@
     const memoryStorage = {};
 
     const savePantryData = (data) => {
-        const key = 'fueliq_pantry';
+        const keys = ['habbt_pantry', 'fueliq_pantry']; // Save to both for compatibility
         const dataStr = JSON.stringify(data);
         
         if (isLocalStorageAvailable()) {
             try {
-                localStorage.setItem(key, dataStr);
+                keys.forEach(key => localStorage.setItem(key, dataStr));
             } catch (e) {
                 console.warn('localStorage failed, using memory storage:', e);
-                memoryStorage[key] = dataStr;
+                keys.forEach(key => memoryStorage[key] = dataStr);
             }
         } else {
-            memoryStorage[key] = dataStr;
+            keys.forEach(key => memoryStorage[key] = dataStr);
         }
     };
 
     const loadPantryData = () => {
-        const key = 'fueliq_pantry';
+        const keys = ['habbt_pantry', 'fueliq_pantry']; // Try both keys for compatibility
         let data = null;
         
         if (isLocalStorageAvailable()) {
             try {
-                data = localStorage.getItem(key);
+                for (const key of keys) {
+                    data = localStorage.getItem(key);
+                    if (data) break;
+                }
             } catch (e) {
                 console.warn('localStorage failed, using memory storage:', e);
-                data = memoryStorage[key];
+                for (const key of keys) {
+                    data = memoryStorage[key];
+                    if (data) break;
+                }
             }
         } else {
-            data = memoryStorage[key];
+            for (const key of keys) {
+                data = memoryStorage[key];
+                if (data) break;
+            }
         }
         
         return data ? JSON.parse(data) : {
@@ -238,7 +247,7 @@
         }
     };
 
-    // Helper Functions (unchanged)
+    // Helper Functions
     const formatDate = (date) => {
         return date.toISOString().split('T')[0];
     };
@@ -260,7 +269,7 @@
         return { status: 'good', color: 'green', text: `${days} days left` };
     };
 
-    // Receipt Items Review Component
+    // Receipt Items Review Component with Habbt styling
     const ReceiptItemsReview = ({ items, onConfirm, onCancel }) => {
         const [selectedItems, setSelectedItems] = React.useState(
             items.map(item => ({ ...item, selected: item.confidence > 60 }))
@@ -319,14 +328,14 @@
                         ...selectedItems.map((item, index) =>
                             React.createElement('div', { 
                                 key: index,
-                                className: `border rounded-lg p-4 ${item.selected ? 'border-green-300 bg-green-50' : 'border-gray-200'}`
+                                className: `border rounded-lg p-4 ${item.selected ? 'border-blue-300 bg-blue-50' : 'border-gray-200'}`
                             },
                                 React.createElement('div', { className: 'flex items-start gap-3' },
                                     React.createElement('input', {
                                         type: 'checkbox',
                                         checked: item.selected,
                                         onChange: () => toggleItem(index),
-                                        className: 'mt-1 w-5 h-5 text-green-600'
+                                        className: 'mt-1 w-5 h-5 text-blue-600'
                                     }),
                                     React.createElement('div', { className: 'flex-1' },
                                         React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-3' },
@@ -378,14 +387,14 @@
                     React.createElement('button', {
                         onClick: handleConfirm,
                         disabled: selectedItems.filter(item => item.selected).length === 0,
-                        className: 'flex-1 px-4 py-3 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white rounded-lg font-semibold'
+                        className: 'flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 disabled:bg-gray-300 text-white rounded-lg font-semibold'
                     }, `Add ${selectedItems.filter(item => item.selected).length} Items to Pantry`)
                 )
             )
         );
     };
 
-    // Enhanced Scanner Component
+    // Enhanced Scanner Component with Habbt styling
     const EnhancedScanner = ({ onScan, onReceiptItems, onClose }) => {
         const [scanMode, setScanMode] = React.useState('barcode'); // 'barcode' or 'receipt'
         const [isScanning, setIsScanning] = React.useState(false);
@@ -528,13 +537,13 @@
                     }, '×')
                 ),
 
-                // Mode Toggle
+                // Mode Toggle with Habbt colors
                 React.createElement('div', { className: 'flex bg-gray-100 rounded-lg p-1 mb-4' },
                     React.createElement('button', {
                         onClick: () => setScanMode('barcode'),
                         className: `flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
                             scanMode === 'barcode' 
-                                ? 'bg-orange-500 text-white' 
+                                ? 'bg-gradient-to-r from-blue-500 to-teal-600 text-white' 
                                 : 'text-gray-600 hover:text-gray-800'
                         }`
                     }, '📷 Barcode'),
@@ -542,7 +551,7 @@
                         onClick: () => setScanMode('receipt'),
                         className: `flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
                             scanMode === 'receipt' 
-                                ? 'bg-orange-500 text-white' 
+                                ? 'bg-gradient-to-r from-blue-500 to-teal-600 text-white' 
                                 : 'text-gray-600 hover:text-gray-800'
                         }`
                     }, '🧾 Receipt')
@@ -566,17 +575,17 @@
                             ),
                             React.createElement('button', {
                                 onClick: startCamera,
-                                className: 'w-full bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold mb-2'
+                                className: 'w-full bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white px-6 py-3 rounded-lg font-semibold mb-2'
                             }, `📷 Start Camera${scanMode === 'receipt' ? ' (Receipt)' : ' (Barcode)'}`),
                             
                             React.createElement('button', {
                                 onClick: () => fileInputRef.current?.click(),
-                                className: 'w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold mb-2'
+                                className: 'w-full bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white px-6 py-3 rounded-lg font-semibold mb-2'
                             }, `📁 Upload ${scanMode === 'receipt' ? 'Receipt' : 'Photo'}`),
                             
                             scanMode === 'barcode' && React.createElement('button', {
                                 onClick: simulateScan,
-                                className: 'w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold text-sm'
+                                className: 'w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-lg font-semibold text-sm'
                             }, '🎯 Demo: Random Product'),
 
                             React.createElement('input', {
@@ -596,8 +605,8 @@
                             }),
                             React.createElement('div', { className: 'absolute inset-0 flex items-center justify-center' },
                                 scanMode === 'barcode' 
-                                    ? React.createElement('div', { className: 'w-32 h-20 border-2 border-orange-500 rounded-lg' })
-                                    : React.createElement('div', { className: 'w-40 h-32 border-2 border-orange-500 rounded-lg border-dashed' })
+                                    ? React.createElement('div', { className: 'w-32 h-20 border-2 border-blue-500 rounded-lg' })
+                                    : React.createElement('div', { className: 'w-40 h-32 border-2 border-blue-500 rounded-lg border-dashed' })
                             ),
                             React.createElement('div', { className: 'text-center mt-3' },
                                 React.createElement('p', { className: 'text-sm text-gray-600 mb-3' }, 
@@ -607,7 +616,7 @@
                                     React.createElement('button', {
                                         onClick: capturePhoto,
                                         disabled: processing,
-                                        className: 'bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg'
+                                        className: 'bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg'
                                     }, processing ? 'Processing...' : 'Capture'),
                                     React.createElement('button', {
                                         onClick: stopCamera,
@@ -620,7 +629,7 @@
 
                 processing && React.createElement('div', { className: 'mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg' },
                     React.createElement('div', { className: 'flex items-center gap-3' },
-                        React.createElement('div', { className: 'animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500' }),
+                        React.createElement('div', { className: 'animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500' }),
                         React.createElement('span', { className: 'text-yellow-800' }, 'Processing receipt... This may take a moment.')
                     )
                 ),
@@ -643,7 +652,7 @@
                         React.createElement('button', {
                             onClick: handleManualEntry,
                             disabled: !manualBarcode.trim(),
-                            className: 'bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg'
+                            className: 'bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg'
                         }, 'Add')
                     )
                 )
@@ -651,7 +660,7 @@
         );
     };
 
-    // Add Item Form Component (unchanged from original)
+    // Add Item Form Component with Habbt styling
     const AddItemForm = ({ productData, onAdd, onCancel }) => {
         const [formData, setFormData] = React.useState({
             name: productData?.name || '',
@@ -710,7 +719,7 @@
                                 type: 'text',
                                 value: formData.name,
                                 onChange: (e) => setFormData({...formData, name: e.target.value}),
-                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500',
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
                                 required: true
                             })
                         ),
@@ -720,7 +729,7 @@
                                 type: 'text',
                                 value: formData.brand,
                                 onChange: (e) => setFormData({...formData, brand: e.target.value}),
-                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500'
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500'
                             })
                         )
                     ),
@@ -731,7 +740,7 @@
                             React.createElement('select', {
                                 value: formData.category,
                                 onChange: (e) => setFormData({...formData, category: e.target.value}),
-                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500'
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500'
                             },
                                 ...categories.map(cat => 
                                     React.createElement('option', { key: cat, value: cat }, cat)
@@ -744,7 +753,7 @@
                                 type: 'date',
                                 value: formData.expiryDate,
                                 onChange: (e) => setFormData({...formData, expiryDate: e.target.value}),
-                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500'
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500'
                             })
                         )
                     ),
@@ -758,7 +767,7 @@
                                 onChange: (e) => setFormData({...formData, quantity: Number(e.target.value)}),
                                 min: '0.1',
                                 step: '0.1',
-                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500',
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
                                 required: true
                             })
                         ),
@@ -767,7 +776,7 @@
                             React.createElement('select', {
                                 value: formData.unit,
                                 onChange: (e) => setFormData({...formData, unit: e.target.value}),
-                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500'
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500'
                             },
                                 ...units.map(unit => 
                                     React.createElement('option', { key: unit, value: unit }, unit)
@@ -781,7 +790,7 @@
                         React.createElement('textarea', {
                             value: formData.notes,
                             onChange: (e) => setFormData({...formData, notes: e.target.value}),
-                            className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500',
+                            className: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
                             rows: 2,
                             placeholder: 'Any additional notes...'
                         })
@@ -795,7 +804,7 @@
                         }, 'Cancel'),
                         React.createElement('button', {
                             type: 'submit',
-                            className: 'flex-1 px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold'
+                            className: 'flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white rounded-lg font-semibold'
                         }, 'Add to Pantry')
                     )
                 )
@@ -803,7 +812,7 @@
         );
     };
 
-    // Pantry Item Component (unchanged)
+    // Pantry Item Component with Habbt styling
     const PantryItem = ({ item, onUpdate, onDelete }) => {
         const [showDetails, setShowDetails] = React.useState(false);
         const expiryStatus = getExpiryStatus(item.expiryDate);
@@ -889,7 +898,7 @@
         );
     };
 
-    // Main Smart Pantry Component
+    // Main Smart Pantry Component with Habbt branding
     const SmartPantry = () => {
         const [pantryData, setPantryData] = React.useState(loadPantryData());
         const [showScanner, setShowScanner] = React.useState(false);
@@ -986,152 +995,156 @@
             return days !== null && days < 0;
         });
 
-        return React.createElement('div', { className: 'max-w-6xl mx-auto p-6' },
-            // Header
-            React.createElement('div', { className: 'bg-gradient-to-r from-orange-500 to-red-600 rounded-xl p-6 mb-6 text-white' },
-                React.createElement('h1', { className: 'text-3xl font-bold mb-2' }, '🏠 Smart Pantry'),
-                React.createElement('p', { className: 'text-lg opacity-90' }, 'Track inventory with barcode scanning & receipt upload'),
-                
-                React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mt-4' },
+        return React.createElement('div', { className: 'min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-cyan-50' },
+            React.createElement('div', { className: 'max-w-6xl mx-auto p-6' },
+                // Header with Habbt branding
+                React.createElement('div', { className: 'bg-gradient-to-r from-blue-600 to-teal-600 rounded-3xl shadow-2xl p-8 mb-8 text-white' },
                     React.createElement('div', { className: 'text-center' },
-                        React.createElement('div', { className: 'text-2xl font-bold' }, pantryData.items.length),
-                        React.createElement('div', { className: 'text-sm opacity-90' }, 'Total Items')
-                    ),
-                    React.createElement('div', { className: 'text-center' },
-                        React.createElement('div', { className: 'text-2xl font-bold' }, pantryData.categories.length),
-                        React.createElement('div', { className: 'text-sm opacity-90' }, 'Categories')
-                    ),
-                    React.createElement('div', { className: 'text-center' },
-                        React.createElement('div', { className: 'text-2xl font-bold text-yellow-200' }, expiringSoon.length),
-                        React.createElement('div', { className: 'text-sm opacity-90' }, 'Expiring Soon')
-                    ),
-                    React.createElement('div', { className: 'text-center' },
-                        React.createElement('div', { className: 'text-2xl font-bold text-red-200' }, expired.length),
-                        React.createElement('div', { className: 'text-sm opacity-90' }, 'Expired')
-                    )
-                )
-            ),
-
-            // Alerts
-            (expiringSoon.length > 0 || expired.length > 0) && React.createElement('div', { className: 'mb-6 space-y-2' },
-                expired.length > 0 && React.createElement('div', { className: 'bg-red-100 border border-red-200 rounded-lg p-4' },
-                    React.createElement('h3', { className: 'font-bold text-red-800 mb-2' }, '⚠️ Expired Items'),
-                    React.createElement('p', { className: 'text-red-700 text-sm' }, 
-                        `${expired.length} item(s) have expired: ${expired.map(item => item.name).join(', ')}`
-                    )
-                ),
-                expiringSoon.length > 0 && React.createElement('div', { className: 'bg-yellow-100 border border-yellow-200 rounded-lg p-4' },
-                    React.createElement('h3', { className: 'font-bold text-yellow-800 mb-2' }, '🔔 Expiring Soon'),
-                    React.createElement('p', { className: 'text-yellow-700 text-sm' }, 
-                        `${expiringSoon.length} item(s) expiring within 7 days: ${expiringSoon.map(item => item.name).join(', ')}`
-                    )
-                )
-            ),
-
-            // Action Buttons
-            React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-4 mb-6' },
-                React.createElement('button', {
-                    onClick: () => setShowScanner(true),
-                    className: 'bg-orange-500 hover:bg-orange-600 text-white px-6 py-4 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all'
-                }, 
-                    React.createElement('span', { className: 'text-xl' }, '🔍'),
-                    'Smart Scanner'
-                ),
-                React.createElement('button', {
-                    onClick: () => {
-                        setProductData(null);
-                        setShowAddForm(true);
-                    },
-                    className: 'bg-blue-500 hover:bg-blue-600 text-white px-6 py-4 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all'
-                }, 
-                    React.createElement('span', { className: 'text-xl' }, '+'),
-                    'Add Manually'
-                ),
-                React.createElement('div', { className: 'bg-green-100 border border-green-300 rounded-lg p-4 text-center' },
-                    React.createElement('div', { className: 'text-2xl mb-1' }, '🧾'),
-                    React.createElement('div', { className: 'text-sm font-medium text-green-800' }, 'NEW: Receipt Upload!'),
-                    React.createElement('div', { className: 'text-xs text-green-600' }, 'Scan receipts to add multiple items')
-                )
-            ),
-
-            // Filters
-            React.createElement('div', { className: 'bg-white rounded-xl p-4 mb-6 shadow-lg' },
-                React.createElement('div', { className: 'flex flex-col md:flex-row gap-4' },
-                    React.createElement('input', {
-                        type: 'text',
-                        placeholder: 'Search items...',
-                        value: searchQuery,
-                        onChange: (e) => setSearchQuery(e.target.value),
-                        className: 'flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500'
-                    }),
-                    React.createElement('select', {
-                        value: selectedCategory,
-                        onChange: (e) => setSelectedCategory(e.target.value),
-                        className: 'px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500'
-                    },
-                        React.createElement('option', { value: 'All' }, 'All Categories'),
-                        ...pantryData.categories.map(cat => 
-                            React.createElement('option', { key: cat, value: cat }, cat)
+                        React.createElement('h1', { className: 'text-4xl font-bold mb-2' }, '🏠 Smart Pantry'),
+                        React.createElement('p', { className: 'text-xl opacity-90 mb-4' }, 'Organize your inventory with smart tracking habits'),
+                        
+                        React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mt-6' },
+                            React.createElement('div', { className: 'text-center' },
+                                React.createElement('div', { className: 'text-2xl font-bold' }, pantryData.items.length),
+                                React.createElement('div', { className: 'text-sm opacity-90' }, 'Total Items')
+                            ),
+                            React.createElement('div', { className: 'text-center' },
+                                React.createElement('div', { className: 'text-2xl font-bold' }, pantryData.categories.length),
+                                React.createElement('div', { className: 'text-sm opacity-90' }, 'Categories')
+                            ),
+                            React.createElement('div', { className: 'text-center' },
+                                React.createElement('div', { className: 'text-2xl font-bold text-yellow-200' }, expiringSoon.length),
+                                React.createElement('div', { className: 'text-sm opacity-90' }, 'Expiring Soon')
+                            ),
+                            React.createElement('div', { className: 'text-center' },
+                                React.createElement('div', { className: 'text-2xl font-bold text-red-200' }, expired.length),
+                                React.createElement('div', { className: 'text-sm opacity-90' }, 'Expired')
+                            )
                         )
                     )
-                )
-            ),
+                ),
 
-            // Items Grid
-            filteredItems.length === 0 ? 
-                React.createElement('div', { className: 'text-center py-12' },
-                    React.createElement('div', { className: 'text-6xl mb-4' }, '🛒'),
-                    React.createElement('h3', { className: 'text-xl font-semibold text-gray-600 mb-2' }, 'Your pantry is empty'),
-                    React.createElement('p', { className: 'text-gray-500' }, 'Start by scanning a barcode, uploading a receipt, or adding items manually')
-                ) :
-                React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' },
-                    ...filteredItems.map(item =>
-                        React.createElement(PantryItem, {
-                            key: item.id,
-                            item: item,
-                            onUpdate: updateItem,
-                            onDelete: deleteItem
-                        })
+                // Alerts with Habbt styling
+                (expiringSoon.length > 0 || expired.length > 0) && React.createElement('div', { className: 'mb-6 space-y-2' },
+                    expired.length > 0 && React.createElement('div', { className: 'bg-red-100 border border-red-200 rounded-lg p-4' },
+                        React.createElement('h3', { className: 'font-bold text-red-800 mb-2' }, '⚠️ Expired Items'),
+                        React.createElement('p', { className: 'text-red-700 text-sm' }, 
+                            `${expired.length} item(s) have expired: ${expired.map(item => item.name).join(', ')}`
+                        )
+                    ),
+                    expiringSoon.length > 0 && React.createElement('div', { className: 'bg-yellow-100 border border-yellow-200 rounded-lg p-4' },
+                        React.createElement('h3', { className: 'font-bold text-yellow-800 mb-2' }, '🔔 Expiring Soon'),
+                        React.createElement('p', { className: 'text-yellow-700 text-sm' }, 
+                            `${expiringSoon.length} item(s) expiring within 7 days: ${expiringSoon.map(item => item.name).join(', ')}`
+                        )
                     )
                 ),
 
-            // Modals
-            showScanner && React.createElement(EnhancedScanner, {
-                onScan: handleBarcodeScan,
-                onReceiptItems: handleReceiptItems,
-                onClose: () => setShowScanner(false)
-            }),
+                // Action Buttons with Habbt styling
+                React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-4 mb-6' },
+                    React.createElement('button', {
+                        onClick: () => setShowScanner(true),
+                        className: 'bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white px-6 py-4 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all'
+                    }, 
+                        React.createElement('span', { className: 'text-xl' }, '🔍'),
+                        'Smart Scanner'
+                    ),
+                    React.createElement('button', {
+                        onClick: () => {
+                            setProductData(null);
+                            setShowAddForm(true);
+                        },
+                        className: 'bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white px-6 py-4 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all'
+                    }, 
+                        React.createElement('span', { className: 'text-xl' }, '+'),
+                        'Add Manually'
+                    ),
+                    React.createElement('div', { className: 'bg-gradient-to-r from-cyan-100 to-blue-100 border border-cyan-300 rounded-lg p-4 text-center' },
+                        React.createElement('div', { className: 'text-2xl mb-1' }, '🧾'),
+                        React.createElement('div', { className: 'text-sm font-medium text-cyan-800' }, 'NEW: Receipt Upload!'),
+                        React.createElement('div', { className: 'text-xs text-cyan-600' }, 'Scan receipts to add multiple items')
+                    )
+                ),
 
-            showAddForm && React.createElement(AddItemForm, {
-                productData: productData,
-                onAdd: addItem,
-                onCancel: () => {
-                    setShowAddForm(false);
-                    setProductData(null);
-                }
-            }),
+                // Filters with Habbt styling
+                React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-xl p-4 mb-6 shadow-lg border border-white/20' },
+                    React.createElement('div', { className: 'flex flex-col md:flex-row gap-4' },
+                        React.createElement('input', {
+                            type: 'text',
+                            placeholder: 'Search items...',
+                            value: searchQuery,
+                            onChange: (e) => setSearchQuery(e.target.value),
+                            className: 'flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500'
+                        }),
+                        React.createElement('select', {
+                            value: selectedCategory,
+                            onChange: (e) => setSelectedCategory(e.target.value),
+                            className: 'px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500'
+                        },
+                            React.createElement('option', { value: 'All' }, 'All Categories'),
+                            ...pantryData.categories.map(cat => 
+                                React.createElement('option', { key: cat, value: cat }, cat)
+                            )
+                        )
+                    )
+                ),
 
-            showReceiptReview && React.createElement(ReceiptItemsReview, {
-                items: receiptItems,
-                onConfirm: addReceiptItems,
-                onCancel: () => {
-                    setShowReceiptReview(false);
-                    setReceiptItems([]);
-                }
-            }),
+                // Items Grid
+                filteredItems.length === 0 ? 
+                    React.createElement('div', { className: 'text-center py-12' },
+                        React.createElement('div', { className: 'text-6xl mb-4' }, '🛒'),
+                        React.createElement('h3', { className: 'text-xl font-semibold text-gray-600 mb-2' }, 'Your pantry is empty'),
+                        React.createElement('p', { className: 'text-gray-500' }, 'Start by scanning a barcode, uploading a receipt, or adding items manually')
+                    ) :
+                    React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' },
+                        ...filteredItems.map(item =>
+                            React.createElement(PantryItem, {
+                                key: item.id,
+                                item: item,
+                                onUpdate: updateItem,
+                                onDelete: deleteItem
+                            })
+                        )
+                    ),
 
-            loading && React.createElement('div', { 
-                className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50' 
-            },
-                React.createElement('div', { className: 'bg-white rounded-xl p-6 text-center' },
-                    React.createElement('div', { className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4' }),
-                    React.createElement('p', null, 'Processing...')
+                // Modals
+                showScanner && React.createElement(EnhancedScanner, {
+                    onScan: handleBarcodeScan,
+                    onReceiptItems: handleReceiptItems,
+                    onClose: () => setShowScanner(false)
+                }),
+
+                showAddForm && React.createElement(AddItemForm, {
+                    productData: productData,
+                    onAdd: addItem,
+                    onCancel: () => {
+                        setShowAddForm(false);
+                        setProductData(null);
+                    }
+                }),
+
+                showReceiptReview && React.createElement(ReceiptItemsReview, {
+                    items: receiptItems,
+                    onConfirm: addReceiptItems,
+                    onCancel: () => {
+                        setShowReceiptReview(false);
+                        setReceiptItems([]);
+                    }
+                }),
+
+                loading && React.createElement('div', { 
+                    className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50' 
+                },
+                    React.createElement('div', { className: 'bg-white rounded-xl p-6 text-center' },
+                        React.createElement('div', { className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4' }),
+                        React.createElement('p', null, 'Processing...')
+                    )
                 )
             )
         );
     };
 
-    // Export for integration
+    // Export for integration with both Habbt and FuelIQ (backward compatibility)
     const renderSmartPantry = (containerId) => {
         const container = document.getElementById(containerId);
         if (container) {
@@ -1139,10 +1152,15 @@
         }
     };
 
-    // Make available globally
-    window.FuelIQPantry = {
+    // Make available globally with both naming conventions
+    window.HabbtPantry = {
         SmartPantry,
         renderSmartPantry
     };
+
+    // Backward compatibility
+    window.FuelIQPantry = window.HabbtPantry;
+
+    console.log('✅ Habbt Smart Pantry loaded - Complete rebranded version with beautiful blue-teal design');
 
 })();
