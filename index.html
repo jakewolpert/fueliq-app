@@ -674,11 +674,11 @@ const profileGoals = (() => {
       if (parsed.goals) {
         console.log('📊 Dashboard loaded goals:', parsed.goals);
         return {
-          calories: parsed.profileGoals.calories,
-          protein: parsed.profileGoals.protein,
-          carbs: parsed.profileGoals.carbs,
-          fat: parsed.profileGoals.fat,
-          water: parsed.profileGoals.water
+          calories: parsed.goals.calories || 2000,
+          protein: parsed.goals.protein || 150,
+          carbs: parsed.goals.carbs || 250,
+          fat: parsed.goals.fat || 67,
+          water: parsed.goals.water || 64
         };
       }
     }
