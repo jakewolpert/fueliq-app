@@ -47,7 +47,21 @@
 
     function FuelIQ() {
       const [currentView, setCurrentView] = useState('profile');
-    
+    // NAVIGATION EVENT LISTENER - ADD THIS
+useEffect(() => {
+  const handleNavigate = (e) => {
+    console.log('🚀 Navigation event received:', e.detail.tab);
+    setCurrentView(e.detail.tab);
+  };
+  
+  window.addEventListener('fueliq-navigate', handleNavigate);
+  window.setCurrentView = setCurrentView; // Direct method
+  
+  return () => {
+    window.removeEventListener('fueliq-navigate', handleNavigate);
+    window.setCurrentView = null;
+  };
+}, [setCurrentView]);
     // Expose navigation globally for other tabs
     useEffect(() => {
       window.setCurrentView = setCurrentView;
