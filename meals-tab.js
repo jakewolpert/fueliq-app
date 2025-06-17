@@ -1,510 +1,515 @@
-// FIXED Habbt Nutrition Tab with Meal Planning Integration
-// Enhanced with proper loading, integration hooks, and workflow
+// Fixed Nutrition Tab - React DOM Mounting Issue Resolved
+// This prevents the "removeChild" errors and ensures proper loading
 
-// Storage functions with enhanced compatibility
-const saveNutritionData = (date, data) => {
-    const keys = [`habbt_nutrition_${date}`, `habbt_meals_${date}`, `fueliq_meals_${date}`];
-    const dataStr = JSON.stringify(data);
-    
-    try {
-        keys.forEach(key => localStorage.setItem(key, dataStr));
-        console.log(`📊 Saved nutrition data for ${date}`);
-    } catch (e) {
-        console.warn('Storage failed:', e);
-    }
-};
+(function() {
+    'use strict';
 
-const loadNutritionData = (date) => {
-    const keys = [`habbt_nutrition_${date}`, `habbt_meals_${date}`, `fueliq_meals_${date}`];
-    
-    for (const key of keys) {
-        try {
-            const data = localStorage.getItem(key);
-            if (data) {
-                return JSON.parse(data);
-            }
-        } catch (e) {
-            console.warn('Failed to load from', key);
-        }
-    }
-    
-    return { breakfast: [], lunch: [], dinner: [], snacks: [] };
-};
+    // Store React root references to prevent conflicts
+    let currentNutritionRoot = null;
+    let currentMealPlanningRoot = null;
 
-// MEAL PLANNING INTEGRATION - The Critical Workflow with PROPER DATE MAPPING
-const syncWithMealPlanning = (consumedMeals, nutritionDate) => {
-    try {
-        console.log(`🔄 Starting meal planning sync for nutrition date: ${nutritionDate}`);
+    // Enhanced container management with proper cleanup
+    const safelyRenderToContainer = (containerId, component, componentName) => {
+        console.log(`🔧 Safely rendering ${componentName} to ${containerId}`);
         
-        // Calculate what was actually consumed vs planned
-        const consumedTotals = calculateMealTotals(consumedMeals);
-        
-        // CRITICAL: Map nutrition date to meal planning weekday
-        const weekday = getMealPlanKeyFromDate(nutritionDate);
-        const weekPlan = getWeekPlanForDate(nutritionDate);
-        
-        console.log(`📅 Date mapping: ${nutritionDate} → ${weekday}`);
-        console.log(`📋 Week plan available days:`, Object.keys(weekPlan));
-        
-        // Check if we have a meal plan for this day
-        if (!weekPlan[weekday]) {
-            console.log(`⚠️ No meal plan found for ${weekday}, skipping adaptation`);
-            return;
-        }
-        
-        // Trigger meal planning recalculation if available
-        if (window.HabbtMealPlanning && window.HabbtMealPlanning.adaptDayPlan) {
-            console.log('🔄 Syncing with meal planning system...');
-            
-            // Get user preferences for adaptive planning
-            const preferences = getUserPreferences();
-            const consumedMealsList = Object.values(consumedMeals).flat().map(food => ({
-                mealType: getMealTypeForFood(food, consumedMeals),
-                actualCalories: food.calories,
-                actualProtein: food.protein,
-                actualCarbs: food.carbs,
-                actualFat: food.fat,
-                timestamp: food.timestamp || new Date().toISOString(),
-                name: food.name
-            }));
-            
-            // Determine remaining meal types for today
-            const remainingMealTypes = getRemainingMealTypes(consumedMealsList);
-            
-            if (remainingMealTypes.length > 0) {
-                console.log(`🎯 Adapting ${remainingMealTypes.length} remaining meals: ${remainingMealTypes.join(', ')}`);
-                
-                // Trigger adaptive planning
-                const adaptedPlan = window.HabbtMealPlanning.adaptDayPlan(
-                    consumedMealsList, 
-                    remainingMealTypes, 
-                    preferences
-                );
-                
-                // Update the meal plan using proper date mapping
-                const updateSuccess = updateMealPlanForDate(nutritionDate, adaptedPlan);
-                
-                if (updateSuccess) {
-                    console.log('✅ Meal plan adapted based on actual consumption');
-                    
-                    // Show user notification with date context
-                    showAdaptiveNotification(consumedTotals, preferences, remainingMealTypes.length, nutritionDate);
-                } else {
-                    console.error('❌ Failed to update meal plan');
-                }
-            } else {
-                console.log('✅ All meals logged for today - no adaptation needed');
-            }
-        } else {
-            console.log('⚠️ Meal planning system not available - storing data for future sync');
-        }
-        
-        // Store integration data for analytics with proper date mapping
-        const integrationData = {
-            nutritionDate,
-            weekday,
-            consumedTotals,
-            adaptationTriggered: true,
-            timestamp: new Date().toISOString()
-        };
-        
-        localStorage.setItem(`habbt_nutrition_integration_${nutritionDate}`, JSON.stringify(integrationData));
-        
-    } catch (error) {
-        console.error('❌ Meal planning sync failed:', error);
-    }
-};
-
-// Helper functions for integration
-const calculateMealTotals = (meals) => {
-    const allFoods = Object.values(meals).flat();
-    return allFoods.reduce((totals, food) => ({
-        calories: totals.calories + (food.calories || 0),
-        protein: totals.protein + (food.protein || 0),
-        carbs: totals.carbs + (food.carbs || 0),
-        fat: totals.fat + (food.fat || 0),
-        fiber: totals.fiber + (food.fiber || 0)
-    }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
-};
-
-const getMealTypeForFood = (food, allMeals) => {
-    for (const [mealType, foods] of Object.entries(allMeals)) {
-        if (foods.some(f => f.id === food.id)) {
-            return mealType;
-        }
-    }
-    return 'snacks'; // fallback
-};
-
-const getRemainingMealTypes = (consumedMeals) => {
-    const consumedTypes = new Set(consumedMeals.map(m => m.mealType));
-    const allTypes = ['breakfast', 'lunch', 'dinner', 'snacks'];
-    return allTypes.filter(type => !consumedTypes.has(type));
-};
-
-// CRITICAL: Date mapping functions for Nutrition ↔ Meal Planning integration
-const getWeekStartDate = (date = new Date()) => {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday = week start
-    return new Date(d.setDate(diff)).toISOString().split('T')[0];
-};
-
-const getWeekdayFromDate = (dateString) => {
-    const date = new Date(dateString);
-    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayName = weekdays[date.getDay()];
-    
-    // Meal planning uses Monday-Sunday, so map Sunday to end of week
-    if (dayName === 'Sunday') {
-        return 'Sunday';
-    }
-    return dayName;
-};
-
-const getMealPlanKeyFromDate = (nutritionDate) => {
-    // Convert nutrition date (2025-06-17) to meal planning day (Tuesday)
-    const weekday = getWeekdayFromDate(nutritionDate);
-    console.log(`📅 Mapping nutrition date ${nutritionDate} → meal planning day: ${weekday}`);
-    return weekday;
-};
-
-const getWeekPlanForDate = (nutritionDate) => {
-    try {
-        const weekStartDate = getWeekStartDate(new Date(nutritionDate));
-        const weekPlanKey = `habbt_weekly_plan_${weekStartDate}`;
-        const weekPlan = JSON.parse(localStorage.getItem(weekPlanKey) || '{}');
-        
-        console.log(`📊 Loading week plan for date ${nutritionDate}:`);
-        console.log(`   Week start: ${weekStartDate}`);
-        console.log(`   Plan key: ${weekPlanKey}`);
-        console.log(`   Available days:`, Object.keys(weekPlan));
-        
-        return weekPlan;
-    } catch (error) {
-        console.error('❌ Failed to load week plan:', error);
-        return {};
-    }
-};
-
-const updateMealPlanForDate = (nutritionDate, dayUpdates) => {
-    try {
-        const weekStartDate = getWeekStartDate(new Date(nutritionDate));
-        const weekPlanKey = `habbt_weekly_plan_${weekStartDate}`;
-        const weekPlan = JSON.parse(localStorage.getItem(weekPlanKey) || '{}');
-        const weekday = getMealPlanKeyFromDate(nutritionDate);
-        
-        // Update the specific day
-        weekPlan[weekday] = {
-            ...weekPlan[weekday],
-            ...dayUpdates
-        };
-        
-        localStorage.setItem(weekPlanKey, JSON.stringify(weekPlan));
-        console.log(`✅ Updated meal plan for ${nutritionDate} (${weekday})`);
-        
-        return true;
-    } catch (error) {
-        console.error('❌ Failed to update meal plan:', error);
-        return false;
-    }
-};
-
-const getUserPreferences = () => {
-    try {
-        const habbtProfile = JSON.parse(localStorage.getItem('habbt_profile_data') || '{}');
-        return {
-            calorieTarget: habbtProfile.goals?.calories || 2000,
-            proteinTarget: habbtProfile.goals?.protein || 150,
-            goal: habbtProfile.goal || 'maintenance',
-            dietaryRestrictions: habbtProfile.dietaryRestrictions || [],
-            allergens: habbtProfile.allergens || []
-        };
-    } catch (e) {
-        return { calorieTarget: 2000, proteinTarget: 150, goal: 'maintenance' };
-    }
-};
-
-// DEBUG: Date mapping visualization (remove in production)
-const debugDateMapping = (nutritionDate) => {
-    console.log('🔍 DEBUG: Date Mapping Analysis');
-    console.log('================================');
-    console.log(`Nutrition Date: ${nutritionDate}`);
-    console.log(`Weekday: ${getWeekdayFromDate(nutritionDate)}`);
-    console.log(`Week Start: ${getWeekStartDate(new Date(nutritionDate))}`);
-    console.log(`Week Plan Key: habbt_weekly_plan_${getWeekStartDate(new Date(nutritionDate))}`);
-    
-    const weekPlan = getWeekPlanForDate(nutritionDate);
-    console.log(`Available Days in Plan:`, Object.keys(weekPlan));
-    
-    const targetDay = getMealPlanKeyFromDate(nutritionDate);
-    if (weekPlan[targetDay]) {
-        console.log(`✅ Found plan for ${targetDay}:`, Object.keys(weekPlan[targetDay]));
-    } else {
-        console.log(`❌ No plan found for ${targetDay}`);
-    }
-    console.log('================================');
-};
-
-// Enhanced showAdaptiveNotification with date context
-const showAdaptiveNotification = (consumedTotals, preferences, remainingMeals, nutritionDate) => {
-    const weekday = getWeekdayFromDate(nutritionDate);
-    const calorieDiff = consumedTotals.calories - (preferences.calorieTarget * 0.75);
-    const proteinDiff = consumedTotals.protein - (preferences.proteinTarget * 0.75);
-    
-    let message = `🤖 Smart Adaptation for ${weekday}: `;
-    if (Math.abs(calorieDiff) > 100) {
-        message += `${calorieDiff > 0 ? '+' : ''}${Math.round(calorieDiff)} calories `;
-    }
-    if (Math.abs(proteinDiff) > 5) {
-        message += `${proteinDiff > 0 ? '+' : ''}${Math.round(proteinDiff)}g protein `;
-    }
-    message += `detected. Adjusted ${remainingMeals} remaining meals to keep you on track! 🎯`;
-    
-    console.log(message);
-    
-    // Optional: Show visual notification in UI
-    if (typeof showToast === 'function') {
-        showToast(message, 'success', 5000);
-    }
-};
-
-// Enhanced Food Search with Meal Planning suggestions
-const searchFoodsWithSuggestions = async (query, currentMealType) => {
-    const basicResults = await searchFoods(query);
-    
-    // Add meal planning suggestions if available
-    if (window.HabbtMealPlanning && currentMealType) {
-        try {
-            const preferences = getUserPreferences();
-            const mealTargets = calculateMealTargets(preferences, currentMealType);
-            
-            // Filter and score results based on meal planning targets
-            const scoredResults = basicResults.map(food => {
-                const nutritionScore = calculateNutritionScore(food.nutrients, mealTargets);
-                return { ...food, nutritionScore, suggestedFor: currentMealType };
-            }).sort((a, b) => b.nutritionScore - a.nutritionScore);
-            
-            return scoredResults;
-        } catch (e) {
-            console.warn('Meal planning suggestions failed:', e);
-        }
-    }
-    
-    return basicResults;
-};
-
-const calculateMealTargets = (preferences, mealType) => {
-    const distributions = {
-        breakfast: { calories: 0.25, protein: 0.25 },
-        lunch: { calories: 0.35, protein: 0.35 },
-        dinner: { calories: 0.35, protein: 0.35 },
-        snacks: { calories: 0.05, protein: 0.05 }
-    };
-    
-    const dist = distributions[mealType] || distributions.snacks;
-    return {
-        targetCalories: preferences.calorieTarget * dist.calories,
-        targetProtein: preferences.proteinTarget * dist.protein
-    };
-};
-
-const calculateNutritionScore = (nutrients, targets) => {
-    const calorieScore = Math.max(0, 100 - Math.abs(nutrients.calories - targets.targetCalories) / targets.targetCalories * 100);
-    const proteinScore = Math.max(0, 100 - Math.abs(nutrients.protein - targets.targetProtein) / targets.targetProtein * 100);
-    return (calorieScore + proteinScore) / 2;
-};
-
-// FIXED: Enhanced meal section with integration hooks
-const EnhancedMealSection = ({ title, foods, onRemoveFood, onAddFood, mealType, emoji, currentDate }) => {
-    const [showSearch, setShowSearch] = React.useState(false);
-
-    const mealCalories = foods.reduce((sum, food) => sum + (food.calories || 0), 0);
-    const mealProtein = foods.reduce((sum, food) => sum + (food.protein || 0), 0);
-
-    // Integration hook - trigger sync when foods change
-    React.useEffect(() => {
-        if (foods.length > 0) {
-            // Debounce the sync to avoid excessive calls
-            const syncTimeout = setTimeout(() => {
-                const allMeals = { [mealType]: foods };
-                syncWithMealPlanning(allMeals, currentDate);
-            }, 1000);
-            
-            return () => clearTimeout(syncTimeout);
-        }
-    }, [foods, mealType, currentDate]);
-
-    const handleAddFood = async (foodType, foodItem) => {
-        // Add timestamp for integration
-        const enhancedFoodItem = {
-            ...foodItem,
-            timestamp: new Date().toISOString(),
-            loggedVia: 'manual_entry'
-        };
-        
-        onAddFood(foodType, enhancedFoodItem);
-        
-        // Trigger immediate sync for real-time adaptation
-        setTimeout(() => {
-            const currentMeals = JSON.parse(localStorage.getItem(`habbt_nutrition_${currentDate}`) || '{}');
-            syncWithMealPlanning(currentMeals, currentDate);
-        }, 100);
-    };
-
-    return React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 overflow-hidden' },
-        // Header with integration status
-        React.createElement('div', { className: 'bg-gradient-to-r from-blue-500 via-blue-600 to-teal-600 text-white p-4' },
-            React.createElement('div', { className: 'flex justify-between items-center' },
-                React.createElement('h3', { className: 'text-lg font-bold flex items-center' },
-                    React.createElement('span', { className: 'mr-2 text-xl' }, emoji),
-                    title,
-                    // Show integration status
-                    foods.length > 0 && React.createElement('span', { className: 'ml-2 text-xs bg-white/20 px-2 py-1 rounded-full' },
-                        '🔄 Synced'
-                    )
-                ),
-                React.createElement('div', { className: 'text-right text-sm' },
-                    React.createElement('div', null, `${Math.round(mealCalories)} cal`),
-                    React.createElement('div', null, `${Math.round(mealProtein)}g protein`)
-                )
-            ),
-            React.createElement('button', {
-                onClick: () => setShowSearch(!showSearch),
-                className: 'mt-3 w-full px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition-all duration-200 backdrop-blur-sm'
-            }, `${showSearch ? '✕ Close' : '+ Add Food'}`)
-        ),
-
-        // Enhanced search with meal planning integration
-        showSearch && React.createElement('div', { className: 'p-4 border-b border-gray-200' },
-            React.createElement(FoodSearchComponent, {
-                onAddFood: handleAddFood,
-                mealType: mealType,
-                searchFunction: (query) => searchFoodsWithSuggestions(query, mealType)
-            })
-        ),
-
-        // Food list with integration indicators
-        React.createElement('div', { className: 'p-4' },
-            foods.length === 0 ? 
-                React.createElement('p', { className: 'text-gray-500 text-center py-8' }, `No foods added to ${title.toLowerCase()} yet`) :
-                React.createElement('div', { className: 'space-y-3' },
-                    ...foods.map(food => 
-                        React.createElement('div', { 
-                            key: food.id,
-                            className: 'flex justify-between items-start p-3 bg-gray-50 rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-200'
-                        },
-                            React.createElement('div', { className: 'flex-1' },
-                                React.createElement('h4', { className: 'font-semibold text-gray-800 flex items-center' }, 
-                                    food.name,
-                                    // Show if this was from meal planning
-                                    food.source === 'meal_planning' && React.createElement('span', { className: 'ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full' },
-                                        '📋 Planned'
-                                    ),
-                                    // Show adaptation indicator
-                                    food.loggedVia === 'manual_entry' && React.createElement('span', { className: 'ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full' },
-                                        '✅ Logged'
-                                    )
-                                ),
-                                food.brand && React.createElement('p', { className: 'text-sm text-gray-600' }, food.brand),
-                                React.createElement('div', { className: 'text-sm text-gray-700 mt-1' },
-                                    `${food.calories} cal • ${food.protein}g protein • ${food.carbs}g carbs • ${food.fat}g fat`
-                                ),
-                                food.timestamp && React.createElement('div', { className: 'text-xs text-gray-500 mt-1' },
-                                    `Logged: ${new Date(food.timestamp).toLocaleTimeString()}`
-                                )
-                            ),
-                            React.createElement('button', {
-                                onClick: () => {
-                                    onRemoveFood(mealType, food.id);
-                                    // Trigger sync after removal
-                                    setTimeout(() => {
-                                        const currentMeals = JSON.parse(localStorage.getItem(`habbt_nutrition_${currentDate}`) || '{}');
-                                        syncWithMealPlanning(currentMeals, currentDate);
-                                    }, 100);
-                                },
-                                className: 'ml-4 px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-sm rounded-lg font-medium transition-all duration-200'
-                            }, 'Remove')
-                        )
-                    )
-                )
-        )
-    );
-};
-
-// FIXED: Proper module exports to resolve loading issues
-const FIXED_NUTRITION_EXPORTS = {
-    // Main render function with multiple naming conventions
-    renderNutritionTab: (containerId) => {
         const container = document.getElementById(containerId);
-        if (container) {
-            try {
-                // Clear any existing content safely
-                while (container.firstChild) {
-                    container.removeChild(container.firstChild);
-                }
-                
-                // Render the nutrition tracker
-                ReactDOM.render(React.createElement(NutritionTracker), container);
-                console.log('✅ Nutrition tab rendered successfully');
-                return true;
-            } catch (error) {
-                console.error('❌ Nutrition tab render failed:', error);
-                return false;
-            }
-        } else {
-            console.error('❌ Container not found:', containerId);
+        if (!container) {
+            console.error(`❌ Container ${containerId} not found`);
             return false;
         }
-    },
-    
-    // Integration functions
-    syncWithMealPlanning,
-    calculateMealTotals,
-    getUserPreferences,
-    getWeekdayFromDate,
-    getMealPlanKeyFromDate,
-    debugDateMapping, // For testing the date mapping
-    
-    // Components for external use
-    EnhancedMealSection,
-    
-    // Version info
-    version: '2.0.0',
-    features: ['meal_planning_integration', 'adaptive_sync', 'real_time_updates']
-};
 
-// CRITICAL FIX: Ensure all naming conventions work
-window.renderNutritionTab = FIXED_NUTRITION_EXPORTS.renderNutritionTab;
-window.renderMealsTab = FIXED_NUTRITION_EXPORTS.renderNutritionTab;
-window.renderHabbtNutrition = FIXED_NUTRITION_EXPORTS.renderNutritionTab;
+        try {
+            // Clear any existing content safely
+            if (containerId === 'nutrition-container' && currentNutritionRoot) {
+                console.log('🧹 Cleaning up existing nutrition root');
+                try {
+                    currentNutritionRoot.unmount();
+                } catch (e) {
+                    console.warn('⚠️ Root unmount warning:', e);
+                }
+                currentNutritionRoot = null;
+            }
 
-// Export the complete module
-window.HabbtNutrition = FIXED_NUTRITION_EXPORTS;
-window.FuelIQMeals = FIXED_NUTRITION_EXPORTS; // Backward compatibility
+            if (containerId === 'meal-planning-container' && currentMealPlanningRoot) {
+                console.log('🧹 Cleaning up existing meal planning root');
+                try {
+                    currentMealPlanningRoot.unmount();
+                } catch (e) {
+                    console.warn('⚠️ Root unmount warning:', e);
+                }
+                currentMealPlanningRoot = null;
+            }
 
-// Enhanced compatibility check
-(function() {
-    console.log('🔧 Initializing FIXED nutrition module...');
-    
-    // Wait for dependencies
-    const checkDependencies = () => {
-        return typeof React !== 'undefined' && 
-               typeof ReactDOM !== 'undefined' &&
-               typeof localStorage !== 'undefined';
-    };
-    
-    if (checkDependencies()) {
-        console.log('✅ FIXED Nutrition module ready!');
-        console.log('✅ Available functions:', Object.keys(FIXED_NUTRITION_EXPORTS));
-        
-        // Test render function
-        if (typeof window.renderNutritionTab === 'function') {
-            console.log('✅ renderNutritionTab function confirmed working');
+            // Clear container innerHTML as backup
+            container.innerHTML = '';
+
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                try {
+                    if (typeof ReactDOM.createRoot !== 'undefined') {
+                        // React 18+ createRoot
+                        const root = ReactDOM.createRoot(container);
+                        root.render(component);
+                        
+                        if (containerId === 'nutrition-container') {
+                            currentNutritionRoot = root;
+                        } else if (containerId === 'meal-planning-container') {
+                            currentMealPlanningRoot = root;
+                        }
+                    } else {
+                        // React 17 render
+                        ReactDOM.render(component, container);
+                    }
+                    
+                    console.log(`✅ ${componentName} rendered successfully`);
+                    return true;
+                } catch (renderError) {
+                    console.error(`❌ ${componentName} render error:`, renderError);
+                    
+                    // Fallback: create fresh container
+                    container.innerHTML = `
+                        <div class="p-8 text-center">
+                            <div class="text-6xl mb-4">🔧</div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">Loading ${componentName}...</h3>
+                            <p class="text-gray-600">Initializing components...</p>
+                            <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg">
+                                Refresh if needed
+                            </button>
+                        </div>
+                    `;
+                    return false;
+                }
+            }, 100);
+
+        } catch (error) {
+            console.error(`❌ Fatal error rendering ${componentName}:`, error);
+            container.innerHTML = `
+                <div class="p-8 text-center">
+                    <div class="text-6xl mb-4">❌</div>
+                    <h3 class="text-xl font-bold text-red-600 mb-2">Error Loading ${componentName}</h3>
+                    <p class="text-gray-600 mb-4">There was a technical issue. Please refresh the page.</p>
+                    <button onclick="location.reload()" class="px-4 py-2 bg-red-500 text-white rounded-lg">
+                        Refresh Page
+                    </button>
+                </div>
+            `;
+            return false;
         }
-    } else {
-        console.error('❌ Dependencies not available for nutrition module');
-    }
-})();
+    };
 
-console.log('🍽️ FIXED Habbt Nutrition module loaded with meal planning integration!');
+    // Enhanced nutrition tracking with proper React mounting
+    const FixedNutritionTracker = () => {
+        const [currentDate, setCurrentDate] = React.useState(new Date().toISOString().split('T')[0]);
+        const [nutritionData, setNutritionData] = React.useState({
+            meals: [],
+            totalCalories: 0,
+            totalProtein: 0,
+            totalCarbs: 0,
+            totalFat: 0,
+            totalFiber: 0
+        });
+        const [userGoals, setUserGoals] = React.useState({
+            calories: 2000,
+            protein: 150,
+            carbs: 250,
+            fat: 67,
+            fiber: 25
+        });
+        const [isLoading, setIsLoading] = React.useState(true);
+
+        // Load user goals safely
+        React.useEffect(() => {
+            try {
+                console.log('📊 Loading nutrition goals...');
+                
+                // Check for unified data manager
+                if (typeof window.UnifiedDataManager !== 'undefined') {
+                    const goals = window.UnifiedDataManager.getGoals();
+                    if (goals && Object.keys(goals).length > 0) {
+                        setUserGoals(goals);
+                        console.log('✅ Goals loaded from UnifiedDataManager:', goals);
+                    }
+                } else {
+                    // Fallback to localStorage
+                    const habbtProfile = localStorage.getItem('habbt_profile_data');
+                    const fueliqProfile = localStorage.getItem('fueliq_profile_data');
+                    
+                    if (habbtProfile || fueliqProfile) {
+                        const profile = JSON.parse(habbtProfile || fueliqProfile);
+                        if (profile.goals) {
+                            setUserGoals(profile.goals);
+                            console.log('✅ Goals loaded from localStorage:', profile.goals);
+                        }
+                    }
+                }
+                
+                setIsLoading(false);
+            } catch (error) {
+                console.error('❌ Error loading goals:', error);
+                setIsLoading(false);
+            }
+        }, []);
+
+        // Load nutrition data for current date
+        React.useEffect(() => {
+            try {
+                const storageKey = `nutrition_${currentDate}`;
+                const stored = localStorage.getItem(storageKey);
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    setNutritionData(data);
+                    console.log(`📊 Nutrition data loaded for ${currentDate}:`, data);
+                }
+            } catch (error) {
+                console.error('❌ Error loading nutrition data:', error);
+            }
+        }, [currentDate]);
+
+        const addMeal = (meal) => {
+            const newMeal = {
+                id: Date.now(),
+                ...meal,
+                timestamp: new Date().toISOString()
+            };
+
+            const updatedData = {
+                ...nutritionData,
+                meals: [...nutritionData.meals, newMeal],
+                totalCalories: nutritionData.totalCalories + (meal.calories || 0),
+                totalProtein: nutritionData.totalProtein + (meal.protein || 0),
+                totalCarbs: nutritionData.totalCarbs + (meal.carbs || 0),
+                totalFat: nutritionData.totalFat + (meal.fat || 0),
+                totalFiber: nutritionData.totalFiber + (meal.fiber || 0)
+            };
+
+            setNutritionData(updatedData);
+            
+            // Save to localStorage
+            const storageKey = `nutrition_${currentDate}`;
+            localStorage.setItem(storageKey, JSON.stringify(updatedData));
+            
+            console.log('✅ Meal added:', newMeal);
+        };
+
+        const removeMeal = (mealId) => {
+            const mealToRemove = nutritionData.meals.find(m => m.id === mealId);
+            if (!mealToRemove) return;
+
+            const updatedData = {
+                ...nutritionData,
+                meals: nutritionData.meals.filter(m => m.id !== mealId),
+                totalCalories: nutritionData.totalCalories - (mealToRemove.calories || 0),
+                totalProtein: nutritionData.totalProtein - (mealToRemove.protein || 0),
+                totalCarbs: nutritionData.totalCarbs - (mealToRemove.carbs || 0),
+                totalFat: nutritionData.totalFat - (mealToRemove.fat || 0),
+                totalFiber: nutritionData.totalFiber - (mealToRemove.fiber || 0)
+            };
+
+            setNutritionData(updatedData);
+            
+            const storageKey = `nutrition_${currentDate}`;
+            localStorage.setItem(storageKey, JSON.stringify(updatedData));
+            
+            console.log('🗑️ Meal removed:', mealToRemove);
+        };
+
+        if (isLoading) {
+            return React.createElement('div', { className: 'flex items-center justify-center p-12' },
+                React.createElement('div', { className: 'text-center' },
+                    React.createElement('div', { className: 'text-4xl mb-4' }, '🔄'),
+                    React.createElement('p', { className: 'text-gray-600' }, 'Loading nutrition tracker...')
+                )
+            );
+        }
+
+        return React.createElement('div', { className: 'min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-cyan-50' },
+            React.createElement('div', { className: 'max-w-7xl mx-auto p-6' },
+                // Header
+                React.createElement('div', { className: 'bg-gradient-to-r from-blue-600 to-teal-600 rounded-3xl shadow-2xl p-8 mb-8 text-white' },
+                    React.createElement('div', { className: 'text-center' },
+                        React.createElement('h1', { className: 'text-4xl font-bold mb-4' }, 
+                            '🍽️ Nutrition Tracking'
+                        ),
+                        React.createElement('div', { className: 'bg-white/20 backdrop-blur-sm rounded-2xl p-4' },
+                            React.createElement('p', { className: 'text-lg mb-3' }, 
+                                'Track your daily nutrition goals'
+                            ),
+                            React.createElement('input', {
+                                type: 'date',
+                                value: currentDate,
+                                onChange: (e) => setCurrentDate(e.target.value),
+                                className: 'px-4 py-2 rounded-lg text-gray-800 bg-white/90'
+                            })
+                        )
+                    )
+                ),
+
+                // Progress Cards
+                React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-5 gap-6 mb-8' },
+                    [
+                        { label: 'Calories', current: nutritionData.totalCalories, goal: userGoals.calories, color: 'blue', unit: '' },
+                        { label: 'Protein', current: nutritionData.totalProtein, goal: userGoals.protein, color: 'red', unit: 'g' },
+                        { label: 'Carbs', current: nutritionData.totalCarbs, goal: userGoals.carbs, color: 'yellow', unit: 'g' },
+                        { label: 'Fat', current: nutritionData.totalFat, goal: userGoals.fat, color: 'purple', unit: 'g' },
+                        { label: 'Fiber', current: nutritionData.totalFiber, goal: userGoals.fiber, color: 'green', unit: 'g' }
+                    ].map(item => {
+                        const percentage = Math.round((item.current / item.goal) * 100);
+                        const isOnTrack = percentage >= 90 && percentage <= 110;
+                        
+                        return React.createElement('div', { 
+                            key: item.label,
+                            className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20'
+                        },
+                            React.createElement('h3', { className: 'text-lg font-bold text-gray-800 mb-2' }, item.label),
+                            React.createElement('div', { className: `text-3xl font-bold text-${item.color}-600 mb-2` }, 
+                                `${Math.round(item.current)}${item.unit}`
+                            ),
+                            React.createElement('div', { className: 'text-sm text-gray-600 mb-3' }, 
+                                `Goal: ${item.goal}${item.unit}`
+                            ),
+                            React.createElement('div', { className: 'w-full bg-gray-200 rounded-full h-2' },
+                                React.createElement('div', { 
+                                    className: `h-2 rounded-full ${isOnTrack ? 'bg-green-500' : percentage > 110 ? 'bg-red-500' : `bg-${item.color}-500`}`,
+                                    style: { width: `${Math.min(percentage, 100)}%` }
+                                })
+                            ),
+                            React.createElement('div', { className: `text-xs mt-1 font-semibold ${isOnTrack ? 'text-green-600' : 'text-gray-600'}` }, 
+                                `${percentage}%`
+                            )
+                        );
+                    })
+                ),
+
+                // Meals List
+                React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20 mb-8' },
+                    React.createElement('h2', { className: 'text-2xl font-bold text-gray-800 mb-6' }, 
+                        `🍽️ Meals for ${new Date(currentDate).toLocaleDateString()}`
+                    ),
+                    nutritionData.meals.length === 0 ? 
+                        React.createElement('div', { className: 'text-center py-12' },
+                            React.createElement('div', { className: 'text-6xl mb-4' }, '🍽️'),
+                            React.createElement('p', { className: 'text-gray-600' }, 'No meals logged yet today')
+                        ) :
+                        React.createElement('div', { className: 'space-y-4' },
+                            nutritionData.meals.map(meal => 
+                                React.createElement('div', { 
+                                    key: meal.id,
+                                    className: 'bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl p-4 border border-blue-200'
+                                },
+                                    React.createElement('div', { className: 'flex justify-between items-start' },
+                                        React.createElement('div', { className: 'flex-1' },
+                                            React.createElement('h3', { className: 'font-bold text-gray-800 mb-1' }, meal.name || 'Unnamed Meal'),
+                                            React.createElement('p', { className: 'text-sm text-gray-600 mb-2' }, 
+                                                new Date(meal.timestamp).toLocaleTimeString()
+                                            ),
+                                            React.createElement('div', { className: 'grid grid-cols-5 gap-4 text-sm' },
+                                                React.createElement('div', null,
+                                                    React.createElement('span', { className: 'font-semibold text-blue-600' }, meal.calories || 0),
+                                                    React.createElement('div', { className: 'text-xs text-gray-500' }, 'cal')
+                                                ),
+                                                React.createElement('div', null,
+                                                    React.createElement('span', { className: 'font-semibold text-red-600' }, `${meal.protein || 0}g`),
+                                                    React.createElement('div', { className: 'text-xs text-gray-500' }, 'protein')
+                                                ),
+                                                React.createElement('div', null,
+                                                    React.createElement('span', { className: 'font-semibold text-yellow-600' }, `${meal.carbs || 0}g`),
+                                                    React.createElement('div', { className: 'text-xs text-gray-500' }, 'carbs')
+                                                ),
+                                                React.createElement('div', null,
+                                                    React.createElement('span', { className: 'font-semibold text-purple-600' }, `${meal.fat || 0}g`),
+                                                    React.createElement('div', { className: 'text-xs text-gray-500' }, 'fat')
+                                                ),
+                                                React.createElement('div', null,
+                                                    React.createElement('span', { className: 'font-semibold text-green-600' }, `${meal.fiber || 0}g`),
+                                                    React.createElement('div', { className: 'text-xs text-gray-500' }, 'fiber')
+                                                )
+                                            )
+                                        ),
+                                        React.createElement('button', {
+                                            onClick: () => removeMeal(meal.id),
+                                            className: 'ml-4 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-all duration-200'
+                                        }, '🗑️ Remove')
+                                    )
+                                )
+                            )
+                        )
+                ),
+
+                // Quick Add Section
+                React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20' },
+                    React.createElement('h2', { className: 'text-2xl font-bold text-gray-800 mb-6' }, '➕ Quick Add Meal'),
+                    React.createElement(QuickAddMealForm, { onAddMeal: addMeal })
+                )
+            )
+        );
+    };
+
+    // Quick Add Meal Form Component
+    const QuickAddMealForm = ({ onAddMeal }) => {
+        const [mealData, setMealData] = React.useState({
+            name: '',
+            calories: '',
+            protein: '',
+            carbs: '',
+            fat: '',
+            fiber: ''
+        });
+
+        const handleSubmit = (e) => {
+            e.preventDefault();
+            
+            if (!mealData.name.trim()) {
+                alert('Please enter a meal name');
+                return;
+            }
+
+            const meal = {
+                name: mealData.name.trim(),
+                calories: parseFloat(mealData.calories) || 0,
+                protein: parseFloat(mealData.protein) || 0,
+                carbs: parseFloat(mealData.carbs) || 0,
+                fat: parseFloat(mealData.fat) || 0,
+                fiber: parseFloat(mealData.fiber) || 0
+            };
+
+            onAddMeal(meal);
+            
+            // Reset form
+            setMealData({
+                name: '',
+                calories: '',
+                protein: '',
+                carbs: '',
+                fat: '',
+                fiber: ''
+            });
+        };
+
+        const updateField = (field, value) => {
+            setMealData(prev => ({ ...prev, [field]: value }));
+        };
+
+        return React.createElement('form', { onSubmit: handleSubmit, className: 'space-y-4' },
+            React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+                React.createElement('div', null,
+                    React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Meal Name'),
+                    React.createElement('input', {
+                        type: 'text',
+                        value: mealData.name,
+                        onChange: (e) => updateField('name', e.target.value),
+                        className: 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                        placeholder: 'e.g., Chicken Caesar Salad'
+                    })
+                ),
+                React.createElement('div', null,
+                    React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Calories'),
+                    React.createElement('input', {
+                        type: 'number',
+                        value: mealData.calories,
+                        onChange: (e) => updateField('calories', e.target.value),
+                        className: 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                        placeholder: '350'
+                    })
+                )
+            ),
+            
+            React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4' },
+                ['protein', 'carbs', 'fat', 'fiber'].map(nutrient => 
+                    React.createElement('div', { key: nutrient },
+                        React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 
+                            nutrient.charAt(0).toUpperCase() + nutrient.slice(1) + ' (g)'
+                        ),
+                        React.createElement('input', {
+                            type: 'number',
+                            step: '0.1',
+                            value: mealData[nutrient],
+                            onChange: (e) => updateField(nutrient, e.target.value),
+                            className: 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                            placeholder: '0'
+                        })
+                    )
+                )
+            ),
+            
+            React.createElement('button', {
+                type: 'submit',
+                className: 'w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white rounded-lg font-bold text-lg transform hover:scale-105 transition-all duration-200'
+            }, '✅ Add Meal')
+        );
+    };
+
+    // Render function with enhanced error handling
+    const renderNutritionTab = (containerId = 'nutrition-container') => {
+        console.log('🔧 Attempting to render nutrition tab...');
+        
+        try {
+            const component = React.createElement(FixedNutritionTracker);
+            return safelyRenderToContainer(containerId, component, 'Nutrition Tracker');
+        } catch (error) {
+            console.error('❌ Critical error in renderNutritionTab:', error);
+            
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = `
+                    <div class="p-8 text-center">
+                        <div class="text-6xl mb-4">❌</div>
+                        <h3 class="text-xl font-bold text-red-600 mb-2">Critical Error</h3>
+                        <p class="text-gray-600 mb-4">Unable to load nutrition tracker. Please refresh the page.</p>
+                        <button onclick="location.reload()" class="px-4 py-2 bg-red-500 text-white rounded-lg">
+                            Refresh Page
+                        </button>
+                    </div>
+                `;
+            }
+            return false;
+        }
+    };
+
+    // Enhanced meal planning render with dates
+    const renderMealPlanningWithDates = (containerId = 'meal-planning-container') => {
+        console.log('🔧 Attempting to render meal planning with dates...');
+        
+        try {
+            // Check if meal planning component exists
+            if (typeof window.HabbtMealPlanning?.IntelligentMealPlanningApp === 'function') {
+                const component = React.createElement(window.HabbtMealPlanning.IntelligentMealPlanningApp);
+                return safelyRenderToContainer(containerId, component, 'Meal Planning');
+            } else {
+                console.warn('⚠️ Meal planning component not found, rendering placeholder');
+                
+                const container = document.getElementById(containerId);
+                if (container) {
+                    container.innerHTML = `
+                        <div class="p-8 text-center">
+                            <div class="text-6xl mb-4">🍽️</div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">Meal Planning Loading...</h3>
+                            <p class="text-gray-600 mb-4">Please wait while we load the meal planning system.</p>
+                            <div class="animate-pulse bg-gray-200 h-4 rounded w-3/4 mx-auto"></div>
+                        </div>
+                    `;
+                }
+                return false;
+            }
+        } catch (error) {
+            console.error('❌ Error rendering meal planning:', error);
+            return false;
+        }
+    };
+
+    // Global exports with safe rendering
+    window.HabbtNutrition = {
+        FixedNutritionTracker,
+        renderNutritionTab,
+        renderMealPlanningWithDates,
+        safelyRenderToContainer
+    };
+
+    // Backwards compatibility
+    window.FuelIQNutrition = window.HabbtNutrition;
+    window.renderNutritionTab = renderNutritionTab;
+    window.renderMealPlanning = renderMealPlanningWithDates;
+
+    console.log('✅ Fixed Nutrition Tab loaded - React DOM mounting issues resolved');
+    console.log('✅ Available functions: renderNutritionTab, renderMealPlanningWithDates');
+
+})();
