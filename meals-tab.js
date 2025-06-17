@@ -893,3 +893,59 @@ window.HabbtNutrition = {
 window.FuelIQMeals = window.HabbtNutrition;
 
 console.log('✅ Habbt Nutrition tab loaded - Complete rebranded version with beautiful blue-teal design');
+// Enhanced Habbt Compatibility Layer
+(function() {
+    console.log('🔧 Creating enhanced nutrition compatibility...');
+    
+    // Wait for React and ReactDOM to be available
+    function waitForDependencies() {
+        return typeof React !== 'undefined' && typeof ReactDOM !== 'undefined';
+    }
+    
+    function createNutritionCompatibility() {
+        if (!waitForDependencies()) {
+            console.warn('❌ React dependencies not ready for nutrition module');
+            return false;
+        }
+        
+        // Create all the expected global references
+        if (typeof renderNutritionTab === 'function') {
+            console.log('✅ renderNutritionTab function available');
+            
+            // Ensure all possible naming conventions work
+            window.renderMealsTab = renderNutritionTab;
+            window.renderHabbtNutrition = renderNutritionTab;
+            window.renderHabbtMeals = renderNutritionTab;
+            
+            console.log('✅ All nutrition render functions created');
+            return true;
+        } else {
+            console.error('❌ renderNutritionTab function not found');
+            return false;
+        }
+    }
+    
+    // Try immediate setup
+    if (!createNutritionCompatibility()) {
+        // Wait for dependencies
+        let attempts = 0;
+        const maxAttempts = 30;
+        
+        const interval = setInterval(() => {
+            attempts++;
+            console.log(`🔄 Nutrition compatibility attempt ${attempts}/30...`);
+            
+            if (createNutritionCompatibility() || attempts >= maxAttempts) {
+                clearInterval(interval);
+                
+                if (attempts >= maxAttempts) {
+                    console.error('❌ Nutrition compatibility failed after 30 attempts');
+                } else {
+                    console.log('✅ Nutrition compatibility setup complete!');
+                }
+            }
+        }, 100);
+    }
+})();
+
+console.log('🍽️ Habbt Nutrition module fully loaded with enhanced compatibility');
