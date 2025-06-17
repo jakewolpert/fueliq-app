@@ -395,7 +395,7 @@ const fallbackKeys = Object.keys(PLANNING_FALLBACK_FOODS).filter(key =>
     const handleBarcodeScan = async (barcode) => {
         setLoading(true);
         try {
-            const product = await lookupBarcode(barcode);
+            const product = await lookupBarcodeForPlanning(barcode);
             if (product) {
                 setSearchResults([product]);
                 setSearchQuery(product.description);
