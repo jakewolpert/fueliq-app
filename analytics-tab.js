@@ -1052,5 +1052,9 @@ window.FuelIQAnalytics = (function() {
     setSpecificDate
   };
 })();
-
+// Habbt Compatibility - ADD THIS TO THE END
+window.HabbtAnalytics = window.FuelIQAnalytics;
+if (window.FuelIQAnalytics && window.FuelIQAnalytics.renderAnalyticsTab) {
+    window.renderAnalyticsTab = window.FuelIQAnalytics.renderAnalyticsTab;
+}
 console.log('✅ Enhanced FuelIQ Analytics module loaded with AI insights');
