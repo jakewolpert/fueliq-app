@@ -264,55 +264,58 @@ useEffect(() => {
   }
 }, [currentView, goals]);
 
-      // Enhanced meals tab rendering
-      useEffect(() => {
-        if (currentView === 'meals') {
-          clearContainer('meals-container');
-          
-          // Enhanced loading with retry mechanism
-          let retryCount = 0;
-          const maxRetries = 10;
-          
-          const tryRenderMeals = () => {
-            if (window.FuelIQMeals && window.FuelIQMeals.renderMealsTab) {
-              try {
-                window.FuelIQMeals.renderMealsTab('meals-container');
-                console.log('✅ Meals tab rendered successfully');
-              } catch (error) {
-                console.error('Error rendering meals tab:', error);
-              }
-            } else {
-              retryCount++;
-              if (retryCount < maxRetries) {
-                console.log(`⏳ Waiting for FuelIQMeals module... (${retryCount}/${maxRetries})`);
-                setTimeout(tryRenderMeals, 200);
-              } else {
-                console.warn('❌ FuelIQMeals module failed to load after', maxRetries, 'attempts');
-                // Show fallback message
-                const container = document.getElementById('meals-container');
-                if (container) {
-                  container.innerHTML = `
-                    <div class="flex items-center justify-center min-h-96">
-                      <div class="text-center p-8">
-                        <div class="text-6xl mb-4">🔄</div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-2">Loading Meals Tab...</h3>
-                        <p class="text-gray-600 mb-4">If this takes too long, please refresh the page.</p>
-                        <button onclick="location.reload()" 
-                                class="px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 font-bold">
-                          Refresh Page
-                        </button>
-                      </div>
-                    </div>
-                  `;
-                }
-              }
-            }
-          };
-          
-          // Start with a small delay to ensure DOM is ready
-          setTimeout(tryRenderMeals, 100);
+      // Simplified meals tab rendering
+useEffect(() => {
+  if (currentView === 'meals') {
+    clearContainer('meals-container');
+    
+    // Ensure goals are available first
+    if (window.FuelIQDataManager) {
+      const goals = window.FuelIQDataManager.getGoals();
+      localStorage.setItem('fueliq_user_goals', JSON.stringify(goals));
+      console.log('✅ Goals synchronized for meals tab');
+    }
+    
+    // Simple retry mechanism  
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    const tryRenderMeals = () => {
+      if (window.FuelIQMeals && window.FuelIQMeals.renderMealsTab) {
+        try {
+          window.FuelIQMeals.renderMealsTab('meals-container');
+          console.log('✅ Meals tab rendered successfully');
+        } catch (error) {
+          console.error('Error rendering meals tab:', error);
         }
-      }, [currentView]);
+      } else {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Waiting for meals module... (${retryCount}/${maxRetries})`);
+          setTimeout(tryRenderMeals, 1000);
+        } else {
+          console.warn('❌ Meals module failed to load');
+          const container = document.getElementById('meals-container');
+          if (container) {
+            container.innerHTML = `
+              <div class="max-w-6xl mx-auto p-6">
+                <div class="bg-orange-50 border border-orange-200 rounded-xl p-6">
+                  <h2 class="text-xl font-bold text-orange-800 mb-2">🍽️ Meals Tab Issue</h2>
+                  <p class="text-orange-600 mb-4">Meals functionality is not loading properly.</p>
+                  <button onclick="location.reload()" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                    Refresh Page
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+        }
+      }
+    };
+    
+    setTimeout(tryRenderMeals, 500);
+  }
+}, [currentView]);
 
       // Enhanced profile tab rendering
 useEffect(() => {
