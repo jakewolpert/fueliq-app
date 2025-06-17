@@ -1,7 +1,7 @@
 // Habbt Nutrition Tab - Complete JavaScript Module
 // Enhanced with Barcode Scanner and AI Suggestions
 // USDA API Functions
-const searchFoods = async (query) => {
+const searchFoodsForPlanning = async (query) => {
     if (!query || query.length < 2) return [];
     
     try {
