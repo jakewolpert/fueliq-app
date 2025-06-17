@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FuelIQ - Your Intelligent Nutrition Companion</title>
+  <title>Habbt - Your System for Better</title>
   <link rel="preload" href="enhanced-integration-system.js" as="script">
   <link rel="preload" href="meals-tab.js" as="script">
   <link rel="preload" href="meal-planning.js" as="script">
@@ -155,16 +155,16 @@
   
   <style>
     .text-gradient {
-      background: linear-gradient(to right, #ea580c, #dc2626);
+      background: linear-gradient(to right, #2563eb, #0d9488);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-    .bg-gradient-orange-red {
-      background: linear-gradient(to right, #ea580c, #dc2626, #ec4899);
+    .bg-gradient-blue-teal {
+      background: linear-gradient(to right, #2563eb, #1d4ed8, #0d9488);
     }
     .bg-gradient-card {
-      background: linear-gradient(135deg, #fed7aa, #fecaca, #fbb6ce);
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe, #a7f3d0);
     }
   </style>
 </head>
@@ -187,7 +187,7 @@
     const AuthContext = createContext();
 
     // Main App Wrapper with Authentication
-    function FuelIQApp() {
+    function HabbtApp() {
       const [user, setUser] = useState(null);
       const [loading, setLoading] = useState(true);
 
@@ -204,7 +204,7 @@
                   const profileData = await window.CloudDataManager.loadProfile(user.uid);
                   if (profileData) {
                     // Sync cloud data to localStorage for existing app compatibility
-                    localStorage.setItem('fueliq_profile_data', JSON.stringify(profileData));
+                    localStorage.setItem('habbt_profile_data', JSON.stringify(profileData));
                     console.log('✅ User data synced from cloud');
                   }
                 } catch (error) {
@@ -231,10 +231,10 @@
       }, []);
 
       if (loading) {
-        return e('div', { className: 'min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-pink-600 flex items-center justify-center' },
+        return e('div', { className: 'min-h-screen bg-gradient-to-br from-blue-500 via-blue-600 to-teal-600 flex items-center justify-center' },
           e('div', { className: 'text-center text-white' },
             e('div', { className: 'animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4' }),
-            e('h2', { className: 'text-2xl font-bold' }, '🔥 Loading FuelIQ...')
+            e('h2', { className: 'text-2xl font-bold' }, '⚡ Loading Habbt...')
           )
         );
       }
@@ -246,7 +246,7 @@
 
       // Show main app if authenticated
       return e(AuthContext.Provider, { value: { user, setUser } },
-        e(FuelIQMain)
+        e(HabbtMain)
       );
     }
 
@@ -297,25 +297,25 @@
         setLoading(false);
       };
 
-      return e('div', { className: 'min-h-screen bg-gradient-to-br from-orange-400 via-red-500 to-pink-600 flex items-center justify-center p-4' },
+      return e('div', { className: 'min-h-screen bg-gradient-to-br from-blue-500 via-blue-600 to-teal-600 flex items-center justify-center p-4' },
         e('div', { className: 'bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md' },
           // Logo/Header
           e('div', { className: 'text-center mb-8' },
-            e('div', { className: 'w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4' },
+            e('div', { className: 'w-16 h-16 bg-gradient-to-br from-blue-600 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4' },
               e('span', { className: 'text-3xl text-white' }, '⚡')
             ),
-            e('h1', { className: 'text-4xl font-bold text-gray-800 mb-2' }, 'FuelIQ'),
-            e('p', { className: 'text-gray-600' }, 'Your Intelligent Nutrition Companion')
+            e('h1', { className: 'text-4xl font-bold text-gray-800 mb-2' }, 'Habbt'),
+            e('p', { className: 'text-gray-600' }, 'Your system for better')
           ),
 
           // Login/Signup Toggle
           e('div', { className: 'flex mb-6 bg-gray-100 rounded-xl p-1' },
             e('button', {
-              className: `flex-1 py-2 px-4 rounded-lg font-medium transition-all ${isLogin ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500'}`,
+              className: `flex-1 py-2 px-4 rounded-lg font-medium transition-all ${isLogin ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`,
               onClick: () => setIsLogin(true)
             }, 'Sign In'),
             e('button', {
-              className: `flex-1 py-2 px-4 rounded-lg font-medium transition-all ${!isLogin ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500'}`,
+              className: `flex-1 py-2 px-4 rounded-lg font-medium transition-all ${!isLogin ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`,
               onClick: () => setIsLogin(false)
             }, 'Sign Up')
           ),
@@ -329,7 +329,7 @@
                 type: 'text',
                 value: name,
                 onChange: (e) => setName(e.target.value),
-                className: 'w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent',
+                className: 'w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent',
                 placeholder: 'Enter your full name',
                 required: !isLogin
               })
@@ -342,7 +342,7 @@
                 type: 'email',
                 value: email,
                 onChange: (e) => setEmail(e.target.value),
-                className: 'w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent',
+                className: 'w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent',
                 placeholder: 'Enter your email',
                 required: true
               })
@@ -355,7 +355,7 @@
                 type: 'password',
                 value: password,
                 onChange: (e) => setPassword(e.target.value),
-                className: 'w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent',
+                className: 'w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent',
                 placeholder: 'Enter your password',
                 required: true,
                 minLength: 6
@@ -371,14 +371,14 @@
             e('button', {
               type: 'submit',
               disabled: loading,
-              className: `w-full bg-gradient-to-r from-orange-500 to-red-600 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:from-orange-600 hover:to-red-700 transform hover:scale-105'}`
+              className: `w-full bg-gradient-to-r from-blue-600 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-700 hover:to-teal-700 transform hover:scale-105'}`
             }, loading ? '⏳ Loading...' : (isLogin ? '🔑 Sign In' : '🚀 Create Account'))
           ),
 
           // Demo info
           e('div', { className: 'mt-6 p-4 bg-blue-50 rounded-xl' },
             e('p', { className: 'text-xs text-blue-600 text-center' }, 
-              '💡 Create an account to save your data across devices!'
+              '💡 Create an account to build better habits across all devices!'
             )
           )
         )
@@ -417,8 +417,8 @@
       };
     }
 
-    // Main FuelIQ App (Your existing app with cloud sync)
-    function FuelIQMain() {
+    // Main Habbt App (Your existing app with cloud sync)
+    function HabbtMain() {
       const { user } = useContext(AuthContext);
       const { saveProfileToCloud, saveMealDataToCloud, saveAnalyticsToCloud } = useDataSync();
       const [currentView, setCurrentView] = useState('profile');
@@ -446,22 +446,31 @@
       // Enhanced localStorage with cloud sync
       const enhancedLocalStorage = {
         setItem: async (key, value) => {
+          // Update keys to use Habbt prefix
+          const newKey = key.replace('fueliq_', 'habbt_');
+          
           // Save to localStorage for immediate access
-          localStorage.setItem(key, value);
+          localStorage.setItem(newKey, value);
           
           // Auto-sync to cloud based on data type
-          if (key === 'fueliq_profile_data') {
+          if (newKey === 'habbt_profile_data') {
             await saveProfileToCloud(JSON.parse(value));
-          } else if (key.startsWith('fueliq_meals_')) {
-            const date = key.replace('fueliq_meals_', '');
+          } else if (newKey.startsWith('habbt_meals_')) {
+            const date = newKey.replace('habbt_meals_', '');
             await saveMealDataToCloud(date, JSON.parse(value));
-          } else if (key === 'fueliq_analytics_data') {
+          } else if (newKey === 'habbt_analytics_data') {
             await saveAnalyticsToCloud(JSON.parse(value));
           }
         },
         
-        getItem: (key) => localStorage.getItem(key),
-        removeItem: (key) => localStorage.removeItem(key)
+        getItem: (key) => {
+          const newKey = key.replace('fueliq_', 'habbt_');
+          return localStorage.getItem(newKey);
+        },
+        removeItem: (key) => {
+          const newKey = key.replace('fueliq_', 'habbt_');
+          return localStorage.removeItem(newKey);
+        }
       };
 
       // Make enhanced localStorage available globally
@@ -476,11 +485,11 @@
           setCurrentView(e.detail.tab);
         };
         
-        window.addEventListener('fueliq-navigate', handleNavigate);
+        window.addEventListener('habbt-navigate', handleNavigate);
         window.setCurrentView = setCurrentView;
         
         return () => {
-          window.removeEventListener('fueliq-navigate', handleNavigate);
+          window.removeEventListener('habbt-navigate', handleNavigate);
           window.setCurrentView = null;
         };
       }, [setCurrentView]);
@@ -519,26 +528,26 @@
           clearContainer(id);
         });
         
-        if (window.FuelIQMeals && window.FuelIQMeals.cleanup) {
-          window.FuelIQMeals.cleanup();
+        if (window.HabbtMeals && window.HabbtMeals.cleanup) {
+          window.HabbtMeals.cleanup();
         }
-        if (window.FuelIQWeightJourney && window.FuelIQWeightJourney.cleanup) {
-          window.FuelIQWeightJourney.cleanup();
+        if (window.HabbtWeightJourney && window.HabbtWeightJourney.cleanup) {
+          window.HabbtWeightJourney.cleanup();
         }
-        if (window.FuelIQPantry && window.FuelIQPantry.cleanup) {
-          window.FuelIQPantry.cleanup();
+        if (window.HabbtPantry && window.HabbtPantry.cleanup) {
+          window.HabbtPantry.cleanup();
         }
-        if (window.FuelIQMealPlanning && window.FuelIQMealPlanning.cleanup) {
-          window.FuelIQMealPlanning.cleanup();
+        if (window.HabbtMealPlanning && window.HabbtMealPlanning.cleanup) {
+          window.HabbtMealPlanning.cleanup();
         }
-        if (window.FuelIQGroceryDelivery && window.FuelIQGroceryDelivery.cleanup) {
-          window.FuelIQGroceryDelivery.cleanup();
+        if (window.HabbtGroceryDelivery && window.HabbtGroceryDelivery.cleanup) {
+          window.HabbtGroceryDelivery.cleanup();
         }
-        if (window.FuelIQAnalytics && window.FuelIQAnalytics.cleanup) {
-          window.FuelIQAnalytics.cleanup();
+        if (window.HabbtAnalytics && window.HabbtAnalytics.cleanup) {
+          window.HabbtAnalytics.cleanup();
         }
-        if (window.FuelIQWearables && window.FuelIQWearables.cleanup) {
-          window.FuelIQWearables.cleanup();
+        if (window.HabbtWearables && window.HabbtWearables.cleanup) {
+          window.HabbtWearables.cleanup();
         }
       };
 
@@ -616,7 +625,7 @@
                 setGoals(savedGoals);
               }
             } else {
-              const savedProfile = localStorage.getItem('fueliq_user_profile');
+              const savedProfile = localStorage.getItem('habbt_user_profile');
               if (savedProfile) {
                 const parsedProfile = JSON.parse(savedProfile);
                 console.log('✅ Loaded profile from localStorage:', parsedProfile);
@@ -648,8 +657,8 @@
         if (currentView === 'meals') {
           let userGoalsData;
           
-          if (window.FuelIQDataManager) {
-            const goals = window.FuelIQDataManager.getGoals();
+          if (window.HabbtDataManager) {
+            const goals = window.HabbtDataManager.getGoals();
             userGoalsData = {
               dailyCalories: goals.calories,
               calories: goals.calories,
@@ -669,7 +678,7 @@
           
           if (userGoalsData) {
             try {
-              localStorage.setItem('fueliq_user_goals', JSON.stringify(userGoalsData));
+              localStorage.setItem('habbt_user_goals', JSON.stringify(userGoalsData));
               console.log('✅ Goals synchronized for meals tab:', userGoalsData);
             } catch (e) {
               console.warn('localStorage not available:', e);
@@ -683,9 +692,9 @@
         if (currentView === 'meals') {
           clearContainer('meals-container');
           
-          if (window.FuelIQDataManager) {
-            const goals = window.FuelIQDataManager.getGoals();
-            localStorage.setItem('fueliq_user_goals', JSON.stringify(goals));
+          if (window.HabbtDataManager) {
+            const goals = window.HabbtDataManager.getGoals();
+            localStorage.setItem('habbt_user_goals', JSON.stringify(goals));
             console.log('✅ Goals synchronized for meals tab');
           }
           
@@ -693,9 +702,9 @@
           const maxRetries = 3;
           
           const tryRenderMeals = () => {
-            if (window.FuelIQMeals && window.FuelIQMeals.renderMealsTab) {
+            if (window.HabbtMeals && window.HabbtMeals.renderMealsTab) {
               try {
-                window.FuelIQMeals.renderMealsTab('meals-container');
+                window.HabbtMeals.renderMealsTab('meals-container');
                 console.log('✅ Meals tab rendered successfully');
               } catch (error) {
                 console.error('Error rendering meals tab:', error);
@@ -711,10 +720,10 @@
                 if (container) {
                   container.innerHTML = `
                     <div class="max-w-6xl mx-auto p-6">
-                      <div class="bg-orange-50 border border-orange-200 rounded-xl p-6">
-                        <h2 class="text-xl font-bold text-orange-800 mb-2">🍽️ Meals Tab Issue</h2>
-                        <p class="text-orange-600 mb-4">Meals functionality is not loading properly.</p>
-                        <button onclick="location.reload()" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                      <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                        <h2 class="text-xl font-bold text-blue-800 mb-2">🍽️ Meals Tab Issue</h2>
+                        <p class="text-blue-600 mb-4">Meals functionality is not loading properly.</p>
+                        <button onclick="location.reload()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
                           Refresh Page
                         </button>
                       </div>
@@ -738,9 +747,9 @@
           const maxRetries = 10;
           
           const tryRenderProfile = () => {
-            if (window.FuelIQProfile && window.FuelIQProfile.renderProfileTab) {
+            if (window.HabbtProfile && window.HabbtProfile.renderProfileTab) {
               try {
-                window.FuelIQProfile.renderProfileTab('profile-container');
+                window.HabbtProfile.renderProfileTab('profile-container');
                 console.log('✅ Profile tab rendered successfully');
               } catch (error) {
                 console.error('Error rendering profile tab:', error);
@@ -748,10 +757,10 @@
             } else {
               retryCount++;
               if (retryCount < maxRetries) {
-                console.log(`⏳ Waiting for FuelIQProfile module... (${retryCount}/${maxRetries})`);
+                console.log(`⏳ Waiting for HabbtProfile module... (${retryCount}/${maxRetries})`);
                 setTimeout(tryRenderProfile, 200);
               } else {
-                console.warn('❌ FuelIQProfile module failed to load');
+                console.warn('❌ HabbtProfile module failed to load');
               }
             }
           };
@@ -769,9 +778,9 @@
           const maxRetries = 3;
           
           const tryRenderPantry = () => {
-            if (window.FuelIQPantry && window.FuelIQPantry.renderSmartPantry) {
+            if (window.HabbtPantry && window.HabbtPantry.renderSmartPantry) {
               try {
-                window.FuelIQPantry.renderSmartPantry('pantry-container');
+                window.HabbtPantry.renderSmartPantry('pantry-container');
                 console.log('✅ Pantry tab rendered successfully');
               } catch (error) {
                 console.error('Error rendering pantry tab:', error);
@@ -814,9 +823,9 @@
           const maxRetries = 10;
           
           const tryRenderPlanning = () => {
-            if (window.FuelIQMealPlanning && window.FuelIQMealPlanning.renderMealPlanning) {
+            if (window.HabbtMealPlanning && window.HabbtMealPlanning.renderMealPlanning) {
               try {
-                window.FuelIQMealPlanning.renderMealPlanning('planning-container');
+                window.HabbtMealPlanning.renderMealPlanning('planning-container');
                 console.log('✅ Planning tab rendered successfully');
               } catch (error) {
                 console.error('Error rendering planning tab:', error);
@@ -824,10 +833,10 @@
             } else {
               retryCount++;
               if (retryCount < maxRetries) {
-                console.log(`⏳ Waiting for FuelIQMealPlanning module... (${retryCount}/${maxRetries})`);
+                console.log(`⏳ Waiting for HabbtMealPlanning module... (${retryCount}/${maxRetries})`);
                 setTimeout(tryRenderPlanning, 200);
               } else {
-                console.warn('❌ FuelIQMealPlanning module failed to load');
+                console.warn('❌ HabbtMealPlanning module failed to load');
               }
             }
           };
@@ -844,9 +853,9 @@
           const maxRetries = 10;
           
           const tryRenderGrocery = () => {
-            if (window.FuelIQGroceryDelivery && window.FuelIQGroceryDelivery.renderGroceryDelivery) {
+            if (window.HabbtGroceryDelivery && window.HabbtGroceryDelivery.renderGroceryDelivery) {
               try {
-                window.FuelIQGroceryDelivery.renderGroceryDelivery('grocery-container');
+                window.HabbtGroceryDelivery.renderGroceryDelivery('grocery-container');
                 console.log('✅ Grocery tab rendered successfully');
               } catch (error) {
                 console.error('Error rendering grocery tab:', error);
@@ -854,10 +863,10 @@
             } else {
               retryCount++;
               if (retryCount < maxRetries) {
-                console.log(`⏳ Waiting for FuelIQGroceryDelivery module... (${retryCount}/${maxRetries})`);
+                console.log(`⏳ Waiting for HabbtGroceryDelivery module... (${retryCount}/${maxRetries})`);
                 setTimeout(tryRenderGrocery, 200);
               } else {
-                console.warn('❌ FuelIQGroceryDelivery module failed to load');
+                console.warn('❌ HabbtGroceryDelivery module failed to load');
               }
             }
           };
@@ -874,9 +883,9 @@
           const maxRetries = 10;
           
           const tryRenderAnalytics = () => {
-            if (window.FuelIQAnalytics && window.FuelIQAnalytics.renderAnalyticsTab) {
+            if (window.HabbtAnalytics && window.HabbtAnalytics.renderAnalyticsTab) {
               try {
-                window.FuelIQAnalytics.renderAnalyticsTab('analytics-container');
+                window.HabbtAnalytics.renderAnalyticsTab('analytics-container');
                 console.log('✅ Analytics tab rendered successfully');
               } catch (error) {
                 console.error('Error rendering analytics tab:', error);
@@ -884,10 +893,10 @@
             } else {
               retryCount++;
               if (retryCount < maxRetries) {
-                console.log(`⏳ Waiting for FuelIQAnalytics module... (${retryCount}/${maxRetries})`);
+                console.log(`⏳ Waiting for HabbtAnalytics module... (${retryCount}/${maxRetries})`);
                 setTimeout(tryRenderAnalytics, 200);
               } else {
-                console.warn('❌ FuelIQAnalytics module failed to load');
+                console.warn('❌ HabbtAnalytics module failed to load');
               }
             }
           };
@@ -904,9 +913,9 @@
           const maxRetries = 10;
           
           const tryRenderWearables = () => {
-            if (window.FuelIQWearables && window.FuelIQWearables.renderWearablesHub) {
+            if (window.HabbtWearables && window.HabbtWearables.renderWearablesHub) {
               try {
-                window.FuelIQWearables.renderWearablesHub('wearables-container');
+                window.HabbtWearables.renderWearablesHub('wearables-container');
                 console.log('✅ Wearables tab rendered successfully');
               } catch (error) {
                 console.error('Error rendering wearables tab:', error);
@@ -914,10 +923,10 @@
             } else {
               retryCount++;
               if (retryCount < maxRetries) {
-                console.log(`⏳ Waiting for FuelIQWearables module... (${retryCount}/${maxRetries})`);
+                console.log(`⏳ Waiting for HabbtWearables module... (${retryCount}/${maxRetries})`);
                 setTimeout(tryRenderWearables, 200);
               } else {
-                console.warn('❌ FuelIQWearables module failed to load');
+                console.warn('❌ HabbtWearables module failed to load');
               }
             }
           };
@@ -946,7 +955,7 @@
       // Calculate current nutrition totals
       const totals = useMemo(() => {
         const today = new Date().toISOString().split('T')[0];
-        const key = `fueliq_meals_${today}`;
+        const key = `habbt_meals_${today}`;
         try {
           const data = JSON.parse(localStorage.getItem(key) || '{}');
           const allFoods = [...(data.breakfast||[]), ...(data.lunch||[]), ...(data.dinner||[]), ...(data.snacks||[])];
@@ -999,19 +1008,19 @@
           }
         };
         
-        return e('div', { className: "bg-gradient-orange-red shadow-xl" },
+        return e('div', { className: "bg-gradient-blue-teal shadow-xl" },
           e('div', { className: "max-w-7xl mx-auto px-6" },
             e('div', { className: "flex items-center justify-between py-4" },
               e('div', { className: "flex items-center space-x-4" },
                 e('div', { className: "flex items-center space-x-2" },
                   e('div', { className: "w-10 h-10 bg-white rounded-xl flex items-center justify-center" },
-                    e('span', { className: "text-2xl text-orange-600" }, '⚡')
+                    e('span', { className: "text-2xl text-blue-600" }, '⚡')
                   ),
                   e('h1', { 
                     className: "text-2xl font-bold text-white tracking-tight", 
                     style: {fontFamily: 'Georgia, Times, serif'} 
-                  }, "FuelIQ"),
-                  e('span', { className: "text-orange-100 text-sm hidden md:inline" }, `Welcome, ${user?.email}!`)
+                  }, "Habbt"),
+                  e('span', { className: "text-blue-100 text-sm hidden md:inline" }, `Welcome, ${user?.email}!`)
                 )
               ),
               
@@ -1021,13 +1030,13 @@
                  [
                     { id: 'profile', label: 'Profile', icon: '👤' },
                     { id: 'dashboard', label: 'Dashboard', icon: '📊', highlight: true },
-                    { id: 'meals', label: 'Meals', icon: '🍽️' },
+                    { id: 'meals', label: 'Nutrition', icon: '🍽️' },
                     { id: 'pantry', label: 'Pantry', icon: '🛒' },
                     { id: 'planning', label: 'Planning', icon: '📅' },
                     { id: 'grocery', label: 'Delivery', icon: '🚚' },
                     { id: 'wearables', label: 'Devices', icon: '⌚' },
                     { id: 'analytics', label: 'Analytics', icon: '📈' },
-                    { id: 'chat', label: 'AI Chat', icon: '💬' }
+                    { id: 'chat', label: 'AI Coach', icon: '💬' }
                   ].map(({ id, label, icon }) => 
                     e('button', {
                       key: id,
@@ -1035,7 +1044,7 @@
                       disabled: isNavigating,
                       className: `flex items-center space-x-2 px-4 py-2 rounded-xl font-medium text-sm whitespace-nowrap transition-all duration-200 ${
         currentView === id
-          ? (id === 'dashboard' ? 'bg-blue-500 text-white shadow-lg' : 'bg-white text-orange-600 shadow-lg')
+          ? (id === 'dashboard' ? 'bg-teal-500 text-white shadow-lg' : 'bg-white text-blue-600 shadow-lg')
           : 'text-white/80 hover:text-white hover:bg-white/10'
       } ${isNavigating ? 'opacity-50 cursor-not-allowed' : ''}`
                     },
@@ -1064,7 +1073,7 @@
         );
       }
 
-      // Enhanced Dashboard view (same as your existing dashboard)
+      // Enhanced Dashboard view
       if (currentView === 'dashboard') {
         const now = new Date();
         const today = now.toLocaleDateString('en-US', { 
@@ -1083,7 +1092,7 @@
         // Get goals from profile data
         const profileGoals = (() => {
           try {
-            const profileData = localStorage.getItem('fueliq_profile_data');
+            const profileData = localStorage.getItem('habbt_profile_data');
             if (profileData) {
               const parsed = JSON.parse(profileData);
               if (parsed.goals) {
@@ -1114,8 +1123,8 @@
           e(Navigation),
           e('div', { className: "max-w-7xl mx-auto p-6" },
             
-            // Welcome Header with cloud sync indicator
-            e('div', { className: "bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-3xl shadow-2xl p-8 mb-8 text-white relative overflow-hidden" },
+            // Welcome Header with Habbt branding
+            e('div', { className: "bg-gradient-to-r from-blue-600 via-blue-700 to-teal-600 rounded-3xl shadow-2xl p-8 mb-8 text-white relative overflow-hidden" },
               e('div', { className: "absolute inset-0 opacity-10" },
                 e('div', { className: "absolute top-0 left-0 w-full h-full", style: { backgroundImage: 'radial-gradient(circle at 20% 50%, white 2px, transparent 2px), radial-gradient(circle at 80% 20%, white 2px, transparent 2px)', backgroundSize: '30px 30px' } })
               ),
@@ -1131,32 +1140,29 @@
                 e('p', { className: "text-xl opacity-90 mb-2" }, today),
                 e('p', { className: "text-lg font-semibold opacity-95" }, currentTime),
                 e('div', { className: "mt-4 text-sm opacity-80 flex items-center justify-center space-x-2" }, 
-                  e('span', {}, '📈 Your nutrition overview'),
-                  e('span', { className: "px-2 py-1 bg-green-500 rounded-full text-xs" }, '☁️ Cloud Synced')
+                  e('span', {}, '📈 Your habit progress overview'),
+                  e('span', { className: "px-2 py-1 bg-teal-500 rounded-full text-xs" }, '☁️ Cloud Synced')
                 )
               )
             ),
 
-            // Same main metrics grid and other dashboard content as your existing version
-            // ... (all the dashboard content from your original app)
-            
-            // Main Metrics Grid
+            // Main Metrics Grid with Habbt colors
             e('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" },
               
-              // Calories Card
+              // Nutrition Card
               e('div', { 
                 className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
                 onClick: () => setCurrentView('meals')
               },
                 e('div', { className: 'flex items-center justify-between mb-4' },
                   e('div', { className: 'flex items-center space-x-3' },
-                    e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-orange-100 to-red-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '🍽️'),
+                    e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-blue-100 to-teal-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '🍽️'),
                     e('div', null,
-                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Calories'),
-                      e('p', { className: 'text-xs text-gray-600' }, 'Daily nutrition target')
+                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Nutrition'),
+                      e('p', { className: 'text-xs text-gray-600' }, 'Daily nutrition habits')
                     )
                   ),
-                  e('div', { className: 'text-sm font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent' }, 
+                  e('div', { className: 'text-sm font-bold bg-gradient-to-r from-blue-500 to-teal-500 bg-clip-text text-transparent' }, 
                     Math.round(getProgressPercentage(totals.calories, profileGoals.calories)) + '%'
                   )
                 ),
@@ -1170,23 +1176,23 @@
                 ),
                 e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
                   e('div', {
-                    className: 'bg-gradient-to-r from-orange-500 to-red-500 h-3 rounded-full transition-all duration-500',
+                    className: 'bg-gradient-to-r from-blue-500 to-teal-500 h-3 rounded-full transition-all duration-500',
                     style: { width: `${getProgressPercentage(totals.calories, profileGoals.calories)}%` }
                   })
                 )
               ),
               
-              // Water Card
+              // Hydration Card
               e('div', { 
                 className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
-                onClick: () => alert('Water tracking coming soon! 🚰')
+                onClick: () => alert('Hydration tracking coming soon! 🚰')
               },
                 e('div', { className: 'flex items-center justify-between mb-4' },
                   e('div', { className: 'flex items-center space-x-3' },
                     e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-cyan-100 to-blue-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '💧'),
                     e('div', null,
-                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Water'),
-                      e('p', { className: 'text-xs text-gray-600' }, 'Stay hydrated')
+                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Hydration'),
+                      e('p', { className: 'text-xs text-gray-600' }, 'Daily water intake')
                     )
                   ),
                   e('div', { className: 'text-sm font-bold text-cyan-600' }, '0%')
@@ -1207,7 +1213,7 @@
                 )
               ),
               
-              // Steps Card
+              // Movement Card
               e('div', { 
                 className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
                 onClick: () => setCurrentView('wearables')
@@ -1216,8 +1222,8 @@
                   e('div', { className: 'flex items-center space-x-3' },
                     e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '👟'),
                     e('div', null,
-                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Steps'),
-                      e('p', { className: 'text-xs text-gray-600' }, 'Daily activity goal')
+                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Movement'),
+                      e('p', { className: 'text-xs text-gray-600' }, 'Daily activity habits')
                     )
                   ),
                   e('div', { className: 'text-sm font-bold text-green-600' }, '0%')
@@ -1225,7 +1231,7 @@
                 e('div', { className: 'mb-4' },
                   e('div', { className: 'flex items-baseline space-x-2' },
                     e('span', { className: 'text-3xl font-bold text-gray-900' }, '0'),
-                    e('span', { className: 'text-lg text-gray-600' }, ''),
+                    e('span', { className: 'text-lg text-gray-600' }, 'steps'),
                     e('span', { className: 'text-gray-400' }, '/'),
                     e('span', { className: 'text-lg text-gray-600' }, '10,000')
                   )
@@ -1238,7 +1244,7 @@
                 )
               ),
               
-              // Sleep Card
+              // Rest Card
               e('div', { 
                 className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
                 onClick: () => alert('Sleep tracking coming soon! 🌙')
@@ -1247,8 +1253,8 @@
                   e('div', { className: 'flex items-center space-x-3' },
                     e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '😴'),
                     e('div', null,
-                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Sleep'),
-                      e('p', { className: 'text-xs text-gray-600' }, 'Rest & recovery')
+                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Rest'),
+                      e('p', { className: 'text-xs text-gray-600' }, 'Sleep & recovery habits')
                     )
                   ),
                   e('div', { className: 'text-sm font-bold text-purple-600' }, '0%')
@@ -1271,17 +1277,17 @@
             ),
 
             // Cloud sync status indicator
-            e('div', { className: "bg-green-50 border border-green-200 rounded-xl p-4 mb-6" },
+            e('div', { className: "bg-teal-50 border border-teal-200 rounded-xl p-4 mb-6" },
               e('div', { className: "flex items-center justify-between" },
                 e('div', { className: "flex items-center space-x-3" },
                   e('span', { className: "text-2xl" }, '☁️'),
                   e('div', {},
-                    e('h3', { className: "font-bold text-green-800" }, 'Cloud Sync Active'),
-                    e('p', { className: "text-sm text-green-600" }, 'Your data is automatically backed up and synced across devices')
+                    e('h3', { className: "font-bold text-teal-800" }, 'Habbt Cloud Sync Active'),
+                    e('p', { className: "text-sm text-teal-600" }, 'Your system for better - automatically synced across all devices')
                   )
                 ),
-                e('div', { className: "text-green-600 text-sm font-medium" }, 
-                  `Logged in as: ${user?.email}`
+                e('div', { className: "text-teal-600 text-sm font-medium" }, 
+                  `Signed in as: ${user?.email}`
                 )
               )
             )
@@ -1289,7 +1295,7 @@
         );
       }
 
-      // All other view handlers (same as your existing app)
+      // All other view handlers (same structure but with Habbt naming)
       if (currentView === 'meals') {
         return e('div', { className: "min-h-screen bg-gradient-card" },
           e(Navigation),
@@ -1337,25 +1343,25 @@
         e(Navigation),
         e('div', { className: "max-w-6xl mx-auto p-6" },
           e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20 text-center" },
-            e('div', { className: "w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6" },
-              e('span', { className: "text-4xl text-white" }, '⚙️')
+            e('div', { className: "w-20 h-20 bg-gradient-to-br from-blue-600 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-6" },
+              e('span', { className: "text-4xl text-white" }, '⚡')
             ),
             e('h2', { className: "text-3xl font-bold mb-4 text-gradient" },
               {
                 'profile': 'Profile',
-                'meals': 'Food Logging',
+                'meals': 'Nutrition Habits',
                 'pantry': 'Smart Pantry',
-                'planning': 'Meal Planning',
+                'planning': 'Habit Planning',
                 'grocery': 'Grocery Delivery',
-                'wearables': 'Wearable Devices',
-                'analytics': 'Analytics & Reports',
-                'chat': 'AI Assistant'
+                'wearables': 'Connected Devices',
+                'analytics': 'Progress Analytics',
+                'chat': 'AI Habit Coach'
               }[currentView] || 'Feature Coming Soon'
             ),
-            e('p', { className: "text-xl text-gray-600 mb-8" }, "This section is coming soon with enhanced features!"),
+            e('p', { className: "text-xl text-gray-600 mb-8" }, "This habit is coming soon to your system for better!"),
             e('button', {
               onClick: () => setCurrentView('dashboard'),
-              className: "px-8 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl hover:from-orange-600 hover:to-red-700 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200"
+              className: "px-8 py-4 bg-gradient-to-r from-blue-600 to-teal-600 text-white rounded-2xl hover:from-blue-700 hover:to-teal-700 font-bold text-lg shadow-xl transform hover:scale-105 transition-all duration-200"
             }, "Back to Dashboard")
           )
         )
@@ -1363,7 +1369,7 @@
     }
 
     // Render the complete app with authentication
-    ReactDOM.render(e(FuelIQApp), document.getElementById('root'));
+    ReactDOM.render(e(HabbtApp), document.getElementById('root'));
   </script>
 </body>
 </html>
