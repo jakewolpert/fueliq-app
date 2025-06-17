@@ -665,7 +665,29 @@ if (currentView === 'profile') {
           minute: '2-digit',
           hour12: true
         });
-
+// Get goals from profile data
+const profileGoals = (() => {
+  try {
+    const profileData = localStorage.getItem('fueliq_profile_data');
+    if (profileData) {
+      const parsed = JSON.parse(profileData);
+      if (parsed.goals) {
+        console.log('📊 Dashboard loaded goals:', parsed.goals);
+        return {
+          calories: parsed.goals.calories || 2000,
+          protein: parsed.goals.protein || 150,
+          carbs: parsed.goals.carbs || 250,
+          fat: parsed.goals.fat || 67,
+          water: parsed.goals.water || 64
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('Error loading goals:', e);
+  }
+  
+  return { calories: 2000, protein: 150, carbs: 250, fat: 67, water: 64 };
+})();
         const getProgressPercentage = (current, goal) => {
           const currentNum = parseFloat(current) || 0;
           const goalNum = parseFloat(goal) || 1;
