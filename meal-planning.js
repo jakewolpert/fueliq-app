@@ -693,7 +693,7 @@
 
                 // Tags
                 React.createElement('div', { className: 'flex flex-wrap gap-1 mb-3' },
-                    ...meal.tags.slice(0, 3).map(tag => 
+                    meal.tags.slice(0, 3).map(tag => 
                         React.createElement('span', { 
                             key: tag,
                             className: 'px-2 py-1 bg-gradient-to-r from-blue-100 to-teal-100 text-blue-700 text-xs rounded-full font-medium'
@@ -776,7 +776,7 @@
                                     'Ingredients'
                                 ),
                                 React.createElement('div', { className: 'space-y-2' },
-                                    ...meal.ingredients.map((ingredient, index) => 
+                                    meal.ingredients.map((ingredient, index) => 
                                         React.createElement('div', { 
                                             key: index,
                                             className: `flex justify-between items-center p-3 rounded-lg ${ingredient.pantryItem ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`
@@ -798,7 +798,7 @@
                                     'Instructions'
                                 ),
                                 React.createElement('ol', { className: 'space-y-3' },
-                                    ...meal.instructions.map((instruction, index) => 
+                                    meal.instructions.map((instruction, index) => 
                                         React.createElement('li', { 
                                             key: index,
                                             className: 'flex gap-3'
@@ -961,9 +961,9 @@
                                 React.createElement('span', { className: 'bg-white/20 px-3 py-1 rounded-full' }, 
                                     `🥘 ${pantryItems.length} pantry items`
                                 ),
-                                userPreferences.dietaryRestrictions.length > 0 && React.createElement('span', { className: 'bg-white/20 px-3 py-1 rounded-full' }, 
+                                userPreferences.dietaryRestrictions.length > 0 ? React.createElement('span', { className: 'bg-white/20 px-3 py-1 rounded-full' }, 
                                     `🌱 ${userPreferences.dietaryRestrictions.join(', ')}`
-                                )
+                                ) : null
                             )
                         ),
                         
@@ -1110,7 +1110,7 @@
                         'Weekly Shopping List'
                     ),
                     React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' },
-                        ...missingIngredients.slice(0, 9).map((ingredient, index) => 
+                        missingIngredients.slice(0, 9).map((ingredient, index) => 
                             React.createElement('div', { 
                                 key: index,
                                 className: 'p-4 bg-orange-50 border border-orange-200 rounded-xl'
