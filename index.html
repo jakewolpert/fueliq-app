@@ -422,6 +422,60 @@
       const { user } = useContext(AuthContext);
       const { saveProfileToCloud, saveMealDataToCloud, saveAnalyticsToCloud } = useDataSync();
       const [currentView, setCurrentView] = useState('profile');
+      const [userDisplayName, setUserDisplayName] = useState('');
+
+      // Load user's display name
+      useEffect(() => {
+        const loadUserName = async () => {
+          if (user) {
+            try {
+              // Try to get name from Firebase user profile first
+              if (user.displayName) {
+                setUserDisplayName(user.displayName);
+                return;
+              }
+
+              // Try to get name from our cloud profile data
+              const profileData = await window.CloudDataManager.loadProfile(user.uid);
+              if (profileData && profileData.name) {
+                setUserDisplayName(profileData.name);
+                return;
+              }
+
+              // Try to get name from localStorage
+              const localProfile = localStorage.getItem('habbt_profile_data') || localStorage.getItem('fueliq_profile_data');
+              if (localProfile) {
+                const parsed = JSON.parse(localProfile);
+                if (parsed.name) {
+                  setUserDisplayName(parsed.name);
+                  return;
+                }
+              }
+
+              // Try to get name from user record in Firestore
+              const userDoc = await window.CloudDataManager.loadProfile(user.uid);
+              if (userDoc && userDoc.name) {
+                setUserDisplayName(userDoc.name);
+                return;
+              }
+
+              // Fallback to first part of email
+              const emailName = user.email.split('@')[0];
+              const capitalizedName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+              setUserDisplayName(capitalizedName);
+              
+            } catch (error) {
+              console.warn('Could not load user name:', error);
+              // Fallback to email username
+              const emailName = user.email.split('@')[0];
+              const capitalizedName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+              setUserDisplayName(capitalizedName);
+            }
+          }
+        };
+
+        loadUserName();
+      }, [user]);
 
       // All your existing state and functionality
       const [userProfile, setUserProfile] = useState({
@@ -687,27 +741,40 @@
         }
       }, [currentView, goals]);
 
-      // All your existing useEffect hooks for tab rendering
+      // All your existing useEffect hooks for tab rendering - with compatibility
       useEffect(() => {
         if (currentView === 'meals') {
           clearContainer('meals-container');
           
+          // Try both Habbt and FuelIQ data managers for compatibility
           if (window.HabbtDataManager) {
             const goals = window.HabbtDataManager.getGoals();
             localStorage.setItem('habbt_user_goals', JSON.stringify(goals));
-            console.log('✅ Goals synchronized for meals tab');
+            console.log('✅ Goals synchronized for meals tab (Habbt)');
+          } else if (window.FuelIQDataManager) {
+            const goals = window.FuelIQDataManager.getGoals();
+            localStorage.setItem('fueliq_user_goals', JSON.stringify(goals));
+            console.log('✅ Goals synchronized for meals tab (FuelIQ compatibility)');
           }
           
           let retryCount = 0;
           const maxRetries = 3;
           
           const tryRenderMeals = () => {
+            // Try Habbt naming first, then FuelIQ for compatibility
             if (window.HabbtMeals && window.HabbtMeals.renderMealsTab) {
               try {
                 window.HabbtMeals.renderMealsTab('meals-container');
-                console.log('✅ Meals tab rendered successfully');
+                console.log('✅ Meals tab rendered successfully (Habbt)');
               } catch (error) {
-                console.error('Error rendering meals tab:', error);
+                console.error('Error rendering meals tab (Habbt):', error);
+              }
+            } else if (window.FuelIQMeals && window.FuelIQMeals.renderMealsTab) {
+              try {
+                window.FuelIQMeals.renderMealsTab('meals-container');
+                console.log('✅ Meals tab rendered successfully (FuelIQ compatibility)');
+              } catch (error) {
+                console.error('Error rendering meals tab (FuelIQ):', error);
               }
             } else {
               retryCount++;
@@ -721,8 +788,8 @@
                   container.innerHTML = `
                     <div class="max-w-6xl mx-auto p-6">
                       <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                        <h2 class="text-xl font-bold text-blue-800 mb-2">🍽️ Meals Tab Issue</h2>
-                        <p class="text-blue-600 mb-4">Meals functionality is not loading properly.</p>
+                        <h2 class="text-xl font-bold text-blue-800 mb-2">🍽️ Nutrition Tab Issue</h2>
+                        <p class="text-blue-600 mb-4">Nutrition functionality is not loading properly.</p>
                         <button onclick="location.reload()" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
                           Refresh Page
                         </button>
@@ -738,7 +805,7 @@
         }
       }, [currentView]);
 
-      // Profile tab rendering
+      // Profile tab rendering - with FuelIQ compatibility
       useEffect(() => {
         if (currentView === 'profile') {
           clearContainer('profile-container');
@@ -747,20 +814,28 @@
           const maxRetries = 10;
           
           const tryRenderProfile = () => {
+            // Try Habbt naming first, then fall back to FuelIQ naming for compatibility
             if (window.HabbtProfile && window.HabbtProfile.renderProfileTab) {
               try {
                 window.HabbtProfile.renderProfileTab('profile-container');
-                console.log('✅ Profile tab rendered successfully');
+                console.log('✅ Profile tab rendered successfully (Habbt)');
               } catch (error) {
-                console.error('Error rendering profile tab:', error);
+                console.error('Error rendering profile tab (Habbt):', error);
+              }
+            } else if (window.FuelIQProfile && window.FuelIQProfile.renderProfileTab) {
+              try {
+                window.FuelIQProfile.renderProfileTab('profile-container');
+                console.log('✅ Profile tab rendered successfully (FuelIQ compatibility)');
+              } catch (error) {
+                console.error('Error rendering profile tab (FuelIQ):', error);
               }
             } else {
               retryCount++;
               if (retryCount < maxRetries) {
-                console.log(`⏳ Waiting for HabbtProfile module... (${retryCount}/${maxRetries})`);
+                console.log(`⏳ Waiting for Profile module... (${retryCount}/${maxRetries})`);
                 setTimeout(tryRenderProfile, 200);
               } else {
-                console.warn('❌ HabbtProfile module failed to load');
+                console.warn('❌ Profile module failed to load');
               }
             }
           };
@@ -975,7 +1050,7 @@
       }, [currentView]);
 
       // Navigation component with user info and sign out
-      function Navigation() {
+      function Navigation({ userDisplayName }) {
         const [isNavigating, setIsNavigating] = useState(false);
         
         const handleNavClick = (targetView) => {
@@ -1020,7 +1095,9 @@
                     className: "text-2xl font-bold text-white tracking-tight", 
                     style: {fontFamily: 'Georgia, Times, serif'} 
                   }, "Habbt"),
-                  e('span', { className: "text-blue-100 text-sm hidden md:inline" }, `Welcome, ${user?.email}!`)
+                  e('span', { className: "text-blue-100 text-sm hidden md:inline" }, 
+                    userDisplayName ? `Welcome, ${userDisplayName}!` : `Welcome!`
+                  )
                 )
               ),
               
@@ -1068,7 +1145,7 @@
       // Special handling for profile tab
       if (currentView === 'profile') {
         return e('div', { className: "min-h-screen bg-gradient-card" },
-          e(Navigation),
+          e(Navigation, { userDisplayName }),
           e('div', { id: "profile-container", className: "profile-tab-content" })
         );
       }
@@ -1120,7 +1197,7 @@
         };
 
         return e('div', { className: "min-h-screen bg-gradient-card" },
-          e(Navigation),
+          e(Navigation, { userDisplayName }),
           e('div', { className: "max-w-7xl mx-auto p-6" },
             
             // Welcome Header with Habbt branding
@@ -1287,7 +1364,7 @@
                   )
                 ),
                 e('div', { className: "text-teal-600 text-sm font-medium" }, 
-                  `Signed in as: ${user?.email}`
+                  userDisplayName ? `${userDisplayName} (${user?.email})` : user?.email
                 )
               )
             )
@@ -1298,49 +1375,49 @@
       // All other view handlers (same structure but with Habbt naming)
       if (currentView === 'meals') {
         return e('div', { className: "min-h-screen bg-gradient-card" },
-          e(Navigation),
+          e(Navigation, { userDisplayName }),
           e('div', { id: "meals-container", className: "meals-tab-content" })
         );
       }
 
       if (currentView === 'pantry') {
         return e('div', { className: "min-h-screen bg-gradient-card" },
-          e(Navigation),
+          e(Navigation, { userDisplayName }),
           e('div', { id: "pantry-container", className: "pantry-tab-content" })
         );
       }
 
       if (currentView === 'planning') {
         return e('div', { className: "min-h-screen bg-gradient-card" },
-          e(Navigation),
+          e(Navigation, { userDisplayName }),
           e('div', { id: "planning-container", className: "planning-tab-content" })
         );
       }
 
       if (currentView === 'grocery') {
         return e('div', { className: "min-h-screen bg-gradient-card" },
-          e(Navigation),
+          e(Navigation, { userDisplayName }),
           e('div', { id: "grocery-container", className: "grocery-tab-content" })
         );
       }
 
       if (currentView === 'analytics') {
         return e('div', { className: "min-h-screen bg-gradient-card" },
-          e(Navigation),
+          e(Navigation, { userDisplayName }),
           e('div', { id: "analytics-container", className: "analytics-tab-content" })
         );
       }
 
       if (currentView === 'wearables') {
         return e('div', { className: "min-h-screen bg-gradient-card" },
-          e(Navigation),
+          e(Navigation, { userDisplayName }),
           e('div', { id: "wearables-container", className: "wearables-tab-content" })
         );
       }
 
       // Default view for other sections
       return e('div', { className: "min-h-screen bg-gradient-card" },
-        e(Navigation),
+        e(Navigation, { userDisplayName }),
         e('div', { className: "max-w-6xl mx-auto p-6" },
           e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20 text-center" },
             e('div', { className: "w-20 h-20 bg-gradient-to-br from-blue-600 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-6" },
