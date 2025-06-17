@@ -1,4 +1,4 @@
-// Enhanced Habbt Meal Planning - Complete Weekly Feature Set
+// Enhanced Habbt Meal Planning - Weekly Feature Set (Syntax Error Free)
 (function() {
     'use strict';
 
@@ -39,7 +39,7 @@
         }
     };
 
-    // Comprehensive meal database with detailed recipes and beautiful imagery
+    // Comprehensive meal database
     const COMPREHENSIVE_MEAL_DATABASE = {
         breakfast: [
             {
@@ -57,7 +57,7 @@
                 servings: 1,
                 image: '🥣',
                 color: 'from-amber-400 to-orange-500',
-                tags: ['high-protein', 'quick', 'vegetarian', 'muscle-building'],
+                tags: ['high-protein', 'quick', 'vegetarian'],
                 dietaryInfo: ['vegetarian', 'gluten-free-option'],
                 ingredients: [
                     { name: 'rolled oats', amount: '1/2 cup', calories: 150, pantryItem: true },
@@ -65,21 +65,17 @@
                     { name: 'banana', amount: '1 medium', calories: 105, pantryItem: false },
                     { name: 'almond butter', amount: '1 tbsp', calories: 95, pantryItem: true },
                     { name: 'chia seeds', amount: '1 tbsp', calories: 60, pantryItem: true },
-                    { name: 'cinnamon', amount: '1/2 tsp', calories: 3, pantryItem: true },
-                    { name: 'mixed berries', amount: '1/2 cup', calories: 40, pantryItem: false }
+                    { name: 'cinnamon', amount: '1/2 tsp', calories: 3, pantryItem: true }
                 ],
                 instructions: [
-                    "Cook oats with water or milk according to package directions (about 3 minutes in microwave)",
-                    "Let cool for 1 minute, then stir in protein powder until smooth and creamy", 
-                    "Slice banana and arrange artfully on top",
-                    "Add a dollop of almond butter and drizzle around the bowl",
-                    "Sprinkle chia seeds and cinnamon for extra nutrition and flavor",
-                    "Top with colorful mixed berries and enjoy this powerhouse breakfast!"
+                    "Cook oats with water or milk according to package directions",
+                    "Let cool for 1 minute, then stir in protein powder until smooth", 
+                    "Slice banana and arrange on top",
+                    "Add almond butter and sprinkle with chia seeds and cinnamon"
                 ],
-                tips: "For extra flavor, try vanilla or cinnamon protein powder. Make overnight oats version by mixing everything the night before!",
-                nutrition_focus: "High protein content supports muscle building and keeps you full until lunch. Chia seeds provide omega-3s and fiber.",
-                meal_prep: "Can be prepped 3 days ahead - just add fresh toppings before eating",
-                substitutions: "Replace almond butter with peanut butter or sunbutter. Use any seasonal berries."
+                tips: "For extra flavor, try vanilla protein powder and add berries",
+                nutrition_focus: "High protein content supports muscle building and keeps you full until lunch",
+                meal_prep: "Can be prepped 3 days ahead - just add fresh toppings before eating"
             },
             {
                 id: 'breakfast_veggie_scramble',
@@ -96,107 +92,26 @@
                 servings: 1,
                 image: '🍳',
                 color: 'from-green-400 to-emerald-500',
-                tags: ['high-protein', 'low-carb', 'vegetarian', 'mediterranean'],
-                dietaryInfo: ['vegetarian', 'keto-friendly', 'low-carb'],
+                tags: ['high-protein', 'low-carb', 'vegetarian'],
+                dietaryInfo: ['vegetarian', 'keto-friendly'],
                 ingredients: [
                     { name: 'eggs', amount: '3 large', calories: 210, pantryItem: true },
                     { name: 'spinach', amount: '2 cups fresh', calories: 15, pantryItem: false },
                     { name: 'bell pepper', amount: '1/2 cup diced', calories: 15, pantryItem: false },
                     { name: 'mushrooms', amount: '1/2 cup sliced', calories: 10, pantryItem: false },
                     { name: 'feta cheese', amount: '2 tbsp', calories: 50, pantryItem: false },
-                    { name: 'avocado', amount: '1/2 medium', calories: 120, pantryItem: false },
-                    { name: 'olive oil', amount: '1 tsp', calories: 40, pantryItem: true },
-                    { name: 'fresh herbs', amount: '1 tbsp', calories: 2, pantryItem: true }
+                    { name: 'olive oil', amount: '1 tsp', calories: 40, pantryItem: true }
                 ],
                 instructions: [
                     "Heat olive oil in a non-stick pan over medium heat",
-                    "Add diced bell pepper and sliced mushrooms, sauté for 3-4 minutes until softened",
-                    "Add fresh spinach and cook until wilted (about 1 minute)",
-                    "Beat eggs with a pinch of salt and pepper",
-                    "Pour eggs into the pan with vegetables and scramble gently for 2-3 minutes",
-                    "Add crumbled feta in the last 30 seconds",
-                    "Serve topped with sliced avocado and fresh herbs"
+                    "Add bell pepper and mushrooms, cook for 3-4 minutes",
+                    "Add spinach and cook until wilted",
+                    "Beat eggs and scramble with vegetables for 2-3 minutes",
+                    "Add feta cheese in the last 30 seconds"
                 ],
-                tips: "Don't overcook the eggs - they should be creamy and soft. Add vegetables in order of cooking time needed.",
-                nutrition_focus: "Perfect balance of protein and healthy fats with plenty of antioxidant-rich vegetables",
-                meal_prep: "Chop vegetables the night before. Scramble fresh each morning for best texture.",
-                substitutions: "Try goat cheese instead of feta, or add sun-dried tomatoes for extra flavor."
-            },
-            {
-                id: 'breakfast_greek_parfait',
-                name: 'Antioxidant Berry Parfait',
-                description: 'Layers of creamy Greek yogurt, fresh berries, and crunchy granola',
-                calories: 320,
-                protein: 28,
-                carbs: 35,
-                fat: 8,
-                fiber: 6,
-                prepTime: '3 minutes',
-                cookTime: '0 minutes',
-                difficulty: 'Easy',
-                servings: 1,
-                image: '🫐',
-                color: 'from-purple-400 to-pink-500',
-                tags: ['high-protein', 'no-cook', 'antioxidants', 'probiotic'],
-                dietaryInfo: ['vegetarian', 'gluten-free-option'],
-                ingredients: [
-                    { name: 'greek yogurt', amount: '1 cup plain', calories: 130, pantryItem: false },
-                    { name: 'mixed berries', amount: '3/4 cup', calories: 60, pantryItem: false },
-                    { name: 'granola', amount: '1/4 cup', calories: 110, pantryItem: true },
-                    { name: 'honey', amount: '1 tbsp', calories: 64, pantryItem: true },
-                    { name: 'almonds', amount: '1 tbsp sliced', calories: 35, pantryItem: true }
-                ],
-                instructions: [
-                    "In a clear glass or bowl, add half the Greek yogurt as the base layer",
-                    "Layer with half the mixed berries and a light drizzle of honey",
-                    "Add remaining yogurt for the middle layer",
-                    "Top with remaining berries arranged beautifully",
-                    "Sprinkle crunchy granola and sliced almonds on top",
-                    "Finish with a final drizzle of honey"
-                ],
-                tips: "Use a clear glass to show off the beautiful layers. Prepare the night before without granola to save time.",
-                nutrition_focus: "High in protein and probiotics from Greek yogurt, plus antioxidants from colorful berries",
-                meal_prep: "Perfect make-ahead breakfast - assemble up to 2 days in advance",
-                substitutions: "Try coconut yogurt for dairy-free, or add chia seeds for extra nutrition."
-            },
-            {
-                id: 'breakfast_avocado_toast',
-                name: 'Ultimate Avocado Toast',
-                description: 'Perfectly seasoned avocado on artisan bread with a poached egg',
-                calories: 420,
-                protein: 18,
-                carbs: 35,
-                fat: 24,
-                fiber: 12,
-                prepTime: '5 minutes',
-                cookTime: '5 minutes',
-                difficulty: 'Medium',
-                servings: 1,
-                image: '🥑',
-                color: 'from-green-300 to-teal-400',
-                tags: ['trendy', 'healthy-fats', 'instagram-worthy', 'fiber-rich'],
-                dietaryInfo: ['vegetarian'],
-                ingredients: [
-                    { name: 'sourdough bread', amount: '2 slices', calories: 180, pantryItem: true },
-                    { name: 'avocado', amount: '1 large', calories: 240, pantryItem: false },
-                    { name: 'eggs', amount: '1 large', calories: 70, pantryItem: true },
-                    { name: 'lemon juice', amount: '1 tsp', calories: 1, pantryItem: true },
-                    { name: 'red pepper flakes', amount: 'pinch', calories: 1, pantryItem: true },
-                    { name: 'sea salt', amount: 'to taste', calories: 0, pantryItem: true }
-                ],
-                instructions: [
-                    "Toast sourdough bread slices until golden and crispy",
-                    "Meanwhile, bring water to a gentle simmer for poached egg",
-                    "Mash avocado with lemon juice, salt, and pepper until creamy",
-                    "Crack egg into simmering water and poach for 3-4 minutes",
-                    "Spread generous avocado mixture on toast",
-                    "Top with perfectly poached egg",
-                    "Sprinkle with red pepper flakes and sea salt"
-                ],
-                tips: "Add a splash of vinegar to poaching water for neater eggs. Mash avocado just before serving.",
-                nutrition_focus: "Healthy monounsaturated fats from avocado support heart health and nutrient absorption",
-                meal_prep: "Toast can be made ahead, but assemble fresh to prevent soggy bread",
-                substitutions: "Try everything bagel seasoning instead of salt, or add sliced tomatoes."
+                tips: "Don't overcook the eggs - they should be creamy and soft",
+                nutrition_focus: "Perfect balance of protein and healthy fats with antioxidant vegetables",
+                meal_prep: "Chop vegetables the night before for quick morning prep"
             }
         ],
         lunch: [
@@ -215,7 +130,7 @@
                 servings: 1,
                 image: '🥗',
                 color: 'from-blue-400 to-cyan-500',
-                tags: ['high-protein', 'mediterranean', 'balanced', 'meal-prep-friendly'],
+                tags: ['high-protein', 'mediterranean', 'balanced'],
                 dietaryInfo: ['gluten-free', 'high-protein'],
                 ingredients: [
                     { name: 'chicken breast', amount: '6 oz', calories: 280, pantryItem: false },
@@ -224,26 +139,18 @@
                     { name: 'cherry tomatoes', amount: '1/2 cup', calories: 15, pantryItem: false },
                     { name: 'red onion', amount: '2 tbsp diced', calories: 8, pantryItem: false },
                     { name: 'feta cheese', amount: '2 tbsp crumbled', calories: 50, pantryItem: false },
-                    { name: 'olive oil', amount: '1 tbsp', calories: 120, pantryItem: true },
-                    { name: 'lemon juice', amount: '1 tbsp', calories: 4, pantryItem: true },
-                    { name: 'oregano', amount: '1 tsp dried', calories: 3, pantryItem: true }
+                    { name: 'olive oil', amount: '1 tbsp', calories: 120, pantryItem: true }
                 ],
                 instructions: [
-                    "Season chicken breast with salt, pepper, oregano, and a splash of olive oil",
-                    "Heat a grill pan or skillet over medium-high heat",
-                    "Cook chicken 6-7 minutes per side until golden and cooked through",
-                    "Let chicken rest for 3 minutes, then slice into strips",
-                    "Cook quinoa according to package directions if not already prepared",
-                    "Whisk together remaining olive oil, lemon juice, and oregano for dressing",
-                    "In a large bowl, arrange quinoa as the base",
-                    "Top with colorful cucumber, tomatoes, and red onion",
-                    "Add sliced chicken and crumbled feta cheese",
-                    "Drizzle with lemon oregano dressing"
+                    "Season and grill chicken breast for 6-7 minutes per side",
+                    "Let chicken rest, then slice into strips",
+                    "Arrange quinoa as base in bowl",
+                    "Top with vegetables, chicken, and feta",
+                    "Drizzle with olive oil and lemon juice"
                 ],
-                tips: "Marinate chicken in Greek herbs for 30 minutes for maximum flavor. Make extra quinoa for the week.",
-                nutrition_focus: "Complete protein with complex carbs and healthy Mediterranean fats for sustained energy",
-                meal_prep: "All components can be prepped 3 days ahead - assemble when ready to eat",
-                substitutions: "Try chickpeas instead of chicken for vegetarian option, or swap quinoa for bulgur wheat."
+                tips: "Marinate chicken in herbs for extra flavor",
+                nutrition_focus: "Complete protein with complex carbs and healthy Mediterranean fats",
+                meal_prep: "All components can be prepped 3 days ahead"
             },
             {
                 id: 'lunch_asian_salmon_salad',
@@ -260,7 +167,7 @@
                 servings: 1,
                 image: '🍣',
                 color: 'from-orange-400 to-red-500',
-                tags: ['high-protein', 'omega-3', 'asian-inspired', 'restaurant-quality'],
+                tags: ['high-protein', 'omega-3', 'asian-inspired'],
                 dietaryInfo: ['gluten-free-option', 'dairy-free'],
                 ingredients: [
                     { name: 'salmon fillet', amount: '5 oz', calories: 275, pantryItem: false },
@@ -268,69 +175,18 @@
                     { name: 'edamame', amount: '1/2 cup shelled', calories: 95, pantryItem: false },
                     { name: 'carrots', amount: '1/2 cup julienned', calories: 25, pantryItem: false },
                     { name: 'avocado', amount: '1/2 medium', calories: 120, pantryItem: false },
-                    { name: 'sesame oil', amount: '1 tsp', calories: 40, pantryItem: true },
-                    { name: 'rice vinegar', amount: '1 tbsp', calories: 0, pantryItem: true },
-                    { name: 'ginger', amount: '1 tsp fresh grated', calories: 1, pantryItem: true },
-                    { name: 'sesame seeds', amount: '1 tsp', calories: 17, pantryItem: true },
-                    { name: 'soy sauce', amount: '1 tbsp', calories: 10, pantryItem: true }
+                    { name: 'sesame oil', amount: '1 tsp', calories: 40, pantryItem: true }
                 ],
                 instructions: [
-                    "Season salmon with salt, pepper, and a brush of soy sauce",
-                    "Heat a non-stick pan over medium-high heat",
                     "Cook salmon skin-side down for 4-5 minutes until crispy",
-                    "Flip and cook another 3-4 minutes until flakes easily",
-                    "Let salmon rest, then flake into elegant chunks",
-                    "Whisk together sesame oil, rice vinegar, grated ginger, and remaining soy sauce",
-                    "In a large salad bowl, combine mixed greens, edamame, and julienned carrots",
-                    "Arrange flaked salmon on top of the colorful salad",
-                    "Add sliced avocado in a fan pattern",
-                    "Drizzle with Asian dressing and sprinkle with sesame seeds"
+                    "Flip and cook another 3-4 minutes",
+                    "Flake salmon into chunks",
+                    "Arrange salad with all vegetables",
+                    "Top with salmon and drizzle with sesame dressing"
                 ],
-                tips: "For extra crispy salmon skin, start skin-side down and don't move until it releases easily from the pan.",
-                nutrition_focus: "Rich in omega-3 fatty acids for brain health and complete proteins with antioxidant vegetables",
-                meal_prep: "Salmon can be cooked ahead and served cold. Dressing keeps for 5 days refrigerated.",
-                substitutions: "Try miso paste in dressing for umami depth, or use tofu for vegetarian version."
-            },
-            {
-                id: 'lunch_turkey_wrap',
-                name: 'California Turkey Wrap',
-                description: 'Lean turkey with avocado, sprouts, and herb cream cheese in spinach tortilla',
-                calories: 450,
-                protein: 35,
-                carbs: 30,
-                fat: 20,
-                fiber: 5,
-                prepTime: '5 minutes',
-                cookTime: '0 minutes',
-                difficulty: 'Easy',
-                servings: 1,
-                image: '🌯',
-                color: 'from-green-400 to-lime-500',
-                tags: ['quick', 'portable', 'no-cook', 'lean-protein'],
-                dietaryInfo: ['high-protein', 'low-carb-option'],
-                ingredients: [
-                    { name: 'spinach tortilla', amount: '1 large', calories: 150, pantryItem: true },
-                    { name: 'turkey breast', amount: '4 oz sliced', calories: 120, pantryItem: false },
-                    { name: 'avocado', amount: '1/2 medium', calories: 120, pantryItem: false },
-                    { name: 'cream cheese', amount: '2 tbsp', calories: 70, pantryItem: false },
-                    { name: 'sprouts', amount: '1/4 cup', calories: 5, pantryItem: false },
-                    { name: 'tomato', amount: '3 slices', calories: 10, pantryItem: false },
-                    { name: 'lettuce', amount: '2 leaves', calories: 3, pantryItem: false },
-                    { name: 'herbs', amount: '1 tbsp fresh', calories: 2, pantryItem: true }
-                ],
-                instructions: [
-                    "Mix cream cheese with fresh herbs (basil, dill, or cilantro)",
-                    "Lay spinach tortilla flat on a clean surface",
-                    "Spread herb cream cheese evenly over tortilla",
-                    "Layer turkey slices in the center, slightly overlapping",
-                    "Add sliced avocado, tomato, crisp lettuce, and fresh sprouts",
-                    "Fold in the sides and roll tightly from bottom to top",
-                    "Cut diagonally and secure with toothpicks if needed"
-                ],
-                tips: "Use a damp paper towel under tortilla to prevent sliding. Wrap tightly in foil for on-the-go meals.",
-                nutrition_focus: "Lean protein from turkey with healthy fats from avocado for sustained energy without heaviness",
-                meal_prep: "Can be assembled night before, but add avocado morning of to prevent browning",
-                substitutions: "Try hummus instead of cream cheese, or use lettuce leaves for carb-free version."
+                tips: "For crispy skin, don't move the salmon until it releases easily",
+                nutrition_focus: "Rich in omega-3 fatty acids for brain health",
+                meal_prep: "Salmon can be cooked ahead and served cold"
             }
         ],
         dinner: [
@@ -349,8 +205,8 @@
                 servings: 1,
                 image: '🐟',
                 color: 'from-teal-400 to-blue-500',
-                tags: ['lean-protein', 'vegetables', 'herbs', 'one-pan'],
-                dietaryInfo: ['gluten-free-option', 'low-carb', 'high-protein'],
+                tags: ['lean-protein', 'vegetables', 'one-pan'],
+                dietaryInfo: ['gluten-free-option', 'low-carb'],
                 ingredients: [
                     { name: 'cod fillet', amount: '6 oz', calories: 180, pantryItem: false },
                     { name: 'sweet potato', amount: '1 medium cubed', calories: 115, pantryItem: false },
@@ -358,81 +214,25 @@
                     { name: 'zucchini', amount: '1 medium sliced', calories: 20, pantryItem: false },
                     { name: 'olive oil', amount: '1 tbsp', calories: 120, pantryItem: true },
                     { name: 'panko breadcrumbs', amount: '2 tbsp', calories: 30, pantryItem: true },
-                    { name: 'fresh herbs', amount: '2 tbsp mixed', calories: 5, pantryItem: true },
-                    { name: 'garlic', amount: '2 cloves minced', calories: 8, pantryItem: true },
-                    { name: 'lemon', amount: '1/2 juiced', calories: 7, pantryItem: true }
+                    { name: 'fresh herbs', amount: '2 tbsp mixed', calories: 5, pantryItem: true }
                 ],
                 instructions: [
-                    "Preheat oven to 425°F (220°C) and line a large baking sheet",
-                    "Toss cubed sweet potato with 1 tsp olive oil, salt and pepper",
-                    "Roast sweet potatoes for 10 minutes to get a head start",
-                    "Add broccoli florets and zucchini slices to the pan",
-                    "Drizzle vegetables with a bit more oil and season well",
-                    "Continue roasting vegetables for 10-15 minutes until tender",
-                    "Meanwhile, mix panko, fresh herbs, minced garlic, and remaining olive oil",
-                    "Place cod fillet on a separate section of the baking sheet",
-                    "Top cod with herb breadcrumb mixture, pressing gently to adhere",
-                    "Bake cod for 12-15 minutes until it flakes easily with a fork",
-                    "Serve herb-crusted cod over the colorful roasted vegetables",
-                    "Finish with a squeeze of fresh lemon juice"
+                    "Preheat oven to 425°F and line baking sheet",
+                    "Toss vegetables with olive oil and roast 15 minutes",
+                    "Mix panko with herbs for coating",
+                    "Top cod with herb mixture",
+                    "Bake cod for 12-15 minutes until flaky"
                 ],
-                tips: "Don't overcook the cod - it should be opaque and flake easily. Cut vegetables uniformly for even cooking.",
-                nutrition_focus: "Lean protein with complex carbs and plenty of fiber from colorful vegetables for optimal nutrition",
-                meal_prep: "Vegetables can be prepped and seasoned ahead. Cook cod fresh for best texture.",
-                substitutions: "Try halibut or mahi-mahi instead of cod. Use almond flour instead of panko for gluten-free."
-            },
-            {
-                id: 'dinner_chicken_stir_fry',
-                name: 'Ginger Chicken Vegetable Stir-Fry',
-                description: 'Tender chicken with crisp vegetables in aromatic ginger sauce',
-                calories: 390,
-                protein: 40,
-                carbs: 25,
-                fat: 15,
-                fiber: 6,
-                prepTime: '10 minutes',
-                cookTime: '12 minutes',
-                difficulty: 'Medium',
-                servings: 1,
-                image: '🥢',
-                color: 'from-yellow-400 to-orange-500',
-                tags: ['high-protein', 'quick', 'asian-inspired', 'vegetable-packed'],
-                dietaryInfo: ['gluten-free-option', 'dairy-free'],
-                ingredients: [
-                    { name: 'chicken breast', amount: '5 oz cubed', calories: 235, pantryItem: false },
-                    { name: 'broccoli', amount: '1 cup', calories: 25, pantryItem: false },
-                    { name: 'bell peppers', amount: '1 cup sliced', calories: 30, pantryItem: false },
-                    { name: 'snap peas', amount: '1/2 cup', calories: 20, pantryItem: false },
-                    { name: 'brown rice', amount: '1/3 cup cooked', calories: 75, pantryItem: true },
-                    { name: 'ginger', amount: '1 tbsp fresh grated', calories: 2, pantryItem: true },
-                    { name: 'garlic', amount: '2 cloves', calories: 8, pantryItem: true },
-                    { name: 'soy sauce', amount: '2 tbsp', calories: 20, pantryItem: true },
-                    { name: 'sesame oil', amount: '1 tsp', calories: 40, pantryItem: true }
-                ],
-                instructions: [
-                    "Cut chicken into bite-sized cubes and season with salt and pepper",
-                    "Heat a large wok or skillet over high heat",
-                    "Add cubed chicken and stir-fry for 4-5 minutes until golden",
-                    "Remove chicken and set aside",
-                    "Add broccoli and bell peppers to the same pan",
-                    "Stir-fry vegetables for 2-3 minutes until crisp-tender",
-                    "Add snap peas, grated ginger, and minced garlic",
-                    "Cook for another minute until fragrant",
-                    "Return chicken to the pan",
-                    "Add soy sauce and sesame oil, tossing everything together",
-                    "Serve immediately over warm brown rice"
-                ],
-                tips: "Keep the heat high for proper stir-frying. Have all ingredients prepped before you start cooking.",
-                nutrition_focus: "High-quality protein with antioxidant-rich vegetables and energizing complex carbs",
-                meal_prep: "Prep all vegetables ahead. Stir-fry fresh for best texture and flavor.",
-                substitutions: "Try cashews for extra crunch, or substitute chicken with tofu or shrimp."
+                tips: "Don't overcook the cod - it should flake easily",
+                nutrition_focus: "Lean protein with fiber-rich vegetables",
+                meal_prep: "Vegetables can be prepped ahead, cook cod fresh"
             }
         ],
         snacks: [
             {
                 id: 'snack_energy_balls',
                 name: 'Chocolate Peanut Energy Balls',
-                description: 'No-bake protein-packed energy balls with dark chocolate and oats',
+                description: 'No-bake protein-packed energy balls with dark chocolate',
                 calories: 180,
                 protein: 8,
                 carbs: 18,
@@ -444,33 +244,28 @@
                 servings: 3,
                 image: '⚽',
                 color: 'from-amber-400 to-brown-500',
-                tags: ['no-cook', 'portable', 'energy', 'make-ahead'],
+                tags: ['no-cook', 'portable', 'energy'],
                 dietaryInfo: ['vegetarian', 'gluten-free-option'],
                 ingredients: [
                     { name: 'oats', amount: '1/2 cup', calories: 150, pantryItem: true },
                     { name: 'peanut butter', amount: '2 tbsp', calories: 190, pantryItem: true },
                     { name: 'honey', amount: '1 tbsp', calories: 64, pantryItem: true },
-                    { name: 'dark chocolate chips', amount: '2 tbsp', calories: 80, pantryItem: true },
-                    { name: 'chia seeds', amount: '1 tbsp', calories: 60, pantryItem: true },
-                    { name: 'vanilla', amount: '1/2 tsp', calories: 6, pantryItem: true }
+                    { name: 'chocolate chips', amount: '2 tbsp', calories: 80, pantryItem: true }
                 ],
                 instructions: [
-                    "Mix oats, chia seeds, and chocolate chips in a bowl",
-                    "In another bowl, stir together peanut butter, honey, and vanilla",
-                    "Combine wet and dry ingredients until well mixed",
-                    "Refrigerate mixture for 30 minutes to firm up",
-                    "Roll into 9 small balls using your hands",
-                    "Store in refrigerator for up to 1 week"
+                    "Mix all dry ingredients in a bowl",
+                    "Stir in peanut butter and honey",
+                    "Refrigerate for 30 minutes",
+                    "Roll into small balls and store"
                 ],
-                tips: "Wet your hands slightly when rolling to prevent sticking. Make a big batch for the week!",
-                nutrition_focus: "Balanced mix of protein, healthy fats, and natural sugars for sustained energy",
-                meal_prep: "Perfect make-ahead snack - stores well for up to 1 week",
-                substitutions: "Use almond butter instead of peanut, or add coconut flakes for tropical twist."
+                tips: "Wet hands when rolling to prevent sticking",
+                nutrition_focus: "Balanced energy from protein, healthy fats, and natural sugars",
+                meal_prep: "Perfect make-ahead snack - stores for 1 week"
             }
         ]
     };
 
-    // User preferences and goals
+    // User preferences
     const getUserPreferences = () => {
         try {
             const habbtProfile = JSON.parse(localStorage.getItem('habbt_profile_data') || '{}');
@@ -513,7 +308,7 @@
         }
     };
 
-    // Generate weekly meal plan based on user preferences
+    // Generate weekly meal plan
     const generateWeeklyMealPlan = (preferences, pantryItems) => {
         const { goal, calorieTarget, proteinTarget, dietaryRestrictions } = preferences;
         const availableIngredients = pantryItems.map(item => item.name.toLowerCase());
@@ -521,7 +316,6 @@
         const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         const weeklyPlan = {};
         
-        // Calorie distribution based on goal
         const calorieDistribution = {
             muscle_gain: { breakfast: 0.25, lunch: 0.35, dinner: 0.35, snacks: 0.05 },
             fat_loss: { breakfast: 0.30, lunch: 0.35, dinner: 0.30, snacks: 0.05 },
@@ -538,11 +332,9 @@
                 snacks: []
             };
 
-            // Filter meals based on dietary restrictions and preferences
             Object.keys(COMPREHENSIVE_MEAL_DATABASE).forEach(mealType => {
                 const targetCalories = calorieTarget * distribution[mealType];
                 let availableMeals = COMPREHENSIVE_MEAL_DATABASE[mealType].filter(meal => {
-                    // Check dietary restrictions
                     if (dietaryRestrictions.includes('vegetarian')) {
                         return meal.dietaryInfo.includes('vegetarian');
                     }
@@ -550,31 +342,17 @@
                         return meal.dietaryInfo.includes('gluten-free') || meal.dietaryInfo.includes('gluten-free-option');
                     }
                     
-                    // Check if meal fits calorie target (within 30% range for variety)
                     return meal.calories >= targetCalories * 0.7 && meal.calories <= targetCalories * 1.3;
                 });
 
-                // Prioritize meals with ingredients from pantry
                 const mealsWithPantryIngredients = availableMeals.filter(meal => 
                     meal.ingredients.some(ingredient => 
                         availableIngredients.includes(ingredient.name.toLowerCase()) || ingredient.pantryItem
                     )
                 );
 
-                // Add variety - don't repeat meals too soon
-                const usedMeals = Object.values(weeklyPlan).flatMap(day => 
-                    Object.values(day).flat().map(meal => meal.id)
-                );
-
                 let selectedMeals = mealsWithPantryIngredients.length > 0 ? mealsWithPantryIngredients : availableMeals;
-                selectedMeals = selectedMeals.filter(meal => {
-                    const lastUsed = usedMeals.lastIndexOf(meal.id);
-                    return lastUsed === -1 || (usedMeals.length - lastUsed) > 2; // Don't repeat within 2 meals
-                });
 
-                if (selectedMeals.length === 0) selectedMeals = availableMeals; // Fallback
-
-                // Select meal based on day (add some variety)
                 if (selectedMeals.length > 0) {
                     const mealIndex = (dayIndex + mealType.length) % selectedMeals.length;
                     weeklyPlan[day][mealType] = [selectedMeals[mealIndex]];
@@ -585,7 +363,7 @@
         return weeklyPlan;
     };
 
-    // Calculate missing ingredients for the week
+    // Calculate missing ingredients
     const calculateWeeklyMissingIngredients = (weeklyPlan, pantryItems) => {
         const pantryItemNames = pantryItems.map(item => item.name.toLowerCase());
         const missingIngredients = {};
@@ -634,22 +412,19 @@
         }
     };
 
-    // Get week start date (Monday)
+    // Get week start date
     const getWeekStartDate = (date = new Date()) => {
         const d = new Date(date);
         const day = d.getDay();
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
         return new Date(d.setDate(diff)).toISOString().split('T')[0];
     };
 
-    // Enhanced Meal Card Component
+    // Meal Card Component
     const MealCard = ({ meal, day, mealType, onViewRecipe, onSwapMeal, onAddToGrocery }) => {
-        const [showQuickView, setShowQuickView] = React.useState(false);
-
         return React.createElement('div', { 
-            className: `group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1`
+            className: 'group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1'
         },
-            // Meal image/emoji header with gradient
             React.createElement('div', { 
                 className: `h-20 bg-gradient-to-r ${meal.color} flex items-center justify-center relative overflow-hidden`
             },
@@ -662,7 +437,6 @@
                 )
             ),
 
-            // Meal details
             React.createElement('div', { className: 'p-4' },
                 React.createElement('h4', { className: 'font-bold text-gray-800 mb-1 group-hover:text-blue-600 transition-colors' }, 
                     meal.name
@@ -671,7 +445,6 @@
                     meal.description
                 ),
 
-                // Nutrition info
                 React.createElement('div', { className: 'grid grid-cols-4 gap-2 mb-3 text-center' },
                     React.createElement('div', { className: 'bg-blue-50 rounded-lg p-2' },
                         React.createElement('div', { className: 'text-sm font-bold text-blue-600' }, meal.calories),
@@ -691,7 +464,6 @@
                     )
                 ),
 
-                // Tags
                 React.createElement('div', { className: 'flex flex-wrap gap-1 mb-3' },
                     meal.tags.slice(0, 3).map(tag => 
                         React.createElement('span', { 
@@ -701,7 +473,6 @@
                     )
                 ),
 
-                // Action buttons
                 React.createElement('div', { className: 'flex gap-2' },
                     React.createElement('button', {
                         onClick: () => onViewRecipe(meal),
@@ -720,14 +491,13 @@
         );
     };
 
-    // Recipe Detail Modal Component
+    // Recipe Detail Modal
     const RecipeDetailModal = ({ meal, isOpen, onClose }) => {
         if (!isOpen || !meal) return null;
 
         return React.createElement('div', { className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50' },
             React.createElement('div', { className: 'bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto' },
                 React.createElement('div', { className: 'relative' },
-                    // Header with gradient
                     React.createElement('div', { className: `bg-gradient-to-r ${meal.color} text-white p-6 rounded-t-2xl` },
                         React.createElement('button', {
                             onClick: onClose,
@@ -748,7 +518,6 @@
                     ),
 
                     React.createElement('div', { className: 'p-6' },
-                        // Nutrition grid
                         React.createElement('div', { className: 'grid grid-cols-4 gap-4 mb-6' },
                             React.createElement('div', { className: 'text-center p-4 bg-blue-50 rounded-xl border border-blue-200' },
                                 React.createElement('div', { className: 'text-3xl font-bold text-blue-600' }, meal.calories),
@@ -769,7 +538,6 @@
                         ),
 
                         React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6' },
-                            // Ingredients
                             React.createElement('div', null,
                                 React.createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4 flex items-center' },
                                     React.createElement('span', { className: 'mr-2 text-2xl' }, '🛒'),
@@ -782,7 +550,7 @@
                                             className: `flex justify-between items-center p-3 rounded-lg ${ingredient.pantryItem ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`
                                         },
                                             React.createElement('span', { className: 'font-medium flex items-center' },
-                                                ingredient.pantryItem && React.createElement('span', { className: 'mr-2 text-green-600' }, '✓'),
+                                                ingredient.pantryItem ? React.createElement('span', { className: 'mr-2 text-green-600' }, '✓') : null,
                                                 ingredient.name
                                             ),
                                             React.createElement('span', { className: 'text-sm text-gray-600' }, ingredient.amount)
@@ -791,7 +559,6 @@
                                 )
                             ),
 
-                            // Instructions
                             React.createElement('div', null,
                                 React.createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4 flex items-center' },
                                     React.createElement('span', { className: 'mr-2 text-2xl' }, '👨‍🍳'),
@@ -813,7 +580,6 @@
                             )
                         ),
 
-                        // Tips and info
                         React.createElement('div', { className: 'mt-6 grid grid-cols-1 md:grid-cols-2 gap-4' },
                             React.createElement('div', { className: 'p-4 bg-yellow-50 rounded-xl border border-yellow-200' },
                                 React.createElement('h4', { className: 'font-bold text-yellow-800 mb-2 flex items-center' },
@@ -831,20 +597,20 @@
                             )
                         ),
 
-                        meal.meal_prep && React.createElement('div', { className: 'mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200' },
+                        meal.meal_prep ? React.createElement('div', { className: 'mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200' },
                             React.createElement('h4', { className: 'font-bold text-blue-800 mb-2 flex items-center' },
                                 React.createElement('span', { className: 'mr-2' }, '📦'),
                                 'Meal Prep Tips'
                             ),
                             React.createElement('p', { className: 'text-blue-700 text-sm' }, meal.meal_prep)
-                        )
+                        ) : null
                     )
                 )
             )
         );
     };
 
-    // Main Weekly Meal Planning Component
+    // Main Component
     const WeeklyMealPlanningApp = () => {
         const [currentWeekStart, setCurrentWeekStart] = React.useState(getWeekStartDate());
         const [weeklyPlan, setWeeklyPlan] = React.useState(loadWeeklyPlan(currentWeekStart));
@@ -875,7 +641,6 @@
         const generateWeeklyPlan = async () => {
             setIsGenerating(true);
             
-            // Simulate AI processing time
             setTimeout(() => {
                 const newPlan = generateWeeklyMealPlan(userPreferences, pantryItems);
                 setWeeklyPlan(newPlan);
@@ -889,7 +654,6 @@
         };
 
         const swapMeal = (day, mealType, currentMeal) => {
-            // Simple swap with next available meal
             const availableMeals = COMPREHENSIVE_MEAL_DATABASE[mealType];
             const currentIndex = availableMeals.findIndex(meal => meal.id === currentMeal.id);
             const nextIndex = (currentIndex + 1) % availableMeals.length;
@@ -904,7 +668,6 @@
         };
 
         const addToGroceryList = (meal) => {
-            // Add missing ingredients to grocery list
             const missingForMeal = meal.ingredients.filter(ingredient => 
                 !pantryItems.some(item => item.name.toLowerCase() === ingredient.name.toLowerCase()) && 
                 !ingredient.pantryItem
@@ -912,7 +675,6 @@
             
             if (missingForMeal.length > 0) {
                 alert(`Added ${missingForMeal.length} ingredients to grocery list!`);
-                // Here you would integrate with your grocery list functionality
             } else {
                 alert('All ingredients are already available!');
             }
@@ -927,7 +689,6 @@
         const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         const weekHasMeals = Object.keys(weeklyPlan).length > 0;
 
-        // Calculate weekly totals
         const weeklyTotals = weekHasMeals ? weekDays.reduce((totals, day) => {
             if (weeklyPlan[day]) {
                 const dayMeals = Object.values(weeklyPlan[day]).flat();
@@ -941,7 +702,6 @@
 
         return React.createElement('div', { className: 'min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-cyan-50' },
             React.createElement('div', { className: 'max-w-7xl mx-auto p-6' },
-                // Header with personalized message
                 React.createElement('div', { className: 'bg-gradient-to-r from-blue-600 to-teal-600 rounded-3xl shadow-2xl p-8 mb-8 text-white' },
                     React.createElement('div', { className: 'text-center' },
                         React.createElement('h1', { className: 'text-4xl font-bold mb-4' }, 
@@ -967,7 +727,6 @@
                             )
                         ),
                         
-                        // Generate Button
                         React.createElement('button', {
                             onClick: generateWeeklyPlan,
                             disabled: isGenerating,
@@ -976,7 +735,6 @@
                             isGenerating ? '🤖 Generating Your Perfect Week...' : '✨ Generate Weekly Meal Plan'
                         ),
                         
-                        // Week Navigation
                         React.createElement('div', { className: 'flex items-center justify-center space-x-4 mt-6' },
                             React.createElement('button', {
                                 onClick: () => navigateWeek(-1),
@@ -993,7 +751,6 @@
                     )
                 ),
 
-                // Weekly Summary Cards
                 React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6 mb-8' },
                     React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20' },
                         React.createElement('h3', { className: 'text-lg font-bold text-gray-800 mb-4' }, '📊 Weekly Totals'),
@@ -1017,10 +774,10 @@
                         React.createElement('div', null,
                             React.createElement('div', { className: 'text-2xl font-bold text-orange-600' }, missingIngredients.length),
                             React.createElement('div', { className: 'text-sm text-gray-600' }, 'unique ingredients needed'),
-                            missingIngredients.length > 0 && React.createElement('button', {
+                            missingIngredients.length > 0 ? React.createElement('button', {
                                 onClick: () => alert(`Shopping list with ${missingIngredients.length} items ready!`),
                                 className: 'mt-2 text-sm px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg'
-                            }, 'View Full List')
+                            }, 'View Full List') : null
                         )
                     ),
                     React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20' },
@@ -1039,7 +796,6 @@
                     )
                 ),
 
-                // Weekly Meal Grid
                 !weekHasMeals ? 
                     React.createElement('div', { className: 'text-center py-16' },
                         React.createElement('div', { className: 'text-6xl mb-6' }, '🍽️'),
@@ -1055,17 +811,17 @@
                         }, '✨ Generate My Meal Plan')
                     ) :
                     React.createElement('div', { className: 'space-y-8' },
-                        ...weekDays.map(day => 
+                        weekDays.map(day => 
                             React.createElement('div', { 
                                 key: day,
                                 className: 'bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 overflow-hidden'
                             },
                                 React.createElement('div', { className: 'bg-gradient-to-r from-gray-700 to-gray-800 text-white p-4' },
                                     React.createElement('h3', { className: 'text-xl font-bold' }, day),
-                                    weeklyPlan[day] && React.createElement('div', { className: 'text-sm opacity-75' },
+                                    weeklyPlan[day] ? React.createElement('div', { className: 'text-sm opacity-75' },
                                         `${Object.values(weeklyPlan[day]).flat().reduce((cal, meal) => cal + meal.calories, 0)} calories • `,
                                         `${Math.round(Object.values(weeklyPlan[day]).flat().reduce((pro, meal) => pro + meal.protein, 0))}g protein`
-                                    )
+                                    ) : null
                                 ),
                                 React.createElement('div', { className: 'p-6' },
                                     React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4' },
@@ -1080,7 +836,7 @@
                                                     mealType
                                                 ),
                                                 weeklyPlan[day] && weeklyPlan[day][mealType] && weeklyPlan[day][mealType].length > 0 ?
-                                                    ...weeklyPlan[day][mealType].map(meal => 
+                                                    weeklyPlan[day][mealType].map(meal => 
                                                         React.createElement(MealCard, {
                                                             key: meal.id,
                                                             meal,
@@ -1103,8 +859,7 @@
                         )
                     ),
 
-                // Missing Ingredients Section
-                missingIngredients.length > 0 && React.createElement('div', { className: 'mt-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20' },
+                missingIngredients.length > 0 ? React.createElement('div', { className: 'mt-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20' },
                     React.createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4 flex items-center' },
                         React.createElement('span', { className: 'mr-2 text-2xl' }, '🛒'),
                         'Weekly Shopping List'
@@ -1123,19 +878,18 @@
                                 ),
                                 React.createElement('div', { className: 'text-sm text-gray-600' },
                                     ingredient.usedIn.slice(0, 2).map(usage => `${usage.day}: ${usage.meal}`).join(', '),
-                                    ingredient.usedIn.length > 2 && ` +${ingredient.usedIn.length - 2} more`
+                                    ingredient.usedIn.length > 2 ? ` +${ingredient.usedIn.length - 2} more` : ''
                                 )
                             )
                         )
                     ),
-                    missingIngredients.length > 9 && React.createElement('div', { className: 'text-center mt-4' },
+                    missingIngredients.length > 9 ? React.createElement('div', { className: 'text-center mt-4' },
                         React.createElement('p', { className: 'text-gray-600' }, 
                             `And ${missingIngredients.length - 9} more ingredients...`
                         )
-                    )
-                ),
+                    ) : null
+                ) : null,
 
-                // Recipe Detail Modal
                 React.createElement(RecipeDetailModal, {
                     meal: selectedMeal,
                     isOpen: modalOpen,
