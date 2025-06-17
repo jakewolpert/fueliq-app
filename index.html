@@ -585,16 +585,26 @@ useEffect(() => {
         const [isNavigating, setIsNavigating] = useState(false);
         
         const handleNavClick = (targetView) => {
-          if (isNavigating) return;
-          
-          setIsNavigating(true);
-          forceCleanup();
-          
-          setTimeout(() => {
-            setCurrentView(targetView);
-            setIsNavigating(false);
-          }, 100);
-        };
+  if (isNavigating) return;
+  
+  setIsNavigating(true);
+  
+  // Force clear profile container when navigating to dashboard
+  if (targetView === 'dashboard') {
+    const profileContainer = document.getElementById('profile-container');
+    if (profileContainer) {
+      profileContainer.innerHTML = '';
+    }
+  }
+  
+  forceCleanup();
+  
+  setTimeout(() => {
+    setCurrentView(targetView);
+    setIsNavigating(false);
+    console.log(`✅ Navigated to: ${targetView}`);
+  }, 100);
+};
         
         return e('div', { className: "bg-gradient-orange-red shadow-xl" },
           e('div', { className: "max-w-7xl mx-auto px-6" },
