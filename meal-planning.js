@@ -364,7 +364,7 @@ const FoodSearchComponent = ({ onAddFood, mealType }) => {
 
         setLoading(true);
         try {
-            const results = await searchFoods(query);
+const results = await searchFoodsForPlanning(query);
             
             if (results.length === 0) {
                 const fallbackKeys = Object.keys(FALLBACK_FOODS).filter(key => 
