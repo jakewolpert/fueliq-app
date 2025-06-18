@@ -1150,7 +1150,7 @@
         );
       }
 
-   // Enhanced Dashboard Integration for Habbt
+  // Enhanced Dashboard Integration for Habbt
 // Replace the dashboard section in your index.html with this enhanced version
 
 // Enhanced Dashboard view with wearables integration
@@ -1189,13 +1189,13 @@ if (currentView === 'dashboard') {
     try {
       const settings = localStorage.getItem('habbt_dashboard_settings');
       return settings ? JSON.parse(settings) : {
-        autoAdjustCalories: true,
+        showHealthInsights: true,
         showRecommendations: true,
         syncWithWearables: true
       };
     } catch (e) {
       return {
-        autoAdjustCalories: true,
+        showHealthInsights: true,
         showRecommendations: true,
         syncWithWearables: true
       };
@@ -1236,28 +1236,7 @@ if (currentView === 'dashboard') {
     return { calories: 2000, protein: 150, carbs: 250, fat: 67, water: 64 };
   })();
 
-  // Calculate nutrition impact from activity
-  const calculateNutritionImpact = () => {
-    if (!healthData.steps && !healthData.calories) return null;
-    
-    const baseSteps = 8000;
-    const extraSteps = Math.max(0, (healthData.steps || 0) - baseSteps);
-    const stepCalorieBonus = Math.round(extraSteps / 2000 * 50);
-    const activityCalories = healthData.calories || 0;
-    const totalEarned = stepCalorieBonus + Math.round(activityCalories * 0.3);
-    
-    return {
-      extraSteps,
-      stepCalorieBonus,
-      activityCalories,
-      totalEarned,
-      adjustedTarget: profileGoals.calories + totalEarned
-    };
-  };
-
-  const nutritionImpact = calculateNutritionImpact();
-
-  // Generate smart recommendations
+  // Generate smart recommendations (no calorie adjustments)
   const generateRecommendations = () => {
     const recommendations = [];
     
@@ -1281,12 +1260,12 @@ if (currentView === 'dashboard') {
       });
     }
     
-    if (nutritionImpact && nutritionImpact.totalEarned > 100) {
+    if (healthData.steps && healthData.steps > 12000) {
       recommendations.push({
         icon: '💪',
-        title: 'Recovery Support',
-        message: `That was great activity! Your body needs ${nutritionImpact.totalEarned} extra calories to recover properly.`,
-        action: 'Support Recovery',
+        title: 'Recovery Focus',
+        message: 'Great activity today! Prioritize quality protein and anti-inflammatory foods for recovery.',
+        action: 'Recovery Tips',
         priority: 'good'
       });
     }
@@ -1344,37 +1323,28 @@ if (currentView === 'dashboard') {
         )
       ),
 
-      // Supportive Nutrition Guidance (if active)
-      nutritionImpact && nutritionImpact.totalEarned > 50 && e('div', { className: "bg-gradient-to-r from-blue-50 to-teal-50 border border-blue-200 rounded-2xl p-6 mb-6" },
-        e('div', { className: "flex items-center justify-between" },
-          e('div', { className: "flex items-center space-x-4" },
-            e('div', { className: "w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center" },
-              e('span', { className: "text-2xl text-white" }, '💪')
-            ),
-            e('div', null,
-              e('h3', { className: "text-lg font-bold text-blue-800" }, 'Great Activity Today!'),
-              e('p', { className: "text-blue-700" }, 
-                `That was ${healthData.steps?.toLocaleString() || 0} steps of hard work! Your body needs extra fuel to recover properly.`
-              ),
-              e('p', { className: "text-sm text-blue-600" }, 
-                `Recommended intake: ${nutritionImpact.adjustedTarget} calories to support recovery`
-              )
-            )
+      // Supportive Health Insights (if available)
+      healthData.steps && healthData.steps > 12000 && e('div', { className: "bg-gradient-to-r from-blue-50 to-teal-50 border border-blue-200 rounded-2xl p-6 mb-6" },
+        e('div', { className: "flex items-center space-x-4" },
+          e('div', { className: "w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center" },
+            e('span', { className: "text-2xl text-white" }, '💪')
           ),
-          dashboardSettings.autoAdjustCalories && e('button', {
-            onClick: () => {
-              // Auto-adjust meal plan calories
-              alert(`💪 Meal plans adjusted to support your recovery with ${nutritionImpact.totalEarned} additional calories for proper fuel!`);
-            },
-            className: 'px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all'
-          }, 'Support Recovery')
+          e('div', null,
+            e('h3', { className: "text-lg font-bold text-blue-800" }, 'Great Activity Today!'),
+            e('p', { className: "text-blue-700" }, 
+              `${healthData.steps?.toLocaleString()} steps is fantastic! Focus on quality protein and hydration for recovery.`
+            ),
+            e('p', { className: "text-sm text-blue-600" }, 
+              'Your body will benefit from nutrient-dense, anti-inflammatory foods today'
+            )
+          )
         )
       ),
 
       // Main Metrics Grid with real data
       e('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" },
         
-        // Nutrition Card (enhanced)
+        // Nutrition Card (no calorie adjustments)
         e('div', { 
           className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
           onClick: () => setCurrentView('meals')
@@ -1384,13 +1354,11 @@ if (currentView === 'dashboard') {
               e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-blue-100 to-teal-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '🍽️'),
               e('div', null,
                 e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Nutrition'),
-                e('p', { className: 'text-xs text-gray-600' }, 
-                  nutritionImpact ? `Target: ${nutritionImpact.adjustedTarget} cal` : 'Daily nutrition tracking'
-                )
+                e('p', { className: 'text-xs text-gray-600' }, 'Daily nutrition tracking')
               )
             ),
             e('div', { className: 'text-sm font-bold bg-gradient-to-r from-blue-500 to-teal-500 bg-clip-text text-transparent' }, 
-              Math.round(getProgressPercentage(totals.calories, nutritionImpact ? nutritionImpact.adjustedTarget : profileGoals.calories)) + '%'
+              Math.round(getProgressPercentage(totals.calories, profileGoals.calories)) + '%'
             )
           ),
           e('div', { className: 'mb-4' },
@@ -1398,21 +1366,14 @@ if (currentView === 'dashboard') {
               e('span', { className: 'text-3xl font-bold text-gray-900' }, Math.round(totals.calories || 0)),
               e('span', { className: 'text-lg text-gray-600' }, 'kcal'),
               e('span', { className: 'text-gray-400' }, '/'),
-              e('span', { className: 'text-lg text-gray-600' }, 
-                `${nutritionImpact ? nutritionImpact.adjustedTarget : profileGoals.calories} kcal`
-              )
+              e('span', { className: 'text-lg text-gray-600' }, `${profileGoals.calories} kcal`)
             )
           ),
           e('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
             e('div', {
               className: 'bg-gradient-to-r from-blue-500 to-teal-500 h-3 rounded-full transition-all duration-500',
-              style: { 
-                width: `${getProgressPercentage(totals.calories, nutritionImpact ? nutritionImpact.adjustedTarget : profileGoals.calories)}%` 
-              }
+              style: { width: `${getProgressPercentage(totals.calories, profileGoals.calories)}%` }
             })
-          ),
-          nutritionImpact && nutritionImpact.totalEarned > 0 && e('div', { className: 'mt-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded' },
-            `+${nutritionImpact.totalEarned} calories to support your recovery`
           )
         ),
         
@@ -1552,8 +1513,8 @@ if (currentView === 'dashboard') {
                   e('p', { className: "text-sm text-gray-600 mb-3" }, rec.message),
                   e('button', {
                     onClick: () => {
-                      if (rec.action === 'Support Recovery') {
-                        setCurrentView('planning');
+                      if (rec.action === 'Recovery Tips') {
+                        alert('💪 Focus on: quality protein (20-30g), antioxidants (berries), and staying hydrated!');
                       } else if (rec.action === 'Take a Walk') {
                         alert('🚶 Your body will thank you! Try: gentle walk, stretching, or light movement');
                       } else if (rec.action === 'View Sleep Foods') {
@@ -1584,31 +1545,31 @@ if (currentView === 'dashboard') {
         ),
         e('div', { className: "grid grid-cols-1 md:grid-cols-3 gap-4" },
           
-          // Auto-adjust calories toggle
+          // Health insights toggle
           e('div', { className: "flex items-center justify-between p-4 bg-gray-50 rounded-xl" },
             e('div', null,
-              e('h4', { className: "font-medium text-gray-800" }, 'Auto-Adjust Calories'),
-              e('p', { className: "text-sm text-gray-600" }, 'Adjust meal targets based on activity')
+              e('h4', { className: "font-medium text-gray-800" }, 'Health Insights'),
+              e('p', { className: "text-sm text-gray-600" }, 'Show movement and recovery guidance')
             ),
             e('button', {
               onClick: () => {
                 const newSettings = { 
                   ...dashboardSettings, 
-                  autoAdjustCalories: !dashboardSettings.autoAdjustCalories 
+                  showHealthInsights: !dashboardSettings.showHealthInsights 
                 };
                 saveDashboardSettings(newSettings);
                 // Force re-render by changing a state value
                 setCurrentView('dashboard');
               },
               className: `w-12 h-6 rounded-full transition-all ${
-                dashboardSettings.autoAdjustCalories 
-                  ? 'bg-green-500' 
+                dashboardSettings.showHealthInsights 
+                  ? 'bg-blue-500' 
                   : 'bg-gray-300'
               } relative`
             },
               e('div', {
                 className: `w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                  dashboardSettings.autoAdjustCalories 
+                  dashboardSettings.showHealthInsights 
                     ? 'transform translate-x-6' 
                     : 'transform translate-x-0'
                 } absolute top-0.5`
@@ -1672,8 +1633,8 @@ if (currentView === 'dashboard') {
               e('h3', { className: "font-bold text-teal-800" }, 'Habbt Mission Control Active'),
               e('p', { className: "text-sm text-teal-600" }, 
                 healthData.steps 
-                  ? `Smart nutrition powered by your health data - ${Object.keys(healthData).length} metrics synced`
-                  : 'Your system for better - connect devices for smart insights'
+                  ? `Supportive nutrition insights powered by your health data - ${Object.keys(healthData).length} metrics synced`
+                  : 'Your system for better - connect devices for health insights'
               )
             )
           ),
@@ -1682,7 +1643,7 @@ if (currentView === 'dashboard') {
               userDisplayName ? `${userDisplayName}` : user?.email?.split('@')[0]
             ),
             e('div', { className: "text-xs text-teal-500" }, 
-              healthData.steps ? '⌚ Live Health Data' : '📱 Ready for Devices'
+              healthData.steps ? '⌚ Health Insights Active' : '📱 Ready for Devices'
             )
           )
         )
@@ -1690,7 +1651,6 @@ if (currentView === 'dashboard') {
     )
   );
 }
-
       // All other view handlers (same structure but with Habbt naming)
       if (currentView === 'meals') {
         return e('div', { className: "min-h-screen bg-gradient-card" },
