@@ -1129,7 +1129,7 @@ Items automatically added to your pantry!`);
     let renderingActive = false;
     let verificationId = null;
 
-    const cleanRenderDeliveryTab = (containerId = 'delivery-container') => {
+    const cleanRenderDeliveryTab = (containerId = 'grocery-container') => {
         console.log('🚚 CLEAN rendering Habbt delivery tab...');
         
         const container = document.getElementById(containerId);
@@ -1202,15 +1202,22 @@ Items automatically added to your pantry!`);
         };
     };
 
-    // Override functions with both naming conventions
+    // Override functions with ALL naming conventions the main app expects
     window.tryRenderDelivery = cleanRenderDeliveryTab;
     window.renderDelivery = cleanRenderDeliveryTab;
     window.renderDeliveryTab = cleanRenderDeliveryTab;
+    window.tryRenderGrocery = cleanRenderDeliveryTab;
+    window.renderGrocery = cleanRenderDeliveryTab;
+    window.renderGroceryTab = cleanRenderDeliveryTab;
 
-    // Export system with both Habbt and FuelIQ compatibility
-    window.FuelIQDelivery = {
+    // Export system with ALL possible naming conventions
+    const createGroceryDeliveryInterface = (containerId, groceryList = null) => {
+        return cleanRenderDeliveryTab(containerId);
+    };
+
+    window.FuelIQGroceryDelivery = {
+        renderGroceryDelivery: createGroceryDeliveryInterface,
         SmartDeliveryTab,
-        renderDeliveryTab: cleanRenderDeliveryTab,
         cleanup: () => {
             if (window.cleanDeliveryCleanup) {
                 window.cleanDeliveryCleanup();
@@ -1218,10 +1225,14 @@ Items automatically added to your pantry!`);
         }
     };
 
-    window.HabbtDelivery = window.FuelIQDelivery;
+    window.HabbtGroceryDelivery = window.FuelIQGroceryDelivery;
+    window.FuelIQDelivery = window.FuelIQGroceryDelivery;
+    window.HabbtDelivery = window.FuelIQGroceryDelivery;
 
     console.log('✅ Habbt Smart Delivery system loaded successfully!');
     console.log('🚚 Features: Multi-service comparison + Smart cart + Meal plan import + Safe mounting');
     console.log('🎨 Beautiful Habbt blue/teal branding + Modern UI + Auto-pantry integration');
+    console.log('✅ Available as: HabbtGroceryDelivery, FuelIQGroceryDelivery, HabbtDelivery, FuelIQDelivery');
+    console.log('✅ Functions: renderGroceryDelivery, tryRenderGrocery, renderGrocery, renderDelivery');
 
 })();
