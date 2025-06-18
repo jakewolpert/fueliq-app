@@ -324,16 +324,54 @@
                 let groceryList = null;
                 const storageKeys = [
                     'fueliq_pending_grocery_list',
-                    'habbt_pending_grocery_list',
+                    'habbt_pending_grocery_list', 
+                    'pending_grocery_list',
                     'fueliq_meal_plan',
                     'habbt_meal_plan',
-                    'meal_plan'
+                    'meal_plan',
+                    'weekly_meal_plan'
                 ];
 
-                console.log('🔍 Searching for meal plan data...');
+                console.log('🔍 Searching for meal plan data in storage...');
+                
+                // Debug: Check what's actually in storage - MORE COMPREHENSIVE
+                const storageContents = {};
+                const allStorageKeys = [
+                    'fueliq_pending_grocery_list', 'habbt_pending_grocery_list', 'pending_grocery_list',
+                    'fueliq_meal_plan', 'habbt_meal_plan', 'meal_plan', 'weekly_meal_plan',
+                    'intelligent_meal_plan', 'adaptive_meal_plan', 'current_meal_plan'
+                ];
+                
+                console.log('🔍 Scanning all possible storage locations...');
+                allStorageKeys.forEach(key => {
+                    const data = loadData(key);
+                    if (data) {
+                        storageContents[key] = `Found data (${typeof data}) - ${Array.isArray(data) ? 'Array' : Object.keys(data || {}).length + ' keys'}`;
+                        console.log(`📋 FOUND ${key}:`, data);
+                        
+                        // If it looks like meal plan data, try to extract ingredients
+                        if (typeof data === 'object' && !Array.isArray(data)) {
+                            console.log(`🔍 Analyzing structure of ${key}:`);
+                            Object.keys(data).forEach(dayKey => {
+                                const dayData = data[dayKey];
+                                if (dayData && typeof dayData === 'object') {
+                                    console.log(`  📅 ${dayKey}:`, dayData);
+                                    if (dayData.breakfast) console.log(`    🍳 breakfast:`, dayData.breakfast);
+                                    if (dayData.lunch) console.log(`    🥪 lunch:`, dayData.lunch);
+                                    if (dayData.dinner) console.log(`    🍽️ dinner:`, dayData.dinner);
+                                    if (dayData.snacks) console.log(`    🍎 snacks:`, dayData.snacks);
+                                }
+                            });
+                        }
+                    } else {
+                        storageContents[key] = 'Empty';
+                    }
+                });
+                
+                console.log('📊 Complete storage scan results:', storageContents);
 
                 // First try pending grocery lists
-                for (const key of storageKeys.slice(0, 2)) {
+                for (const key of storageKeys.slice(0, 3)) {
                     const data = loadData(key);
                     if (data) {
                         groceryList = Array.isArray(data) ? data : (data.ingredients ? Object.values(data.ingredients) : []);
@@ -343,11 +381,12 @@
                     }
                 }
 
-                // If no pending list, try meal plans
+                // If no pending list, try meal plans and convert them
                 if (!groceryList || groceryList.length === 0) {
-                    for (const key of storageKeys.slice(2)) {
+                    for (const key of storageKeys.slice(3)) {
                         const mealPlan = loadData(key);
                         if (mealPlan && typeof mealPlan === 'object') {
+                            console.log(`📅 Found meal plan in ${key}:`, mealPlan);
                             groceryList = convertMealPlanToGroceryList(mealPlan);
                             console.log(`✅ Converted meal plan from ${key}:`, groceryList.length, 'items');
                             break;
@@ -355,10 +394,24 @@
                     }
                 }
 
+                // Show diagnostic info to user
                 if (!groceryList || groceryList.length === 0) {
-                    alert('❌ No meal plan found. Please create a meal plan first.');
+                    const foundKeys = Object.entries(storageContents).filter(([k,v]) => v === 'Found data').map(([k,v]) => k);
+                    
+                    let message = '❌ No meal plan found. \n\n🔍 Diagnostic Info:\n';
+                    if (foundKeys.length > 0) {
+                        message += `Found data in: ${foundKeys.join(', ')}\n`;
+                        message += 'But could not convert to grocery list.\n\n';
+                    } else {
+                        message += 'No meal plan data found in storage.\n\n';
+                    }
+                    message += '💡 Please:\n1. Create a meal plan first\n2. Generate grocery list from planning tab\n3. Then import here';
+                    
+                    alert(message);
                     return;
                 }
+
+                console.log('🛒 Processing grocery list:', groceryList);
 
                 let addedCount = 0;
                 const failedItems = [];
@@ -389,18 +442,19 @@
 
                 let message = `✅ Imported ${addedCount} items from meal plan!`;
                 if (failedItems.length > 0) {
-                    message += `\n\n⚠️ Could not find: ${failedItems.slice(0, 3).join(', ')}`;
+                    message += `\n\n⚠️ Could not find products for: ${failedItems.slice(0, 3).join(', ')}`;
                     if (failedItems.length > 3) {
                         message += ` and ${failedItems.length - 3} more`;
                     }
+                    message += '\n\n💡 Try searching for these manually in the product browser.';
                 }
                 
                 alert(message);
                 saveData('habbt_delivery_cart', currentState.shoppingCart);
 
             } catch (error) {
-                console.error('Import error:', error);
-                alert('❌ Error importing meal plan. Please try again.');
+                console.error('❌ Import error:', error);
+                alert('❌ Error importing meal plan. Check console for details.');
             } finally {
                 currentState.isImporting = false;
                 renderApp();
@@ -546,7 +600,7 @@
                                 📝 Manual List
                             </button>
                             
-                            <button onclick="window.deliveryActions.setActiveView('products')"
+                            <button onclick="document.getElementById('product-search-section').scrollIntoView({behavior: 'smooth'})"
                                     class="px-6 py-3 bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white rounded-lg font-semibold transition-all">
                                 🛒 Browse Products
                             </button>
@@ -623,7 +677,7 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         
                         <!-- Products Section -->
-                        <div class="lg:col-span-2 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-6">
+                        <div id="product-search-section" class="lg:col-span-2 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-6">
                             <h3 class="text-xl font-bold text-gray-800 mb-4">🛒 Browse Products</h3>
                             
                             <!-- Search and Filters -->
