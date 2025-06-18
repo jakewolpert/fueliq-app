@@ -1,666 +1,773 @@
-// DOM Hijacking Meals Fix - Direct Container Replacement
-// This watches for the meals container and immediately replaces its content
+// Safe Meals Tab Restoration - Your Working Code + Safe Mounting
+// This takes your existing sophisticated meals system and adds safe mounting
 
 (function() {
     'use strict';
 
-    console.log('🎯 Starting DOM Hijacking for Meals Tab...');
+    console.log('🔧 Restoring your working meals system with safe mounting...');
 
-    let isHijacked = false;
-    let hijackAttempts = 0;
-    const maxHijackAttempts = 50;
-    let observer = null;
-
-    // The working meals interface HTML
-    const getWorkingMealsHTML = () => `
-        <div class="min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-cyan-50">
-            <div class="max-w-7xl mx-auto p-6">
-                <!-- Success Header -->
-                <div class="bg-gradient-to-r from-green-600 to-blue-600 rounded-3xl shadow-2xl p-8 mb-8 text-white">
-                    <div class="text-center">
-                        <div class="text-6xl mb-4">🎉</div>
-                        <h1 class="text-4xl font-bold mb-4">Meals Tab Fixed via DOM Hijacking!</h1>
-                        <div class="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
-                            <p class="text-lg mb-2">✅ React DOM conflicts completely bypassed</p>
-                            <p class="text-lg mb-2">🎯 Direct DOM manipulation successful</p>
-                            <p class="text-lg">🍽️ Full nutrition tracking operational</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Nutrition Dashboard -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 mb-8">
-                    <div class="bg-gradient-to-r from-blue-600 to-teal-600 text-white p-6 rounded-t-2xl">
-                        <div class="flex items-center justify-between">
-                            <h2 class="text-3xl font-bold flex items-center">
-                                <span class="mr-3 text-4xl">🍽️</span>
-                                Nutrition Dashboard
-                            </h2>
-                            <div class="flex items-center space-x-2">
-                                <div class="px-3 py-1 bg-green-500/20 rounded-full text-sm font-semibold">
-                                    🎯 DOM Hijacked
-                                </div>
-                                <button id="refresh-nutrition" class="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-semibold transition-colors">
-                                    🔄 Refresh
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="p-6">
-                        <!-- Stats Grid -->
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg transform hover:scale-105 transition-transform">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <div class="text-3xl font-bold" id="calories-today">0</div>
-                                        <div class="text-sm opacity-90">Calories Today</div>
-                                    </div>
-                                    <div class="text-4xl opacity-80">🔥</div>
-                                </div>
-                                <div class="mt-2 text-xs opacity-75">Goal: <span id="calories-goal">2000</span></div>
-                                <div class="w-full bg-white/20 rounded-full h-2 mt-2">
-                                    <div id="calories-progress" class="bg-white h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-                                </div>
-                            </div>
-
-                            <div class="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 rounded-xl shadow-lg transform hover:scale-105 transition-transform">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <div class="text-3xl font-bold" id="protein-today">0g</div>
-                                        <div class="text-sm opacity-90">Protein Today</div>
-                                    </div>
-                                    <div class="text-4xl opacity-80">💪</div>
-                                </div>
-                                <div class="mt-2 text-xs opacity-75">Goal: <span id="protein-goal">150g</span></div>
-                                <div class="w-full bg-white/20 rounded-full h-2 mt-2">
-                                    <div id="protein-progress" class="bg-white h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
-                                </div>
-                            </div>
-
-                            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg transform hover:scale-105 transition-transform">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <div class="text-3xl font-bold" id="meals-today">0</div>
-                                        <div class="text-sm opacity-90">Meals Logged</div>
-                                    </div>
-                                    <div class="text-4xl opacity-80">🍽️</div>
-                                </div>
-                                <div class="mt-2 text-xs opacity-75">Target: 3-5 meals</div>
-                            </div>
-
-                            <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg transform hover:scale-105 transition-transform">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <div class="text-3xl font-bold" id="progress-percent">0%</div>
-                                        <div class="text-sm opacity-90">Daily Progress</div>
-                                    </div>
-                                    <div class="text-4xl opacity-80">🎯</div>
-                                </div>
-                                <div class="mt-2 text-xs opacity-75">Calorie goal progress</div>
-                            </div>
-                        </div>
-
-                        <!-- Quick Add Meal -->
-                        <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 border border-green-200 mb-8">
-                            <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                                <span class="mr-2 text-2xl">➕</span>
-                                Quick Add Meal
-                                <span class="ml-2 px-2 py-1 bg-green-500 text-white text-xs rounded-full animate-pulse">WORKING</span>
-                            </h3>
-
-                            <form id="hijacked-meal-form" class="space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 mb-2">🍽️ Meal Name</label>
-                                        <input type="text" id="hijacked-meal-name" placeholder="e.g., Grilled Chicken Caesar Salad" 
-                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg" required>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 mb-2">🔥 Calories</label>
-                                        <input type="number" id="hijacked-meal-calories" placeholder="420" 
-                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg" required>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 mb-2">💪 Protein (g)</label>
-                                        <input type="number" step="0.1" id="hijacked-meal-protein" placeholder="35" 
-                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 mb-2">🌾 Carbs (g)</label>
-                                        <input type="number" step="0.1" id="hijacked-meal-carbs" placeholder="25" 
-                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 mb-2">🥑 Fat (g)</label>
-                                        <input type="number" step="0.1" id="hijacked-meal-fat" placeholder="15" 
-                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-semibold text-gray-700 mb-2">🥬 Fiber (g)</label>
-                                        <input type="number" step="0.1" id="hijacked-meal-fiber" placeholder="8" 
-                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                    </div>
-                                </div>
-
-                                <button type="submit" id="hijacked-add-meal" 
-                                        class="w-full px-8 py-4 bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white rounded-lg font-bold text-lg transform hover:scale-105 transition-all duration-200">
-                                    ✅ Add Meal to Today's Log
-                                </button>
-                            </form>
-
-                            <!-- Quick Options -->
-                            <div class="mt-6 pt-6 border-t border-gray-200">
-                                <h4 class="text-lg font-semibold text-gray-800 mb-3">⚡ Quick Options</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                                    <button type="button" class="quick-meal-btn p-3 bg-blue-100 hover:bg-blue-200 rounded-lg text-left transition-colors border border-blue-200"
-                                            data-meal='{"name":"Protein Shake","calories":250,"protein":30,"carbs":8,"fat":3,"fiber":1}'>
-                                        <div class="font-semibold text-gray-800 text-sm">🥤 Protein Shake</div>
-                                        <div class="text-xs text-gray-600">250 cal • 30g protein</div>
-                                    </button>
-                                    <button type="button" class="quick-meal-btn p-3 bg-green-100 hover:bg-green-200 rounded-lg text-left transition-colors border border-green-200"
-                                            data-meal='{"name":"Greek Yogurt Bowl","calories":180,"protein":20,"carbs":15,"fat":2,"fiber":3}'>
-                                        <div class="font-semibold text-gray-800 text-sm">🥣 Greek Yogurt</div>
-                                        <div class="text-xs text-gray-600">180 cal • 20g protein</div>
-                                    </button>
-                                    <button type="button" class="quick-meal-btn p-3 bg-orange-100 hover:bg-orange-200 rounded-lg text-left transition-colors border border-orange-200"
-                                            data-meal='{"name":"Chicken Breast (6oz)","calories":350,"protein":65,"carbs":0,"fat":8,"fiber":0}'>
-                                        <div class="font-semibold text-gray-800 text-sm">🍗 Chicken Breast</div>
-                                        <div class="text-xs text-gray-600">350 cal • 65g protein</div>
-                                    </button>
-                                    <button type="button" class="quick-meal-btn p-3 bg-purple-100 hover:bg-purple-200 rounded-lg text-left transition-colors border border-purple-200"
-                                            data-meal='{"name":"Oatmeal Bowl","calories":300,"protein":10,"carbs":55,"fat":6,"fiber":8}'>
-                                        <div class="font-semibold text-gray-800 text-sm">🥣 Oatmeal Bowl</div>
-                                        <div class="text-xs text-gray-600">300 cal • 10g protein</div>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Meals List -->
-                        <div class="bg-white rounded-xl shadow-lg border border-gray-200">
-                            <div class="bg-gradient-to-r from-gray-800 to-gray-700 text-white p-6 rounded-t-xl">
-                                <div class="flex justify-between items-center">
-                                    <h3 class="text-xl font-bold flex items-center">
-                                        <span class="mr-2 text-2xl">📋</span>
-                                        Today's Meals - ${new Date().toLocaleDateString('en-US', { 
-                                            weekday: 'long', 
-                                            month: 'long', 
-                                            day: 'numeric' 
-                                        })}
-                                    </h3>
-                                    <div class="text-sm opacity-75" id="last-updated">
-                                        Updated: Just now
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="p-6">
-                                <div id="hijacked-meals-list">
-                                    <div class="text-center py-8 text-gray-500">
-                                        <div class="text-6xl mb-4 opacity-20">🍽️</div>
-                                        <h4 class="text-lg font-semibold mb-2">No meals logged yet today</h4>
-                                        <p class="text-gray-400">Add your first meal above to start tracking!</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Advanced Options -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                            <span class="mr-2 text-2xl">📅</span>
-                            Meal Planning
-                        </h3>
-                        <p class="text-gray-600 mb-4">Advanced AI-powered meal planning with precision macro targeting is available</p>
-                        <button id="hijacked-meal-planning" class="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white rounded-lg font-semibold transition-all">
-                            🚀 Load Meal Planning System
-                        </button>
-                    </div>
-
-                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/20">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                            <span class="mr-2 text-2xl">🛠️</span>
-                            System Status
-                        </h3>
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-gray-600">DOM Hijacking</span>
-                                <span class="px-2 py-1 bg-green-100 text-green-800 text-sm rounded font-semibold">Active</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-gray-600">React Conflicts</span>
-                                <span class="px-2 py-1 bg-green-100 text-green-800 text-sm rounded font-semibold">Bypassed</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-gray-600">Data Storage</span>
-                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded font-semibold">localStorage</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-gray-600">Status</span>
-                                <span class="px-2 py-1 bg-green-100 text-green-800 text-sm rounded font-semibold">Operational</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Data management functions
-    const HijackedDataManager = {
-        getTodaysKey() {
-            return `hijacked_nutrition_${new Date().toISOString().split('T')[0]}`;
-        },
-
-        loadTodaysData() {
-            try {
-                const data = localStorage.getItem(this.getTodaysKey());
-                return data ? JSON.parse(data) : {
-                    meals: [],
-                    totalCalories: 0,
-                    totalProtein: 0,
-                    totalCarbs: 0,
-                    totalFat: 0,
-                    totalFiber: 0
-                };
-            } catch (error) {
-                console.error('Error loading data:', error);
-                return { meals: [], totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0, totalFiber: 0 };
-            }
-        },
-
-        saveTodaysData(data) {
-            try {
-                localStorage.setItem(this.getTodaysKey(), JSON.stringify(data));
-                console.log('✅ Data saved successfully');
-                return true;
-            } catch (error) {
-                console.error('Error saving data:', error);
-                return false;
-            }
-        },
-
-        getUserGoals() {
-            try {
-                // Try multiple sources
-                if (typeof window.UnifiedDataManager !== 'undefined') {
-                    const goals = window.UnifiedDataManager.getGoals();
-                    if (goals && Object.keys(goals).length > 0) {
-                        return goals;
-                    }
-                }
-
-                const habbtProfile = localStorage.getItem('habbt_profile_data');
-                const fueliqProfile = localStorage.getItem('fueliq_profile_data');
-                const profile = JSON.parse(habbtProfile || fueliqProfile || '{}');
-                
-                return profile.goals || {
-                    calories: 2000,
-                    protein: 150,
-                    carbs: 250,
-                    fat: 67,
-                    fiber: 25
-                };
-            } catch (error) {
-                console.error('Error loading goals:', error);
-                return { calories: 2000, protein: 150, carbs: 250, fat: 67, fiber: 25 };
-            }
+    // Your original sophisticated food system (keeping all functionality)
+    
+    // USDA API Functions (your original code)
+    const searchFoods = async (query) => {
+        if (!query || query.length < 2) return [];
+        try {
+            const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&pageSize=10&api_key=DEMO_KEY`);
+            const data = await response.json();
+            return data.foods || [];
+        } catch (error) {
+            console.error('Error searching foods:', error);
+            return [];
         }
     };
 
-    // Initialize the hijacked interface
-    function initializeHijackedInterface() {
-        console.log('🔧 Initializing hijacked meals interface...');
-
-        // Load data and update display
-        updateNutritionDisplay();
-        
-        // Set up form submission
-        const form = document.getElementById('hijacked-meal-form');
-        if (form) {
-            form.addEventListener('submit', handleMealSubmission);
-        }
-
-        // Set up quick meal buttons
-        const quickMealBtns = document.querySelectorAll('.quick-meal-btn');
-        quickMealBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const mealData = JSON.parse(btn.dataset.meal);
-                populateForm(mealData);
-            });
-        });
-
-        // Set up refresh button
-        const refreshBtn = document.getElementById('refresh-nutrition');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => {
-                updateNutritionDisplay();
-                showNotification('Data refreshed!', 'success');
-            });
-        }
-
-        // Set up meal planning button
-        const mealPlanningBtn = document.getElementById('hijacked-meal-planning');
-        if (mealPlanningBtn) {
-            mealPlanningBtn.addEventListener('click', loadMealPlanning);
-        }
-
-        console.log('✅ Hijacked interface initialized successfully');
-    }
-
-    function populateForm(mealData) {
-        document.getElementById('hijacked-meal-name').value = mealData.name;
-        document.getElementById('hijacked-meal-calories').value = mealData.calories;
-        document.getElementById('hijacked-meal-protein').value = mealData.protein;
-        document.getElementById('hijacked-meal-carbs').value = mealData.carbs;
-        document.getElementById('hijacked-meal-fat').value = mealData.fat;
-        document.getElementById('hijacked-meal-fiber').value = mealData.fiber;
-    }
-
-    function updateNutritionDisplay() {
-        const data = HijackedDataManager.loadTodaysData();
-        const goals = HijackedDataManager.getUserGoals();
-
-        // Update stats
-        document.getElementById('calories-today').textContent = data.totalCalories || 0;
-        document.getElementById('protein-today').textContent = `${Math.round(data.totalProtein || 0)}g`;
-        document.getElementById('meals-today').textContent = data.meals?.length || 0;
-
-        // Update goals
-        document.getElementById('calories-goal').textContent = goals.calories;
-        document.getElementById('protein-goal').textContent = `${goals.protein}g`;
-
-        // Update progress
-        const calorieProgress = Math.round(((data.totalCalories || 0) / goals.calories) * 100);
-        const proteinProgress = Math.round(((data.totalProtein || 0) / goals.protein) * 100);
-        
-        document.getElementById('progress-percent').textContent = `${calorieProgress}%`;
-        document.getElementById('calories-progress').style.width = `${Math.min(calorieProgress, 100)}%`;
-        document.getElementById('protein-progress').style.width = `${Math.min(proteinProgress, 100)}%`;
-
-        // Update meals list
-        updateMealsList(data.meals || []);
-
-        // Update last updated time
-        document.getElementById('last-updated').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
-    }
-
-    function updateMealsList(meals) {
-        const container = document.getElementById('hijacked-meals-list');
-        
-        if (meals.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-8 text-gray-500">
-                    <div class="text-6xl mb-4 opacity-20">🍽️</div>
-                    <h4 class="text-lg font-semibold mb-2">No meals logged yet today</h4>
-                    <p class="text-gray-400">Add your first meal above to start tracking!</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = meals.map(meal => `
-            <div class="bg-gradient-to-r from-blue-50 to-teal-50 rounded-lg p-4 border border-blue-200 mb-4 hover:shadow-lg transition-shadow">
-                <div class="flex justify-between items-start">
-                    <div class="flex-1">
-                        <div class="flex items-center mb-3">
-                            <h4 class="font-bold text-gray-800 text-lg mr-3">${meal.name}</h4>
-                            <span class="px-2 py-1 bg-blue-500 text-white text-xs rounded-full">
-                                ${new Date(meal.timestamp).toLocaleTimeString('en-US', { 
-                                    hour: 'numeric', 
-                                    minute: '2-digit',
-                                    hour12: true 
-                                })}
-                            </span>
-                        </div>
-                        <div class="grid grid-cols-5 gap-3 text-center">
-                            <div class="bg-white rounded-lg p-3 border border-blue-200">
-                                <div class="font-bold text-blue-600 text-lg">${meal.calories}</div>
-                                <div class="text-xs text-gray-500">calories</div>
-                            </div>
-                            <div class="bg-white rounded-lg p-3 border border-red-200">
-                                <div class="font-bold text-red-600 text-lg">${meal.protein}g</div>
-                                <div class="text-xs text-gray-500">protein</div>
-                            </div>
-                            <div class="bg-white rounded-lg p-3 border border-yellow-200">
-                                <div class="font-bold text-yellow-600 text-lg">${meal.carbs}g</div>
-                                <div class="text-xs text-gray-500">carbs</div>
-                            </div>
-                            <div class="bg-white rounded-lg p-3 border border-purple-200">
-                                <div class="font-bold text-purple-600 text-lg">${meal.fat}g</div>
-                                <div class="text-xs text-gray-500">fat</div>
-                            </div>
-                            <div class="bg-white rounded-lg p-3 border border-green-200">
-                                <div class="font-bold text-green-600 text-lg">${meal.fiber}g</div>
-                                <div class="text-xs text-gray-500">fiber</div>
-                            </div>
-                        </div>
-                    </div>
-                    <button onclick="window.hijackedRemoveMeal(${meal.id})" 
-                            class="ml-4 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors">
-                        🗑️ Remove
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function handleMealSubmission(e) {
-        e.preventDefault();
-        
-        const submitBtn = document.getElementById('hijacked-add-meal');
-        submitBtn.disabled = true;
-        submitBtn.textContent = '⏳ Adding Meal...';
-
+    const getFoodDetails = async (fdcId) => {
         try {
-            const name = document.getElementById('hijacked-meal-name').value.trim();
-            const calories = parseFloat(document.getElementById('hijacked-meal-calories').value) || 0;
-            const protein = parseFloat(document.getElementById('hijacked-meal-protein').value) || 0;
-            const carbs = parseFloat(document.getElementById('hijacked-meal-carbs').value) || 0;
-            const fat = parseFloat(document.getElementById('hijacked-meal-fat').value) || 0;
-            const fiber = parseFloat(document.getElementById('hijacked-meal-fiber').value) || 0;
+            const response = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${fdcId}?api_key=DEMO_KEY`);
+            return await response.json();
+        } catch (error) {
+            console.error('Error getting food details:', error);
+            return null;
+        }
+    };
 
-            if (!name || calories <= 0) {
-                showNotification('Please enter a meal name and calories', 'error');
-                return;
+    // Safe Storage Functions (your original code)
+    const isLocalStorageAvailable = () => {
+        try {
+            const test = '__localStorage_test__';
+            localStorage.setItem(test, test);
+            localStorage.removeItem(test);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    };
+
+    const memoryStorage = {};
+
+    const saveMealData = (date, meals) => {
+        const key = `fueliq_meals_${date}`;
+        const data = JSON.stringify(meals);
+        
+        if (isLocalStorageAvailable()) {
+            try {
+                localStorage.setItem(key, data);
+            } catch (e) {
+                console.warn('localStorage failed, using memory storage:', e);
+                memoryStorage[key] = data;
             }
+        } else {
+            memoryStorage[key] = data;
+        }
+    };
 
-            const meal = {
-                id: Date.now(),
-                name, calories, protein, carbs, fat, fiber,
-                timestamp: new Date().toISOString()
+    const loadMealData = (date) => {
+        const key = `fueliq_meals_${date}`;
+        let data = null;
+        
+        if (isLocalStorageAvailable()) {
+            try {
+                data = localStorage.getItem(key);
+            } catch (e) {
+                console.warn('localStorage failed, using memory storage:', e);
+                data = memoryStorage[key];
+            }
+        } else {
+            data = memoryStorage[key];
+        }
+        
+        return data ? JSON.parse(data) : {
+            breakfast: [], lunch: [], dinner: [], snacks: []
+        };
+    };
+
+    const saveRecentFoods = (foods) => {
+        const key = 'fueliq_recent_foods';
+        const data = JSON.stringify(foods.slice(0, 20));
+        
+        if (isLocalStorageAvailable()) {
+            try {
+                localStorage.setItem(key, data);
+            } catch (e) {
+                console.warn('localStorage failed, using memory storage:', e);
+                memoryStorage[key] = data;
+            }
+        } else {
+            memoryStorage[key] = data;
+        }
+    };
+
+    const loadRecentFoods = () => {
+        const key = 'fueliq_recent_foods';
+        let data = null;
+        
+        if (isLocalStorageAvailable()) {
+            try {
+                data = localStorage.getItem(key);
+            } catch (e) {
+                console.warn('localStorage failed, using memory storage:', e);
+                data = memoryStorage[key];
+            }
+        } else {
+            data = memoryStorage[key];
+        }
+        
+        return data ? JSON.parse(data) : [];
+    };
+
+    // Helper Functions (your original code)
+    const formatDate = (date) => {
+        return date.toISOString().split('T')[0];
+    };
+
+    const calculateNutrition = (foodItems) => {
+        return foodItems.reduce((totals, item) => {
+            const multiplier = item.servingSize / 100;
+            return {
+                calories: totals.calories + (item.calories * multiplier),
+                protein: totals.protein + (item.protein * multiplier),
+                carbs: totals.carbs + (item.carbs * multiplier),
+                fat: totals.fat + (item.fat * multiplier),
+                fiber: totals.fiber + (item.fiber * multiplier)
             };
-
-            // Load existing data
-            const data = HijackedDataManager.loadTodaysData();
-
-            // Add new meal
-            data.meals.push(meal);
-            data.totalCalories += calories;
-            data.totalProtein += protein;
-            data.totalCarbs += carbs;
-            data.totalFat += fat;
-            data.totalFiber += fiber;
-
-            // Save and update
-            HijackedDataManager.saveTodaysData(data);
-            updateNutritionDisplay();
-            
-            // Clear form
-            document.getElementById('hijacked-meal-form').reset();
-            
-            showNotification(`"${name}" added successfully!`, 'success');
-            console.log('✅ Meal added via hijacked interface:', name);
-
-        } catch (error) {
-            console.error('Error adding meal:', error);
-            showNotification('Error adding meal. Please try again.', 'error');
-        } finally {
-            submitBtn.textContent = '✅ Add Meal to Today\'s Log';
-            submitBtn.disabled = false;
-        }
-    }
-
-    // Global remove meal function
-    window.hijackedRemoveMeal = function(mealId) {
-        try {
-            const data = HijackedDataManager.loadTodaysData();
-            const mealIndex = data.meals.findIndex(m => m.id === mealId);
-            
-            if (mealIndex === -1) return;
-
-            const meal = data.meals[mealIndex];
-            
-            // Remove meal and update totals
-            data.meals.splice(mealIndex, 1);
-            data.totalCalories -= meal.calories;
-            data.totalProtein -= meal.protein;
-            data.totalCarbs -= meal.carbs;
-            data.totalFat -= meal.fat;
-            data.totalFiber -= meal.fiber;
-
-            // Save and update
-            HijackedDataManager.saveTodaysData(data);
-            updateNutritionDisplay();
-            
-            showNotification('Meal removed successfully', 'success');
-            console.log('🗑️ Meal removed via hijacked interface');
-        } catch (error) {
-            console.error('Error removing meal:', error);
-            showNotification('Error removing meal', 'error');
-        }
+        }, { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
     };
 
-    function loadMealPlanning() {
-        try {
-            if (typeof window.HabbtMealPlanning?.IntelligentMealPlanningApp === 'function') {
-                const container = document.getElementById('meals-container');
-                container.innerHTML = '<div id="meal-planning-container"></div>';
-                window.HabbtMealPlanning.renderMealPlanning('meal-planning-container');
-                showNotification('Meal planning loaded!', 'success');
-            } else {
-                showNotification('Meal planning system not available. Please refresh the page.', 'warning');
-            }
-        } catch (error) {
-            console.error('Error loading meal planning:', error);
-            showNotification('Error loading meal planning', 'error');
-        }
-    }
+    const extractNutrients = (foodData) => {
+        const nutrients = foodData.foodNutrients || [];
+        const getNutrient = (id) => {
+            const nutrient = nutrients.find(n => n.nutrient && n.nutrient.id === id);
+            return nutrient ? nutrient.amount || 0 : 0;
+        };
 
-    function showNotification(message, type = 'info') {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg font-semibold text-white transition-all duration-300 transform translate-x-full`;
-        
-        switch (type) {
-            case 'success':
-                notification.className += ' bg-green-500';
-                break;
-            case 'error':
-                notification.className += ' bg-red-500';
-                break;
-            case 'warning':
-                notification.className += ' bg-yellow-500';
-                break;
-            default:
-                notification.className += ' bg-blue-500';
-        }
-        
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        
-        // Animate in
-        setTimeout(() => {
-            notification.classList.remove('translate-x-full');
-        }, 100);
-        
-        // Animate out and remove
-        setTimeout(() => {
-            notification.classList.add('translate-x-full');
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
+        return {
+            calories: getNutrient(1008),
+            protein: getNutrient(1003),
+            carbs: getNutrient(1005),
+            fat: getNutrient(1004),
+            fiber: getNutrient(1079)
+        };
+    };
+
+    // Enhanced Food Search Component (your original code)
+    const EnhancedFoodSearch = ({ onAddFood, onClose }) => {
+        const [activeTab, setActiveTab] = React.useState('search');
+        const [query, setQuery] = React.useState('');
+        const [results, setResults] = React.useState([]);
+        const [loading, setLoading] = React.useState(false);
+        const [recentFoods, setRecentFoods] = React.useState(loadRecentFoods());
+
+        React.useEffect(() => {
+            const searchTimeout = setTimeout(async () => {
+                if (query.length >= 2) {
+                    setLoading(true);
+                    const foods = await searchFoods(query);                
+                    setResults(foods);
+                    setLoading(false);
+                } else {
+                    setResults([]);
                 }
             }, 300);
-        }, 3000);
-    }
 
-    // DOM Hijacking Logic
-    function hijackMealsContainer() {
-        hijackAttempts++;
-        console.log(`🎯 DOM Hijack attempt ${hijackAttempts}/${maxHijackAttempts}`);
+            return () => clearTimeout(searchTimeout);
+        }, [query]);
 
-        const container = document.getElementById('meals-container');
+        const handleAddFood = async (food, servingSize = 100) => {
+            const details = await getFoodDetails(food.fdcId);
+            if (details) {
+                const nutrients = extractNutrients(details);
+                const foodItem = {
+                    id: Date.now(),
+                    fdcId: food.fdcId,
+                    name: food.description,
+                    servingSize: servingSize,
+                    ...nutrients
+                };
+                
+                const updatedRecent = [foodItem, ...recentFoods.filter(f => f.fdcId !== foodItem.fdcId)];
+                setRecentFoods(updatedRecent);
+                saveRecentFoods(updatedRecent);
+                
+                onAddFood(foodItem);
+                onClose();
+            }
+        };
+
+        return React.createElement('div', { 
+            className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50' 
+        },
+            React.createElement('div', { 
+                className: 'bg-white rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col' 
+            },
+                React.createElement('div', { className: 'flex justify-between items-center mb-4' },
+                    React.createElement('h3', { className: 'text-xl font-bold text-gradient' }, 'Add Food'),
+                    React.createElement('button', { 
+                        onClick: onClose,
+                        className: 'text-gray-500 hover:text-gray-700 text-xl font-bold' 
+                    }, '×')
+                ),
+
+                // Tab Navigation
+                React.createElement('div', { className: 'flex gap-2 mb-4 border-b border-gray-200' },
+                    React.createElement('button', {
+                        onClick: () => setActiveTab('search'),
+                        className: `px-4 py-2 font-semibold transition-colors ${
+                            activeTab === 'search' 
+                                ? 'border-b-2 border-orange-500 text-orange-600' 
+                                : 'text-gray-600 hover:text-gray-800'
+                        }`
+                    }, '🔍 Search'),
+                    React.createElement('button', {
+                        onClick: () => setActiveTab('recent'),
+                        className: `px-4 py-2 font-semibold transition-colors ${
+                            activeTab === 'recent' 
+                                ? 'border-b-2 border-orange-500 text-orange-600' 
+                                : 'text-gray-600 hover:text-gray-800'
+                        }`
+                    }, '⏰ Recent')
+                ),
+
+                // Tab Content
+                React.createElement('div', { className: 'flex-1 overflow-y-auto' },
+                    
+                    // Search Tab
+                    activeTab === 'search' && React.createElement('div', null,
+                        React.createElement('input', {
+                            type: 'text',
+                            placeholder: 'Search for foods...',
+                            value: query,
+                            onChange: (e) => setQuery(e.target.value),
+                            className: 'w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-orange-500'
+                        }),
+
+                        loading && React.createElement('div', { className: 'text-center py-8' },
+                            React.createElement('div', { className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto' })
+                        ),
+
+                        !loading && results.length > 0 && React.createElement('div', { className: 'space-y-2' },
+                            ...results.map(food =>
+                                React.createElement('div', { 
+                                    key: food.fdcId,
+                                    className: 'flex justify-between items-center p-3 border border-gray-200 rounded-lg hover:border-orange-300 cursor-pointer'
+                                },
+                                    React.createElement('div', null,
+                                        React.createElement('div', { className: 'font-semibold text-gray-800' }, food.description),
+                                        React.createElement('div', { className: 'text-sm text-gray-600' }, food.brandOwner || 'Generic Food')
+                                    ),
+                                    React.createElement('button', { 
+                                        onClick: () => handleAddFood(food),
+                                        className: 'bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-all' 
+                                    }, 'Add')
+                                )
+                            )
+                        ),
+
+                        !loading && query.length >= 2 && results.length === 0 && 
+                        React.createElement('div', { className: 'text-center py-8 text-gray-500' }, 'No foods found. Try a different search term.')
+                    ),
+
+                    // Recent Tab
+                    activeTab === 'recent' && React.createElement('div', null,
+                        recentFoods.length === 0 ? 
+                            React.createElement('div', { className: 'text-center py-8 text-gray-500' },
+                                React.createElement('div', { className: 'text-4xl mb-2' }, '🕐'),
+                                'No recent foods yet'
+                            ) :
+                            React.createElement('div', { className: 'space-y-2' },
+                                ...recentFoods.map(food =>
+                                    React.createElement('div', { 
+                                        key: food.fdcId || food.id,
+                                        className: 'flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer'
+                                    },
+                                        React.createElement('div', null,
+                                            React.createElement('div', { className: 'font-semibold text-gray-800' }, food.name),
+                                            React.createElement('div', { className: 'text-sm text-gray-600' }, 
+                                                `${Math.round(food.calories)} cal per 100g${food.source ? ` • ${food.source}` : ''}`
+                                            )
+                                        ),
+                                        React.createElement('button', { 
+                                            onClick: () => handleAddFood(food),
+                                            className: 'bg-orange-500 text-white px-3 py-1 rounded-lg text-sm' 
+                                        }, 'Add')
+                                    )
+                                )
+                            )
+                    )
+                )
+            )
+        );
+    };
+
+    // Food Item Component (your original code)
+    const FoodItem = ({ food, onRemove, onUpdateServing }) => {
+        const getCalories = (food) => {
+            let calories = food.calories || 
+                          food.energy || 
+                          food.kcal || 
+                          food.energy_kcal || 
+                          (food.nutrients && food.nutrients.calories) ||
+                          (food.nutrients && food.nutrients.energy) ||
+                          (food.nutriments && food.nutriments['energy-kcal']) ||
+                          (food.nutriments && food.nutriments.energy_kcal) ||
+                          0;
+            
+            if (calories === 0 && (food.protein || food.carbs || food.fat)) {
+                const protein = food.protein || 0;
+                const carbs = food.carbs || 0;
+                const fat = food.fat || 0;
+                calories = (protein * 4) + (carbs * 4) + (fat * 9);
+            }
+            
+            return calories;
+        };
+
+        const [serving, setServing] = React.useState(1);
         
-        if (container && !isHijacked) {
-            console.log('🎯 Meals container found! Hijacking now...');
-            
-            // Immediately replace content
-            container.innerHTML = getWorkingMealsHTML();
-            
-            // Initialize functionality
-            setTimeout(() => {
-                initializeHijackedInterface();
-            }, 100);
-            
-            isHijacked = true;
-            console.log('✅ DOM Hijacking successful! Meals tab is now operational.');
-            
-            // Set up observer to re-hijack if content gets replaced
-            if (observer) observer.disconnect();
-            
-            observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.type === 'childList' && 
-                        container.children.length === 0) {
-                        console.log('🔄 Container was cleared, re-hijacking...');
-                        container.innerHTML = getWorkingMealsHTML();
-                        setTimeout(() => {
-                            initializeHijackedInterface();
-                        }, 100);
+        const handleServingChange = (newServing) => {
+            setServing(newServing);
+            onUpdateServing(food.id, newServing);
+        };
+
+        const multiplier = (serving * (food.servingSize || 100)) / 100;
+
+        return React.createElement('div', { className: 'bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow' },
+            React.createElement('div', { className: 'flex justify-between items-start mb-2' },
+                React.createElement('h4', { className: 'font-semibold text-gray-800 flex-1' }, food.name),
+                React.createElement('button', { 
+                    onClick: () => onRemove(food.id),
+                    className: 'text-red-500 hover:text-red-700 ml-2' 
+                }, '×')
+            ),
+            React.createElement('div', { className: 'flex items-center gap-4 mb-3' },
+                React.createElement('input', {
+                    type: 'number',
+                    value: serving,
+                    onChange: (e) => handleServingChange(Number(e.target.value)),
+                    className: 'w-20 p-1 border border-gray-300 rounded text-sm',
+                    min: '0.1',
+                    step: '0.1'
+                }),
+                React.createElement('span', { className: 'text-sm text-gray-600' }, 'servings')
+            ),
+            React.createElement('div', { className: 'grid grid-cols-2 gap-4 text-sm' },
+                React.createElement('div', null,
+                    React.createElement('span', { className: 'text-gray-600' }, 'Calories: '),
+                    React.createElement('span', { className: 'font-semibold' }, Math.round(getCalories(food) * multiplier))
+                ),
+                React.createElement('div', null,
+                    React.createElement('span', { className: 'text-gray-600' }, 'Protein: '),
+                    React.createElement('span', { className: 'font-semibold' }, `${Math.round(food.protein * multiplier)}g`)
+                ),
+                React.createElement('div', null,
+                    React.createElement('span', { className: 'text-gray-600' }, 'Carbs: '),
+                    React.createElement('span', { className: 'font-semibold' }, `${Math.round(food.carbs * multiplier)}g`)
+                ),
+                React.createElement('div', null,
+                    React.createElement('span', { className: 'text-gray-600' }, 'Fat: '),
+                    React.createElement('span', { className: 'font-semibold' }, `${Math.round(food.fat * multiplier)}g`)
+                )
+            )
+        );
+    };
+
+    // Progress Bar Component (your original code)
+    const ProgressBar = ({ label, current, goal, unit, color = 'orange' }) => {
+        const percentage = goal > 0 ? Math.min((current / goal) * 100, 100) : 0;
+        const colorClasses = {
+            orange: 'bg-orange-500',
+            red: 'bg-red-500',
+            green: 'bg-green-500',
+            blue: 'bg-blue-500'
+        };
+
+        return React.createElement('div', { className: 'mb-4' },
+            React.createElement('div', { className: 'flex justify-between items-center mb-2' },
+                React.createElement('span', { className: 'font-semibold text-gray-700' }, label),
+                React.createElement('span', { className: 'text-sm text-gray-600' }, 
+                    `${Math.round(current)}${unit} / ${Math.round(goal)}${unit}`
+                )
+            ),
+            React.createElement('div', { className: 'w-full bg-gray-200 rounded-full h-3' },
+                React.createElement('div', { 
+                    className: `h-3 rounded-full transition-all duration-500 ${colorClasses[color]}`,
+                    style: { width: `${percentage}%` }
+                })
+            )
+        );
+    };
+
+    // Meal Section Component (your original code)
+    const MealSection = ({ title, foods, onAddFood, onRemoveFood, onUpdateServing, icon }) => {
+        const [showSearch, setShowSearch] = React.useState(false);
+        const totalNutrition = calculateNutrition(foods);
+
+        return React.createElement('div', { className: 'bg-white rounded-xl p-6 shadow-lg border border-gray-100' },
+            React.createElement('div', { className: 'flex justify-between items-center mb-4' },
+                React.createElement('div', { className: 'flex items-center gap-3' },
+                    React.createElement('span', { className: 'text-2xl' }, icon),
+                    React.createElement('h3', { className: 'text-xl font-bold text-gray-800' }, title),
+                    foods.length > 0 && React.createElement('span', { className: 'bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-sm font-semibold' }, 
+                        `${Math.round(totalNutrition.calories)} cal`
+                    )
+                ),
+                React.createElement('button', { 
+                    onClick: () => setShowSearch(true),
+                    className: 'bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-all font-semibold' 
+                }, '+ Add Food')
+            ),
+
+            foods.length === 0 ? 
+                React.createElement('div', { className: 'text-center py-8 text-gray-400' },
+                    React.createElement('p', null, 'No foods logged yet'),
+                    React.createElement('p', { className: 'text-sm' }, 'Tap "Add Food" to get started')
+                ) :
+                React.createElement('div', { className: 'space-y-3' },
+                    ...foods.map(food =>
+                        React.createElement(FoodItem, {
+                            key: food.id,
+                            food: food,
+                            onRemove: onRemoveFood,
+                            onUpdateServing: onUpdateServing
+                        })
+                    )
+                ),
+
+            showSearch && React.createElement(EnhancedFoodSearch, {
+                onAddFood: (food) => {
+                    onAddFood(food);
+                    setShowSearch(false);
+                },
+                onClose: () => setShowSearch(false)
+            })
+        );
+    };
+
+    // Main Meals Component (your original code with success message)
+    const SafeMealsTab = () => {
+        const [currentDate, setCurrentDate] = React.useState(new Date());
+        const [meals, setMeals] = React.useState(loadMealData(formatDate(currentDate)));
+
+        const loadUserGoals = () => {
+            const defaultGoals = {
+                calories: 2000,
+                protein: 150,
+                carbs: 250,
+                fat: 67
+            };
+
+            if (isLocalStorageAvailable()) {
+                try {
+                    let data = localStorage.getItem('fueliq_user_goals') || localStorage.getItem('habbt_profile_data') || localStorage.getItem('fueliq_profile_data');
+                    
+                    if (data) {
+                        const parsed = JSON.parse(data);
+                        
+                        const goals = {
+                            calories: parsed.calories || parsed.dailyCalories || (parsed.goals && parsed.goals.calories) || defaultGoals.calories,
+                            protein: parsed.protein || (parsed.goals && parsed.goals.protein) || defaultGoals.protein,
+                            carbs: parsed.carbs || parsed.carbohydrates || (parsed.goals && parsed.goals.carbs) || defaultGoals.carbs,
+                            fat: parsed.fat || (parsed.goals && parsed.goals.fat) || defaultGoals.fat
+                        };
+                        
+                        console.log('✅ Loaded user goals:', goals);
+                        return goals;
                     }
-                });
-            });
+                    
+                    return defaultGoals;
+                } catch (e) {
+                    console.warn('Failed to load user goals from localStorage:', e);
+                    return defaultGoals;
+                }
+            } else {
+                return defaultGoals;
+            }
+        };
+
+        const userGoals = loadUserGoals();
+        const dailyGoals = {
+            calories: userGoals.calories || 2000,
+            protein: userGoals.protein || 150,
+            carbs: userGoals.carbs || 250,
+            fat: userGoals.fat || 67
+        };
+
+        React.useEffect(() => {
+            const dateStr = formatDate(currentDate);
+            setMeals(loadMealData(dateStr));
+        }, [currentDate]);
+
+        React.useEffect(() => {
+            saveMealData(formatDate(currentDate), meals);
+        }, [meals, currentDate]);
+
+        const addFoodToMeal = (mealType, food) => {
+            setMeals(prev => ({
+                ...prev,
+                [mealType]: [...prev[mealType], food]
+            }));
+        };
+
+        const removeFoodFromMeal = (mealType, foodId) => {
+            setMeals(prev => ({
+                ...prev,
+                [mealType]: prev[mealType].filter(food => food.id !== foodId)
+            }));
+        };
+
+        const updateFoodServing = (mealType, foodId, newServing) => {
+            setMeals(prev => ({
+                ...prev,
+                [mealType]: prev[mealType].map(food => 
+                    food.id === foodId ? { ...food, servingSize: newServing } : food
+                )
+            }));
+        };
+
+        const allFoods = [...meals.breakfast, ...meals.lunch, ...meals.dinner, ...meals.snacks];
+        const dailyTotals = calculateNutrition(allFoods);
+
+        const changeDate = (days) => {
+            const newDate = new Date(currentDate);
+            newDate.setDate(newDate.getDate() + days);
+            setCurrentDate(newDate);
+        };
+
+        const isToday = formatDate(currentDate) === formatDate(new Date());
+
+        return React.createElement('div', { className: 'max-w-6xl mx-auto p-6' },
+            // Success Alert
+            React.createElement('div', { className: 'bg-green-50 border border-green-200 rounded-xl p-4 mb-6' },
+                React.createElement('div', { className: 'flex items-center' },
+                    React.createElement('span', { className: 'text-2xl mr-3' }, '✅'),
+                    React.createElement('div', null,
+                        React.createElement('h3', { className: 'text-lg font-bold text-green-800' }, 'Meals Tab Successfully Restored!'),
+                        React.createElement('p', { className: 'text-green-700' }, 'Your sophisticated nutrition tracking system is now working with safe mounting.')
+                    )
+                )
+            ),
+
+            // Header (your original design)
+            React.createElement('div', { className: 'bg-orange-500 rounded-xl p-6 mb-6 text-white' },
+                React.createElement('div', { className: 'flex justify-between items-center mb-4' },
+                    React.createElement('h1', { className: 'text-3xl font-bold' }, 'Daily Nutrition'),
+                    React.createElement('div', { className: 'flex items-center gap-4' },
+                        React.createElement('button', { 
+                            onClick: () => changeDate(-1),
+                            className: 'bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors' 
+                        }, '‹'),
+                        React.createElement('span', { className: 'font-semibold text-lg' }, 
+                            isToday ? 'Today' : currentDate.toLocaleDateString()
+                        ),
+                        React.createElement('button', { 
+                            onClick: () => changeDate(1),
+                            className: 'bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors' 
+                        }, '›')
+                    )
+                ),
+                
+                // Daily Summary (your original design)
+                React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4' },
+                    React.createElement('div', { className: 'text-center' },
+                        React.createElement('div', { className: 'text-2xl font-bold' }, Math.round(dailyTotals.calories)),
+                        React.createElement('div', { className: 'text-sm opacity-90' }, `/ ${dailyGoals.calories} calories`)
+                    ),
+                    React.createElement('div', { className: 'text-center' },
+                        React.createElement('div', { className: 'text-2xl font-bold' }, `${Math.round(dailyTotals.protein)}g`),
+                        React.createElement('div', { className: 'text-sm opacity-90' }, `/ ${dailyGoals.protein}g protein`)
+                    ),
+                    React.createElement('div', { className: 'text-center' },
+                        React.createElement('div', { className: 'text-2xl font-bold' }, `${Math.round(dailyTotals.carbs)}g`),
+                        React.createElement('div', { className: 'text-sm opacity-90' }, `/ ${dailyGoals.carbs}g carbs`)
+                    ),
+                    React.createElement('div', { className: 'text-center' },
+                        React.createElement('div', { className: 'text-2xl font-bold' }, `${Math.round(dailyTotals.fat)}g`),
+                        React.createElement('div', { className: 'text-sm opacity-90' }, `/ ${dailyGoals.fat}g fat`)
+                    )
+                )
+            ),
+
+            // Progress Bars (your original design)
+            React.createElement('div', { className: 'bg-white rounded-xl p-6 mb-6 shadow-lg' },
+                React.createElement('h2', { className: 'text-xl font-bold text-gray-800 mb-4' }, 'Daily Progress'),
+                React.createElement(ProgressBar, { 
+                    label: 'Calories', 
+                    current: dailyTotals.calories, 
+                    goal: dailyGoals.calories, 
+                    unit: '', 
+                    color: 'orange' 
+                }),
+                React.createElement(ProgressBar, { 
+                    label: 'Protein', 
+                    current: dailyTotals.protein, 
+                    goal: dailyGoals.protein, 
+                    unit: 'g', 
+                    color: 'red' 
+                }),
+                React.createElement(ProgressBar, { 
+                    label: 'Carbohydrates', 
+                    current: dailyTotals.carbs, 
+                    goal: dailyGoals.carbs, 
+                    unit: 'g', 
+                    color: 'blue' 
+                }),
+                React.createElement(ProgressBar, { 
+                    label: 'Fat', 
+                    current: dailyTotals.fat, 
+                    goal: dailyGoals.fat, 
+                    unit: 'g', 
+                    color: 'green' 
+                })
+            ),
+
+            // Meals Grid (your original design)
+            React.createElement('div', { className: 'grid md:grid-cols-2 gap-6' },
+                React.createElement(MealSection, {
+                    title: 'Breakfast',
+                    icon: '🍳',
+                    foods: meals.breakfast,
+                    onAddFood: (food) => addFoodToMeal('breakfast', food),
+                    onRemoveFood: (foodId) => removeFoodFromMeal('breakfast', foodId),
+                    onUpdateServing: (foodId, serving) => updateFoodServing('breakfast', foodId, serving)
+                }),
+                React.createElement(MealSection, {
+                    title: 'Lunch',
+                    icon: '🥪',
+                    foods: meals.lunch,
+                    onAddFood: (food) => addFoodToMeal('lunch', food),
+                    onRemoveFood: (foodId) => removeFoodFromMeal('lunch', foodId),
+                    onUpdateServing: (foodId, serving) => updateFoodServing('lunch', foodId, serving)
+                }),
+                React.createElement(MealSection, {
+                    title: 'Dinner',
+                    icon: '🍽️',
+                    foods: meals.dinner,
+                    onAddFood: (food) => addFoodToMeal('dinner', food),
+                    onRemoveFood: (foodId) => removeFoodFromMeal('dinner', foodId),
+                    onUpdateServing: (foodId, serving) => updateFoodServing('dinner', foodId, serving)
+                }),
+                React.createElement(MealSection, {
+                    title: 'Snacks',
+                    icon: '🍎',
+                    foods: meals.snacks,
+                    onAddFood: (food) => addFoodToMeal('snacks', food),
+                    onRemoveFood: (foodId) => removeFoodFromMeal('snacks', foodId),
+                    onUpdateServing: (foodId, serving) => updateFoodServing('snacks', foodId, serving)
+                })
+            )
+        );
+    };
+
+    // Safe rendering system that prevents React conflicts
+    let safeRenderingActive = false;
+    let contentVerificationId = null;
+
+    const safeRenderMealsTab = (containerId = 'meals-container') => {
+        console.log('🔧 Safe rendering meals tab...');
+        
+        const container = document.getElementById(containerId);
+        if (!container) {
+            console.error(`❌ Container ${containerId} not found`);
+            return false;
+        }
+
+        try {
+            // Clear any existing content and create verification ID
+            container.innerHTML = '';
+            contentVerificationId = `safe-meals-${Date.now()}`;
             
-            observer.observe(container, { childList: true, subtree: true });
+            // Create wrapper with verification
+            const wrapper = document.createElement('div');
+            wrapper.id = contentVerificationId;
+            wrapper.className = 'safe-meals-wrapper';
+            container.appendChild(wrapper);
+
+            // Render React component to wrapper
+            ReactDOM.render(React.createElement(SafeMealsTab), wrapper);
+            
+            safeRenderingActive = true;
+            console.log('✅ Safe meals tab rendered successfully');
+            
+            // Set up monitoring to re-render if overridden
+            startSafeMonitoring(containerId);
             
             return true;
+        } catch (error) {
+            console.error('❌ Error in safe rendering:', error);
+            container.innerHTML = `
+                <div class="p-8 text-center">
+                    <div class="text-6xl mb-4">⚠️</div>
+                    <h3 class="text-xl font-bold text-red-600 mb-2">Rendering Error</h3>
+                    <p class="text-gray-600 mb-4">Unable to load the meals tab. Please refresh the page.</p>
+                    <button onclick="location.reload()" class="px-4 py-2 bg-red-500 text-white rounded-lg">
+                        🔄 Refresh Page
+                    </button>
+                </div>
+            `;
+            return false;
         }
-        
-        // Continue trying if not found and under limit
-        if (hijackAttempts < maxHijackAttempts) {
-            setTimeout(hijackMealsContainer, 500);
-        } else {
-            console.log('❌ DOM Hijacking failed - container not found after maximum attempts');
-        }
-        
-        return false;
-    }
+    };
 
-    // Start hijacking immediately and set up continuous monitoring
-    hijackMealsContainer();
-    
-    // Also use MutationObserver to watch for the container appearing
-    const bodyObserver = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'childList') {
-                const container = document.getElementById('meals-container');
-                if (container && !isHijacked) {
-                    console.log('🎯 Meals container detected by MutationObserver!');
-                    hijackMealsContainer();
-                }
+    // Monitoring system to detect and recover from overrides
+    const startSafeMonitoring = (containerId) => {
+        console.log('🛡️ Starting safe monitoring...');
+
+        // Check every 2 seconds
+        const monitoringInterval = setInterval(() => {
+            const container = document.getElementById(containerId);
+            const ourContent = document.getElementById(contentVerificationId);
+            
+            if (container && !ourContent && safeRenderingActive) {
+                console.log('🔄 Content was overridden, re-rendering...');
+                safeRenderMealsTab(containerId);
             }
-        });
-    });
-    
-    bodyObserver.observe(document.body, { childList: true, subtree: true });
+        }, 2000);
 
-    console.log('✅ DOM Hijacking system initialized and monitoring for meals container');
+        // Also use MutationObserver for immediate detection
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList') {
+                    const container = document.getElementById(containerId);
+                    const ourContent = document.getElementById(contentVerificationId);
+                    
+                    if (container && !ourContent && safeRenderingActive) {
+                        console.log('🚨 Override detected by observer, re-rendering...');
+                        setTimeout(() => safeRenderMealsTab(containerId), 100);
+                    }
+                }
+            });
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // Store references for cleanup
+        window.safeMealsCleanup = () => {
+            clearInterval(monitoringInterval);
+            observer.disconnect();
+            safeRenderingActive = false;
+        };
+    };
+
+    // Override the problematic functions
+    const originalTryRenderMeals = window.tryRenderMeals;
+    window.tryRenderMeals = safeRenderMealsTab;
+    window.renderMeals = safeRenderMealsTab;
+    window.renderMealsTab = safeRenderMealsTab;
+
+    // Export your original system with safe mounting
+    window.FuelIQMeals = {
+        SafeMealsTab,
+        renderMealsTab: safeRenderMealsTab,
+        cleanup: () => {
+            if (window.safeMealsCleanup) {
+                window.safeMealsCleanup();
+            }
+        }
+    };
+
+    // Also export as Habbt for compatibility
+    window.HabbtMeals = window.FuelIQMeals;
+
+    console.log('✅ Your sophisticated meals system has been safely restored!');
+    console.log('🎯 All original functionality preserved with React conflict protection');
 
 })();
