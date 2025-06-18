@@ -29,15 +29,21 @@
         }
     };
 
-    // Barcode API
+    // Barcode API - Enhanced with better error handling and fallback data
     const searchByBarcode = async (barcode) => {
         try {
+            console.log(`🔍 Looking up barcode: ${barcode}`);
             const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
             const data = await response.json();
+            
+            console.log('API Response:', data);
             
             if (data.status === 1 && data.product) {
                 const product = data.product;
                 const nutriments = product.nutriments || {};
+                
+                console.log('Product found:', product.product_name);
+                console.log('Nutriments:', nutriments);
                 
                 return {
                     id: Date.now(),
@@ -45,7 +51,7 @@
                     brand: product.brands || '',
                     barcode: barcode,
                     servingSize: 100,
-                    calories: nutriments['energy-kcal_100g'] || nutriments['energy-kcal'] || 0,
+                    calories: nutriments['energy-kcal_100g'] || nutriments['energy-kcal'] || nutriments.energy_kcal || 0,
                     protein: nutriments['proteins_100g'] || nutriments.proteins || 0,
                     carbs: nutriments['carbohydrates_100g'] || nutriments.carbohydrates || 0,
                     fat: nutriments['fat_100g'] || nutriments.fat || 0,
@@ -53,10 +59,74 @@
                     source: 'Barcode Scan',
                     confidence: 'high'
                 };
+            } else {
+                console.log('Product not found in Open Food Facts');
+                
+                // Fallback data for demo barcodes
+                const demoProducts = {
+                    '7622210771704': {
+                        id: Date.now(),
+                        name: 'Nutella Hazelnut Spread',
+                        brand: 'Ferrero',
+                        barcode: barcode,
+                        servingSize: 100,
+                        calories: 539,
+                        protein: 6.3,
+                        carbs: 57.5,
+                        fat: 30.9,
+                        fiber: 0,
+                        source: 'Demo Data',
+                        confidence: 'high'
+                    },
+                    '8076800105987': {
+                        id: Date.now(),
+                        name: 'Coca-Cola Classic',
+                        brand: 'Coca-Cola',
+                        barcode: barcode,
+                        servingSize: 100,
+                        calories: 42,
+                        protein: 0,
+                        carbs: 10.6,
+                        fat: 0,
+                        fiber: 0,
+                        source: 'Demo Data',
+                        confidence: 'high'
+                    }
+                };
+                
+                if (demoProducts[barcode]) {
+                    console.log('Using demo data for:', barcode);
+                    return demoProducts[barcode];
+                }
+                
+                return null;
             }
-            return null;
         } catch (error) {
             console.error('Error searching barcode:', error);
+            
+            // Fallback for network errors with demo data
+            const demoProducts = {
+                '7622210771704': {
+                    id: Date.now(),
+                    name: 'Nutella Hazelnut Spread (Offline)',
+                    brand: 'Ferrero',
+                    barcode: barcode,
+                    servingSize: 100,
+                    calories: 539,
+                    protein: 6.3,
+                    carbs: 57.5,
+                    fat: 30.9,
+                    fiber: 0,
+                    source: 'Offline Demo',
+                    confidence: 'high'
+                }
+            };
+            
+            if (demoProducts[barcode]) {
+                console.log('Using offline demo data for:', barcode);
+                return demoProducts[barcode];
+            }
+            
             return null;
         }
     };
@@ -340,24 +410,34 @@
         };
 
         const handleScanBarcode = async (barcode) => {
+            console.log('🔍 Starting barcode lookup for:', barcode);
             setScanLoading(true);
-            const product = await searchByBarcode(barcode);
             
-            if (product) {
-                setScannedProducts(prev => [product, ...prev.filter(p => p.barcode !== barcode)]);
-            } else {
-                setScannedProducts(prev => [{
-                    id: Date.now(),
-                    name: `Product ${barcode}`,
-                    barcode: barcode,
-                    servingSize: 100,
-                    calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0,
-                    source: 'Manual Entry Needed',
-                    confidence: 'unknown',
-                    needsManualEntry: true
-                }, ...prev]);
+            try {
+                const product = await searchByBarcode(barcode);
+                
+                if (product) {
+                    console.log('✅ Product found:', product);
+                    setScannedProducts(prev => [product, ...prev.filter(p => p.barcode !== barcode)]);
+                } else {
+                    console.log('❌ Product not found, creating manual entry');
+                    setScannedProducts(prev => [{
+                        id: Date.now(),
+                        name: `Product ${barcode}`,
+                        barcode: barcode,
+                        servingSize: 100,
+                        calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0,
+                        source: 'Manual Entry Needed',
+                        confidence: 'unknown',
+                        needsManualEntry: true
+                    }, ...prev.filter(p => p.barcode !== barcode)]);
+                }
+            } catch (error) {
+                console.error('Error in barcode lookup:', error);
+            } finally {
+                setScanLoading(false);
+                console.log('🏁 Barcode lookup completed');
             }
-            setScanLoading(false);
         };
 
         const handleManualBarcodeEntry = (barcode) => {
@@ -401,9 +481,11 @@
 
         const simulateBarcodeDetection = (detectedBarcode) => {
             // In a real implementation, this would be called by a barcode detection library
-            console.log('📱 Barcode detected:', detectedBarcode);
+            console.log('📱 Demo: Simulating barcode detection for:', detectedBarcode);
             handleScanBarcode(detectedBarcode);
-            stopCamera();
+            if (isScanning) {
+                stopCamera();
+            }
         };
 
         // Camera component
@@ -667,17 +749,19 @@
                             )
                         ),
 
+                        // Scan loading
                         scanLoading && React.createElement('div', { className: 'text-center py-4' },
                             React.createElement('div', { className: 'animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2' }),
                             React.createElement('p', { className: 'text-sm text-gray-600' }, 'Looking up product...')
                         ),
 
-                        scannedProducts.length > 0 && React.createElement('div', { className: 'space-y-3' },
-                            React.createElement('h4', { className: 'font-semibold text-gray-800 mb-3 border-t pt-4' }, 'Scanned Products:'),
+                        // Scanned products - ALWAYS VISIBLE if there are products
+                        scannedProducts.length > 0 && React.createElement('div', { className: 'space-y-3 border-t pt-4' },
+                            React.createElement('h4', { className: 'font-semibold text-gray-800 mb-3' }, 'Scanned Products:'),
                             ...scannedProducts.map(product =>
                                 React.createElement('div', { 
                                     key: product.id,
-                                    className: `border border-gray-200 rounded-lg p-3 ${product.needsManualEntry ? 'bg-yellow-50' : 'bg-gray-50'}`
+                                    className: `border border-gray-200 rounded-lg p-3 ${product.needsManualEntry ? 'bg-yellow-50 border-yellow-200' : 'bg-green-50 border-green-200'}`
                                 },
                                     React.createElement('div', { className: 'flex justify-between items-start mb-2' },
                                         React.createElement('div', { className: 'flex-1' },
@@ -687,7 +771,8 @@
                                                 React.createElement('span', { className: 'text-xs text-gray-500' }, `Barcode: ${product.barcode}`),
                                                 React.createElement('span', { 
                                                     className: `text-xs px-2 py-1 rounded-full ${getConfidenceColor(product.confidence)}`
-                                                }, product.confidence === 'unknown' ? 'needs manual entry' : `${product.confidence} confidence`)
+                                                }, product.confidence === 'unknown' ? 'needs manual entry' : `${product.confidence} confidence`),
+                                                React.createElement('span', { className: 'text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800' }, product.source)
                                             )
                                         ),
                                         !product.needsManualEntry && React.createElement('button', { 
@@ -696,32 +781,33 @@
                                         }, 'Add')
                                     ),
                                     !product.needsManualEntry ? 
-                                        React.createElement('div', { className: 'grid grid-cols-4 gap-2 text-sm text-gray-600' },
+                                        React.createElement('div', { className: 'grid grid-cols-4 gap-2 text-sm text-gray-600 mt-2' },
                                             React.createElement('div', null, `${Math.round(product.calories)} cal`),
                                             React.createElement('div', null, `${Math.round(product.protein)}g protein`),
                                             React.createElement('div', null, `${Math.round(product.carbs)}g carbs`),
                                             React.createElement('div', null, `${Math.round(product.fat)}g fat`)
                                         ) :
-                                        React.createElement('div', { className: 'bg-yellow-100 p-2 rounded text-sm text-yellow-800' },
+                                        React.createElement('div', { className: 'bg-yellow-100 p-2 rounded text-sm text-yellow-800 mt-2' },
                                             'Product not found in database. Try the Search tab instead.'
                                         )
                                 )
                             )
                         ),
 
+                        // Demo barcodes section - Only show if no products scanned yet
                         scannedProducts.length === 0 && !scanLoading && React.createElement('div', { className: 'border-t pt-4 mt-4' },
                             React.createElement('h4', { className: 'font-semibold text-gray-700 mb-3' }, 'Try these demo barcodes:'),
                             React.createElement('div', { className: 'grid grid-cols-1 gap-2' },
                                 React.createElement('button', {
                                     onClick: () => handleManualBarcodeEntry('7622210771704'),
-                                    className: 'text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50'
+                                    className: 'text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors'
                                 },
                                     React.createElement('div', { className: 'font-medium' }, 'Nutella (7622210771704)'),
                                     React.createElement('div', { className: 'text-sm text-gray-600' }, 'Chocolate hazelnut spread')
                                 ),
                                 React.createElement('button', {
                                     onClick: () => handleManualBarcodeEntry('8076800105987'),
-                                    className: 'text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50'
+                                    className: 'text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors'
                                 },
                                     React.createElement('div', { className: 'font-medium' }, 'Coca-Cola (8076800105987)'),
                                     React.createElement('div', { className: 'text-sm text-gray-600' }, 'Classic soft drink')
