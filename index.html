@@ -1695,7 +1695,12 @@ if (currentView === 'dashboard') {
           e('div', { id: "wearables-container", className: "wearables-tab-content" })
         );
       }
-
+if (currentView === 'journal') {
+  return e('div', { className: "min-h-screen bg-gradient-card" },
+    e(Navigation, { userDisplayName }),
+    e('div', { id: "journal-container", className: "journal-tab-content" })
+  );
+}
       // Default view for other sections
       return e('div', { className: "min-h-screen bg-gradient-card" },
         e(Navigation, { userDisplayName }),
