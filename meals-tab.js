@@ -29,7 +29,54 @@
         }
     };
 
-    // Common Foods Database for Natural Language Processing
+    // Open Food Facts API for barcode scanning
+    const searchByBarcode = async (barcode) => {
+        try {
+            const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+            const data = await response.json();
+            
+            if (data.status === 1 && data.product) {
+                const product = data.product;
+                const nutriments = product.nutriments || {};
+                
+                return {
+                    id: Date.now(),
+                    name: product.product_name || 'Unknown Product',
+                    brand: product.brands || '',
+                    barcode: barcode,
+                    servingSize: 100,
+                    calories: nutriments['energy-kcal_100g'] || nutriments['energy-kcal'] || 0,
+                    protein: nutriments['proteins_100g'] || nutriments.proteins || 0,
+                    carbs: nutriments['carbohydrates_100g'] || nutriments.carbohydrates || 0,
+                    fat: nutriments['fat_100g'] || nutriments.fat || 0,
+                    fiber: nutriments['fiber_100g'] || nutriments.fiber || 0,
+                    source: 'Barcode Scan',
+                    confidence: 'high',
+                    image: product.image_url || null
+                };
+            }
+            return null;
+        } catch (error) {
+            console.error('Error searching barcode:', error);
+            return null;
+        }
+    };
+
+    // Barcode scanner functionality (using device camera)
+    const startBarcodeScanner = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'environment' // Use back camera
+                } 
+            });
+            
+            return stream;
+        } catch (error) {
+            console.error('Error accessing camera:', error);
+            throw error;
+        }
+    };
     const commonFoods = {
         // Breakfast items
         'eggs': { calories: 70, protein: 6, carbs: 1, fat: 5 },
@@ -333,6 +380,12 @@
         const [parsedFoods, setParsedFoods] = React.useState([]);
         const [parseLoading, setParseLoading] = React.useState(false);
 
+        // Barcode scanner state
+        const [isScanning, setIsScanning] = React.useState(false);
+        const [scannedProducts, setScannedProducts] = React.useState([]);
+        const [scanLoading, setScanLoading] = React.useState(false);
+        const [cameraError, setCameraError] = React.useState(null);
+
         React.useEffect(() => {
             const searchTimeout = setTimeout(async () => {
                 if (query.length >= 2) {
@@ -389,6 +442,64 @@
             onClose();
         };
 
+        const handleScanBarcode = async (barcode) => {
+            setScanLoading(true);
+            const product = await searchByBarcode(barcode);
+            
+            if (product) {
+                setScannedProducts(prev => [product, ...prev.filter(p => p.barcode !== barcode)]);
+            } else {
+                // If not found in Open Food Facts, create a manual entry prompt
+                setScannedProducts(prev => [{
+                    id: Date.now(),
+                    name: `Product ${barcode}`,
+                    barcode: barcode,
+                    servingSize: 100,
+                    calories: 0,
+                    protein: 0,
+                    carbs: 0,
+                    fat: 0,
+                    fiber: 0,
+                    source: 'Manual Entry Needed',
+                    confidence: 'unknown',
+                    needsManualEntry: true
+                }, ...prev]);
+            }
+            setScanLoading(false);
+        };
+
+        const startScanning = async () => {
+            try {
+                setCameraError(null);
+                setIsScanning(true);
+                
+                // For demo purposes, we'll simulate barcode scanning
+                // In a real implementation, you'd integrate with a barcode scanning library
+                // like QuaggaJS or ZXing
+                
+            } catch (error) {
+                setCameraError('Unable to access camera. Please ensure camera permissions are enabled.');
+                setIsScanning(false);
+            }
+        };
+
+        const stopScanning = () => {
+            setIsScanning(false);
+        };
+
+        const handleManualBarcodeEntry = (barcode) => {
+            if (barcode && barcode.length >= 8) {
+                handleScanBarcode(barcode);
+            }
+        };
+            const updatedRecent = [food, ...recentFoods.filter(f => f.id !== food.id)];
+            setRecentFoods(updatedRecent);
+            saveRecentFoods(updatedRecent);
+            
+            onAddFood(food);
+            onClose();
+        };
+
         const getConfidenceColor = (confidence) => {
             switch(confidence) {
                 case 'high': return 'text-green-600 bg-green-100';
@@ -413,10 +524,10 @@
                 ),
 
                 // Tab Navigation
-                React.createElement('div', { className: 'flex gap-2 mb-4 border-b border-gray-200' },
+                React.createElement('div', { className: 'flex gap-1 mb-4 border-b border-gray-200 overflow-x-auto' },
                     React.createElement('button', {
                         onClick: () => setActiveTab('search'),
-                        className: `px-4 py-2 font-semibold transition-colors ${
+                        className: `px-3 py-2 font-semibold transition-colors whitespace-nowrap ${
                             activeTab === 'search' 
                                 ? 'border-b-2 border-blue-500 text-blue-600' 
                                 : 'text-gray-600 hover:text-gray-800'
@@ -424,7 +535,7 @@
                     }, '🔍 Search'),
                     React.createElement('button', {
                         onClick: () => setActiveTab('recent'),
-                        className: `px-4 py-2 font-semibold transition-colors ${
+                        className: `px-3 py-2 font-semibold transition-colors whitespace-nowrap ${
                             activeTab === 'recent' 
                                 ? 'border-b-2 border-blue-500 text-blue-600' 
                                 : 'text-gray-600 hover:text-gray-800'
@@ -432,12 +543,20 @@
                     }, '⏰ Recent'),
                     React.createElement('button', {
                         onClick: () => setActiveTab('describe'),
-                        className: `px-4 py-2 font-semibold transition-colors ${
+                        className: `px-3 py-2 font-semibold transition-colors whitespace-nowrap ${
                             activeTab === 'describe' 
                                 ? 'border-b-2 border-blue-500 text-blue-600' 
                                 : 'text-gray-600 hover:text-gray-800'
                         }`
-                    }, '💭 Describe')
+                    }, '💭 Describe'),
+                    React.createElement('button', {
+                        onClick: () => setActiveTab('scan'),
+                        className: `px-3 py-2 font-semibold transition-colors whitespace-nowrap ${
+                            activeTab === 'scan' 
+                                ? 'border-b-2 border-blue-500 text-blue-600' 
+                                : 'text-gray-600 hover:text-gray-800'
+                        }`
+                    }, '📱 Scan')
                 ),
 
                 // Tab Content
@@ -569,6 +688,145 @@
                                         React.createElement('div', null, `${Math.round(food.carbs)}g carbs`),
                                         React.createElement('div', null, `${Math.round(food.fat)}g fat`)
                                     )
+                                )
+                            )
+                        )
+                    ),
+
+                    // NEW: Scan Tab
+                    activeTab === 'scan' && React.createElement('div', null,
+                        React.createElement('div', { className: 'bg-blue-50 p-4 rounded-lg mb-4' },
+                            React.createElement('div', { className: 'flex items-center gap-2 mb-2' },
+                                React.createElement('span', { className: 'text-blue-600 text-lg' }, '📱'),
+                                React.createElement('span', { className: 'font-semibold text-blue-800' }, 'Barcode Scanner')
+                            ),
+                            React.createElement('p', { className: 'text-sm text-blue-700' }, 
+                                'Scan product barcodes for precise nutrition information from packaged foods.'
+                            )
+                        ),
+
+                        // Manual barcode entry
+                        React.createElement('div', { className: 'mb-4' },
+                            React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Enter Barcode Manually:'),
+                            React.createElement('div', { className: 'flex gap-2' },
+                                React.createElement('input', {
+                                    type: 'text',
+                                    placeholder: 'Enter barcode number...',
+                                    className: 'flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
+                                    onKeyPress: (e) => {
+                                        if (e.key === 'Enter') {
+                                            handleManualBarcodeEntry(e.target.value);
+                                            e.target.value = '';
+                                        }
+                                    }
+                                }),
+                                React.createElement('button', {
+                                    onClick: (e) => {
+                                        const input = e.target.parentElement.querySelector('input');
+                                        handleManualBarcodeEntry(input.value);
+                                        input.value = '';
+                                    },
+                                    className: 'bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all'
+                                }, 'Look Up')
+                            )
+                        ),
+
+                        // Camera scanner section
+                        React.createElement('div', { className: 'border-t pt-4 mb-4' },
+                            React.createElement('div', { className: 'text-center' },
+                                !isScanning ? 
+                                    React.createElement('div', null,
+                                        React.createElement('div', { className: 'text-4xl mb-2' }, '📸'),
+                                        React.createElement('p', { className: 'text-gray-600 mb-4' }, 'Use your camera to scan product barcodes'),
+                                        React.createElement('button', {
+                                            onClick: startScanning,
+                                            className: 'bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white px-6 py-3 rounded-lg transition-all font-semibold'
+                                        }, '📱 Start Camera Scanner'),
+                                        cameraError && React.createElement('div', { className: 'mt-3 p-3 bg-red-100 text-red-700 rounded-lg text-sm' }, cameraError)
+                                    ) :
+                                    React.createElement('div', { className: 'bg-gray-100 rounded-lg p-8' },
+                                        React.createElement('div', { className: 'text-4xl mb-2' }, '🎥'),
+                                        React.createElement('p', { className: 'text-gray-600 mb-4' }, 'Camera scanning active...'),
+                                        React.createElement('p', { className: 'text-sm text-gray-500 mb-4' }, 'Point your camera at a product barcode'),
+                                        React.createElement('button', {
+                                            onClick: stopScanning,
+                                            className: 'bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-all'
+                                        }, 'Stop Scanning'),
+                                        React.createElement('div', { className: 'mt-4 text-xs text-gray-500' }, 
+                                            'Note: This is a demo interface. In production, camera preview would appear here.'
+                                        )
+                                    )
+                            )
+                        ),
+
+                        // Scan loading
+                        scanLoading && React.createElement('div', { className: 'text-center py-4' },
+                            React.createElement('div', { className: 'animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2' }),
+                            React.createElement('p', { className: 'text-sm text-gray-600' }, 'Looking up product...')
+                        ),
+
+                        // Scanned products
+                        scannedProducts.length > 0 && React.createElement('div', { className: 'space-y-3' },
+                            React.createElement('div', { className: 'border-t pt-4' },
+                                React.createElement('h4', { className: 'font-semibold text-gray-800 mb-3' }, 'Scanned Products:')
+                            ),
+                            ...scannedProducts.map(product =>
+                                React.createElement('div', { 
+                                    key: product.id,
+                                    className: `border border-gray-200 rounded-lg p-3 ${product.needsManualEntry ? 'bg-yellow-50' : 'bg-gray-50'}`
+                                },
+                                    React.createElement('div', { className: 'flex justify-between items-start mb-2' },
+                                        React.createElement('div', { className: 'flex-1' },
+                                            React.createElement('div', { className: 'font-semibold text-gray-800' }, product.name),
+                                            product.brand && React.createElement('div', { className: 'text-sm text-gray-600' }, product.brand),
+                                            React.createElement('div', { className: 'flex items-center gap-2 mt-1' },
+                                                React.createElement('span', { className: 'text-xs text-gray-500' }, `Barcode: ${product.barcode}`),
+                                                React.createElement('span', { 
+                                                    className: `text-xs px-2 py-1 rounded-full ${getConfidenceColor(product.confidence)}`
+                                                }, product.confidence === 'unknown' ? 'needs manual entry' : `${product.confidence} confidence`)
+                                            )
+                                        ),
+                                        !product.needsManualEntry && React.createElement('button', { 
+                                            onClick: () => handleAddParsedFood(product),
+                                            className: 'bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm ml-3' 
+                                        }, 'Add')
+                                    ),
+                                    !product.needsManualEntry ? 
+                                        React.createElement('div', { className: 'grid grid-cols-4 gap-2 text-sm text-gray-600' },
+                                            React.createElement('div', null, `${Math.round(product.calories)} cal`),
+                                            React.createElement('div', null, `${Math.round(product.protein)}g protein`),
+                                            React.createElement('div', null, `${Math.round(product.carbs)}g carbs`),
+                                            React.createElement('div', null, `${Math.round(product.fat)}g fat`)
+                                        ) :
+                                        React.createElement('div', { className: 'bg-yellow-100 p-2 rounded text-sm' },
+                                            React.createElement('p', { className: 'text-yellow-800' }, 'Product not found in database. You can:'),
+                                            React.createElement('ul', { className: 'text-yellow-700 mt-1 ml-4' },
+                                                React.createElement('li', null, '• Enter nutrition info manually'),
+                                                React.createElement('li', null, '• Use the Search tab to find similar items'),
+                                                React.createElement('li', null, '• Try the Describe tab instead')
+                                            )
+                                        )
+                                )
+                            )
+                        ),
+
+                        // Demo barcode suggestions
+                        scannedProducts.length === 0 && !scanLoading && React.createElement('div', { className: 'border-t pt-4 mt-4' },
+                            React.createElement('h4', { className: 'font-semibold text-gray-700 mb-3' }, 'Try these demo barcodes:'),
+                            React.createElement('div', { className: 'grid grid-cols-1 gap-2' },
+                                React.createElement('button', {
+                                    onClick: () => handleManualBarcodeEntry('7622210771704'),
+                                    className: 'text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors'
+                                },
+                                    React.createElement('div', { className: 'font-medium' }, 'Nutella (7622210771704)'),
+                                    React.createElement('div', { className: 'text-sm text-gray-600' }, 'Chocolate hazelnut spread')
+                                ),
+                                React.createElement('button', {
+                                    onClick: () => handleManualBarcodeEntry('8076800105987'),
+                                    className: 'text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors'
+                                },
+                                    React.createElement('div', { className: 'font-medium' }, 'Coca-Cola (8076800105987)'),
+                                    React.createElement('div', { className: 'text-sm text-gray-600' }, 'Classic soft drink')
                                 )
                             )
                         )
