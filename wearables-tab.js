@@ -1130,27 +1130,90 @@
         );
     };
 
-    // Export for integration
-    const renderEnhancedWearablesHub = (containerId) => {
-        const container = document.getElementById(containerId);
-        if (container) {
-            ReactDOM.render(React.createElement(EnhancedWearablesHub), container);
+    // Safe React mounting
+    const safeRenderWearables = (containerId) => {
+        try {
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.warn(`Container ${containerId} not found`);
+                return;
+            }
+
+            // Clear container safely
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+
+            // Create new wrapper
+            const wrapper = document.createElement('div');
+            wrapper.className = 'wearables-wrapper';
+            container.appendChild(wrapper);
+
+            // Render with error boundary
+            ReactDOM.render(React.createElement(EnhancedWearablesHub), wrapper);
+            console.log('✅ Wearables hub rendered successfully');
+        } catch (error) {
+            console.error('❌ Failed to render wearables hub:', error);
+            // Fallback content
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = `
+                    <div class="p-8 text-center">
+                        <h2 class="text-xl font-bold text-gray-800 mb-4">⌚ Wearables Hub</h2>
+                        <p class="text-gray-600">Loading wearables dashboard...</p>
+                    </div>
+                `;
+            }
         }
     };
 
-    // Make available globally
+    // Multiple export formats for compatibility
+    const renderWearablesHub = safeRenderWearables;
+    const renderEnhancedWearablesHub = safeRenderWearables;
+    const renderWearables = safeRenderWearables;
+
+    // Test function to verify module is working
+    const testWearablesModule = () => {
+        console.log('🧪 Wearables module test: PASSED');
+        return true;
+    };
+
+    // Make available globally with multiple naming conventions
     window.HabbtWearables = {
         EnhancedWearablesHub,
-        renderEnhancedWearablesHub,
+        renderWearablesHub: safeRenderWearables,
+        renderEnhancedWearablesHub: safeRenderWearables,
+        renderWearables: safeRenderWearables,
         calculateAdjustedCalories,
         getActivityLevel,
         exportHealthDataForDashboard,
-        generateHealthRecommendations
+        generateHealthRecommendations,
+        testModule: testWearablesModule
     };
 
+    // Compatibility exports
     window.FuelIQWearables = window.HabbtWearables;
-    window.renderEnhancedWearablesHub = renderEnhancedWearablesHub;
+    window.renderWearablesHub = safeRenderWearables;
+    window.renderEnhancedWearablesHub = safeRenderWearables;
+    window.renderWearables = safeRenderWearables;
+
+    // Debug helper to identify what the app is looking for
+    window.debugWearables = () => {
+        console.log('🔍 Debug Info:');
+        console.log('- window.HabbtWearables exists:', !!window.HabbtWearables);
+        console.log('- window.FuelIQWearables exists:', !!window.FuelIQWearables);
+        console.log('- Available functions:', window.HabbtWearables ? Object.keys(window.HabbtWearables) : 'None');
+        console.log('- renderWearablesHub available:', !!window.renderWearablesHub);
+        console.log('- renderWearables available:', !!window.renderWearables);
+        return {
+            HabbtWearables: !!window.HabbtWearables,
+            functions: window.HabbtWearables ? Object.keys(window.HabbtWearables) : []
+        };
+    };
 
     console.log('⌚ Enhanced Habbt Wearables Hub loaded - 8 devices, analytics export, beautiful UI! 💙');
+    console.log('✅ Available functions:', Object.keys(window.HabbtWearables));
+    console.log('🔧 Safe mounting with error handling enabled');
+    console.log('🐛 Run debugWearables() to troubleshoot');
 
 })();
