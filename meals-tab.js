@@ -514,13 +514,6 @@
                 handleScanBarcode(barcode);
             }
         };
-            const updatedRecent = [food, ...recentFoods.filter(f => f.id !== food.id)];
-            setRecentFoods(updatedRecent);
-            saveRecentFoods(updatedRecent);
-            
-            onAddFood(food);
-            onClose();
-        };
 
         const getConfidenceColor = (confidence) => {
             switch(confidence) {
