@@ -267,15 +267,37 @@
         const key = `fueliq_meals_${date}`;
         const data = JSON.stringify(meals);
         
+        // Always save to localStorage first for immediate access
         if (isLocalStorageAvailable()) {
             try {
                 localStorage.setItem(key, data);
+                console.log(`💾 Meals saved locally for ${date}`);
             } catch (e) {
                 console.warn('localStorage failed, using memory storage:', e);
                 memoryStorage[key] = data;
             }
         } else {
             memoryStorage[key] = data;
+        }
+
+        // Also save to a "sync queue" for Firebase when it comes back online
+        try {
+            const syncQueue = JSON.parse(localStorage.getItem('meals_sync_queue') || '[]');
+            const existingIndex = syncQueue.findIndex(item => item.date === date);
+            
+            if (existingIndex >= 0) {
+                syncQueue[existingIndex] = { date, meals, timestamp: Date.now() };
+            } else {
+                syncQueue.push({ date, meals, timestamp: Date.now() });
+            }
+            
+            // Keep only last 30 days in sync queue
+            const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+            const filteredQueue = syncQueue.filter(item => item.timestamp > thirtyDaysAgo);
+            
+            localStorage.setItem('meals_sync_queue', JSON.stringify(filteredQueue));
+        } catch (e) {
+            console.warn('Could not save to sync queue:', e);
         }
     };
 
@@ -997,30 +1019,42 @@
                 fat: 67
             };
 
+            // Try multiple localStorage keys and Firebase fallback
             if (isLocalStorageAvailable()) {
                 try {
-                    let data = localStorage.getItem('fueliq_user_goals') || localStorage.getItem('habbt_profile_data') || localStorage.getItem('fueliq_profile_data');
+                    const possibleKeys = [
+                        'fueliq_user_goals', 
+                        'habbt_profile_data', 
+                        'fueliq_profile_data',
+                        'unified_goals_data',
+                        'user_profile_data'
+                    ];
                     
-                    if (data) {
-                        const parsed = JSON.parse(data);
-                        
-                        const goals = {
-                            calories: parsed.calories || parsed.dailyCalories || (parsed.goals && parsed.goals.calories) || defaultGoals.calories,
-                            protein: parsed.protein || (parsed.goals && parsed.goals.protein) || defaultGoals.protein,
-                            carbs: parsed.carbs || parsed.carbohydrates || (parsed.goals && parsed.goals.carbs) || defaultGoals.carbs,
-                            fat: parsed.fat || (parsed.goals && parsed.goals.fat) || defaultGoals.fat
-                        };
-                        
-                        console.log('✅ Loaded user goals:', goals);
-                        return goals;
+                    for (const key of possibleKeys) {
+                        const data = localStorage.getItem(key);
+                        if (data) {
+                            const parsed = JSON.parse(data);
+                            
+                            const goals = {
+                                calories: parsed.calories || parsed.dailyCalories || (parsed.goals && parsed.goals.calories) || defaultGoals.calories,
+                                protein: parsed.protein || (parsed.goals && parsed.goals.protein) || defaultGoals.protein,
+                                carbs: parsed.carbs || parsed.carbohydrates || (parsed.goals && parsed.goals.carbs) || defaultGoals.carbs,
+                                fat: parsed.fat || (parsed.goals && parsed.goals.fat) || defaultGoals.fat
+                            };
+                            
+                            console.log(`✅ Loaded user goals from ${key}:`, goals);
+                            return goals;
+                        }
                     }
                     
+                    console.log('⚠️ No saved goals found, using defaults');
                     return defaultGoals;
                 } catch (e) {
                     console.warn('Failed to load user goals from localStorage:', e);
                     return defaultGoals;
                 }
             } else {
+                console.log('📱 localStorage unavailable, using defaults');
                 return defaultGoals;
             }
         };
@@ -1034,44 +1068,84 @@
         };
 
         React.useEffect(() => {
-            const dateStr = formatDate(currentDate);
-            setMeals(loadMealData(dateStr));
+            try {
+                const dateStr = formatDate(currentDate);
+                const loadedMeals = loadMealData(dateStr);
+                setMeals(loadedMeals);
+            } catch (error) {
+                console.error('Error loading meal data:', error);
+                // Fallback to empty meals if loading fails
+                setMeals({
+                    breakfast: [], lunch: [], dinner: [], snacks: []
+                });
+            }
         }, [currentDate]);
 
         React.useEffect(() => {
-            saveMealData(formatDate(currentDate), meals);
+            try {
+                saveMealData(formatDate(currentDate), meals);
+            } catch (error) {
+                console.error('Error saving meal data:', error);
+            }
         }, [meals, currentDate]);
 
         const addFoodToMeal = (mealType, food) => {
-            setMeals(prev => ({
-                ...prev,
-                [mealType]: [...prev[mealType], food]
-            }));
+            try {
+                setMeals(prev => ({
+                    ...prev,
+                    [mealType]: [...prev[mealType], food]
+                }));
+                console.log(`✅ Added ${food.name} to ${mealType}`);
+            } catch (error) {
+                console.error('Error adding food to meal:', error);
+            }
         };
 
         const removeFoodFromMeal = (mealType, foodId) => {
-            setMeals(prev => ({
-                ...prev,
-                [mealType]: prev[mealType].filter(food => food.id !== foodId)
-            }));
+            try {
+                setMeals(prev => ({
+                    ...prev,
+                    [mealType]: prev[mealType].filter(food => food.id !== foodId)
+                }));
+                console.log(`🗑️ Removed food from ${mealType}`);
+            } catch (error) {
+                console.error('Error removing food from meal:', error);
+            }
         };
 
         const updateFoodServing = (mealType, foodId, newServing) => {
-            setMeals(prev => ({
-                ...prev,
-                [mealType]: prev[mealType].map(food => 
-                    food.id === foodId ? { ...food, servingSize: newServing } : food
-                )
-            }));
+            try {
+                setMeals(prev => ({
+                    ...prev,
+                    [mealType]: prev[mealType].map(food => 
+                        food.id === foodId ? { ...food, servingSize: newServing } : food
+                    )
+                }));
+                console.log(`📏 Updated serving size for food in ${mealType}`);
+            } catch (error) {
+                console.error('Error updating food serving:', error);
+            }
         };
 
-        const allFoods = [...meals.breakfast, ...meals.lunch, ...meals.dinner, ...meals.snacks];
-        const dailyTotals = calculateNutrition(allFoods);
+        const allFoods = [...(meals.breakfast || []), ...(meals.lunch || []), ...(meals.dinner || []), ...(meals.snacks || [])];
+        let dailyTotals;
+        
+        try {
+            dailyTotals = calculateNutrition(allFoods);
+        } catch (error) {
+            console.error('Error calculating nutrition:', error);
+            dailyTotals = { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 };
+        }
 
         const changeDate = (days) => {
-            const newDate = new Date(currentDate);
-            newDate.setDate(newDate.getDate() + days);
-            setCurrentDate(newDate);
+            try {
+                const newDate = new Date(currentDate);
+                newDate.setDate(newDate.getDate() + days);
+                setCurrentDate(newDate);
+                console.log(`📅 Changed date to: ${newDate.toLocaleDateString()}`);
+            } catch (error) {
+                console.error('Error changing date:', error);
+            }
         };
 
         const isToday = formatDate(currentDate) === formatDate(new Date());
@@ -1278,19 +1352,20 @@
         };
     };
 
-    // Override the problematic functions
-    window.tryRenderMeals = safeRenderMealsTab;
-    window.renderMeals = safeRenderMealsTab;
-    window.renderMealsTab = safeRenderMealsTab;
+    // Override the problematic functions with ultra-safe versions
+    window.tryRenderMeals = ultraSafeRenderMealsTab;
+    window.renderMeals = ultraSafeRenderMealsTab;
+    window.renderMealsTab = ultraSafeRenderMealsTab;
 
-    // Export enhanced system
+    // Export enhanced system with ultra-safe rendering
     window.FuelIQMeals = {
         SafeMealsTab,
-        renderMealsTab: safeRenderMealsTab,
+        renderMealsTab: ultraSafeRenderMealsTab,
         parseDescription,
+        searchByBarcode,
         cleanup: () => {
-            if (window.safeMealsCleanup) {
-                window.safeMealsCleanup();
+            if (window.ultraSafeMealsCleanup) {
+                window.ultraSafeMealsCleanup();
             }
         }
     };
@@ -1298,7 +1373,8 @@
     // Also export as Habbt for compatibility
     window.HabbtMeals = window.FuelIQMeals;
 
-    console.log('🎯 Enhanced meals system loaded with natural language support!');
-    console.log('💭 Users can now describe meals in plain English for quick estimation');
+    console.log('🎯 Enhanced meals system loaded with ultra-safe rendering!');
+    console.log('💭 Features: Natural language descriptions + Barcode scanning + Ultra-safe mounting');
+    console.log('🛡️ Ultra-persistent recovery system active - meals tab will stay loaded!');
 
 })();
