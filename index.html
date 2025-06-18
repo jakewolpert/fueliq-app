@@ -1150,32 +1150,12 @@
         );
       }
 
- // Enhanced Habbt Dashboard with Evening Journal Integration
+// Enhanced Habbt Dashboard with Evening Journal Integration
 // Replace the dashboard section in your index.html with this code
 
 if (currentView === 'dashboard') {
   
-  // Journal Functions
-  function saveJournalEntry(date, data) {
-    try {
-      localStorage.setItem(`habbt_journal_${date}`, JSON.stringify(data));
-      return true;
-    } catch (e) {
-      console.error('Failed to save journal entry:', e);
-      return false;
-    }
-  }
-
-  function getJournalEntry(date) {
-    try {
-      const data = localStorage.getItem(`habbt_journal_${date}`);
-      return data ? JSON.parse(data) : null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  // Dashboard Health Data Functions (existing)
+  // Dashboard Health Data Functions (simplified)
   function getWearableData() {
     try {
       const data = localStorage.getItem('habbt_dashboard_health_data');
@@ -1218,84 +1198,13 @@ if (currentView === 'dashboard') {
     }
   }
 
-  function generateHealthRecommendations(wearableData, journalData) {
-    const recommendations = [];
-    
-    if (!wearableData) {
-      recommendations.push({
-        type: 'info',
-        title: 'Connect Your Devices',
-        message: 'Connect wearables for personalized health insights!',
-        action: 'Go to Devices tab to connect your health tracking devices.'
-      });
-      return recommendations;
+  function getJournalEntry(date) {
+    try {
+      const data = localStorage.getItem(`habbt_journal_${date}`);
+      return data ? JSON.parse(data) : null;
+    } catch (e) {
+      return null;
     }
-
-    const steps = wearableData.dailyMetrics?.steps || 0;
-    const sleepHours = wearableData.dailyMetrics?.sleep?.totalSleep ? 
-      (wearableData.dailyMetrics.sleep.totalSleep / 60) : 0;
-    const sleepQuality = wearableData.dailyMetrics?.sleep?.sleepQuality || 0;
-
-    // Movement recommendations
-    if (steps < 6000) {
-      recommendations.push({
-        type: 'movement',
-        title: 'Gentle Movement',
-        message: 'Your body could use some gentle movement today.',
-        action: 'Take a 15-minute walk to boost circulation and energy.'
-      });
-    } else if (steps > 12000) {
-      recommendations.push({
-        type: 'recovery',
-        title: 'Great Activity!',
-        message: 'Your body worked hard today. Focus on recovery nutrition.',
-        action: 'Prioritize quality protein and stay well hydrated.'
-      });
-    }
-
-    // Sleep recommendations
-    if (sleepHours < 7) {
-      recommendations.push({
-        type: 'sleep',
-        title: 'Recovery Focus',
-        message: 'Your body needs extra support after limited sleep.',
-        action: 'Consider magnesium-rich foods and limit caffeine after 2 PM today.'
-      });
-    } else if (sleepQuality < 70) {
-      recommendations.push({
-        type: 'sleep',
-        title: 'Sleep Quality Support',
-        message: 'Sleep quality affects hunger hormones and decision-making.',
-        action: 'Focus on regular meal timing and avoid large meals 3 hours before bed.'
-      });
-    }
-
-    // Add journal-based recommendations if available
-    if (journalData) {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayEntry = getJournalEntry(yesterday.toISOString().split('T')[0]);
-      
-      if (yesterdayEntry?.symptoms?.includes('headache')) {
-        recommendations.push({
-          type: 'symptom',
-          title: 'Headache Pattern',
-          message: 'Yesterday you experienced headaches.',
-          action: 'Stay well hydrated (8+ cups water) and avoid long gaps between meals.'
-        });
-      }
-      
-      if (yesterdayEntry?.energy && yesterdayEntry.energy <= 2) {
-        recommendations.push({
-          type: 'energy',
-          title: 'Energy Support',
-          message: 'Yesterday was a low energy day.',
-          action: 'Focus on balanced protein at each meal to stabilize blood sugar.'
-        });
-      }
-    }
-
-    return recommendations.slice(0, 3); // Limit to 3 recommendations
   }
 
   // Main dashboard data
@@ -1304,81 +1213,14 @@ if (currentView === 'dashboard') {
   const todayNutrition = getTodayNutrition();
   const today = new Date().toISOString().split('T')[0];
   const todayJournal = getJournalEntry(today);
-  const recommendations = generateHealthRecommendations(wearableData, todayJournal);
 
   // Calculate progress percentages
   const nutritionProgress = goals.calories ? Math.min((todayNutrition.calories / goals.calories) * 100, 100) : 0;
   const stepsProgress = wearableData?.dailyMetrics?.steps ? Math.min((wearableData.dailyMetrics.steps / 10000) * 100, 100) : 0;
   const sleepProgress = wearableData?.dailyMetrics?.sleep?.totalSleep ? 
     Math.min(((wearableData.dailyMetrics.sleep.totalSleep / 60) / 8) * 100, 100) : 0;
-
-  // Get hydration from journal or default
   const waterCups = todayJournal?.waterCups || 0;
   const hydrationProgress = Math.min((waterCups / 8) * 100, 100);
-
-  // Global functions for journal interaction (set once)
-  if (!window.habbtJournalFunctionsLoaded) {
-    window.currentJournalDate = today;
-    window.currentJournalEntry = todayJournal || {};
-
-    window.setJournalRating = function(type, value) {
-      window.currentJournalEntry[type] = value;
-      
-      // Update UI
-      document.querySelectorAll('.' + type + '-btn').forEach((btn, index) => {
-        if (index < value) {
-          btn.className = btn.className.replace(/bg-white border-gray-300/, getJournalButtonColor(type) + ' text-white');
-        } else {
-          btn.className = btn.className.replace(getJournalButtonColor(type) + ' text-white', 'bg-white border-gray-300');
-        }
-      });
-    };
-
-    window.getJournalButtonColor = function(type) {
-      return type === 'energy' ? 'bg-blue-500 border-blue-500' :
-             type === 'mood' ? 'bg-green-500 border-green-500' :
-             'bg-orange-500 border-orange-500';
-    };
-
-    window.updateJournalSymptoms = function() {
-      const checkedSymptoms = Array.from(document.querySelectorAll('.symptom-checkbox:checked'))
-        .map(cb => cb.dataset.symptom);
-      window.currentJournalEntry.symptoms = checkedSymptoms;
-    };
-
-    window.loadJournalForDate = function(date) {
-      window.currentJournalDate = date;
-      const journalEntry = getJournalEntry(date) || {};
-      window.currentJournalEntry = journalEntry;
-      switchView('dashboard'); // Refresh dashboard
-    };
-
-    window.saveCurrentJournalEntry = function() {
-      const waterInput = document.getElementById('water-input');
-      const notesInput = document.getElementById('notes-input');
-      
-      if (waterInput && waterInput.value) window.currentJournalEntry.waterCups = parseInt(waterInput.value);
-      if (notesInput && notesInput.value) window.currentJournalEntry.notes = notesInput.value;
-      
-      const success = saveJournalEntry(window.currentJournalDate, window.currentJournalEntry);
-      
-      if (success) {
-        const isToday = window.currentJournalDate === new Date().toISOString().split('T')[0];
-        alert(`✅ Journal entry saved for ${isToday ? 'today' : new Date(window.currentJournalDate).toLocaleDateString()}!`);
-        
-        // Refresh dashboard if saving today's entry
-        if (isToday) {
-          setTimeout(() => {
-            switchView('dashboard');
-          }, 1000);
-        }
-      } else {
-        alert('❌ Failed to save journal entry. Please try again.');
-      }
-    };
-
-    window.habbtJournalFunctionsLoaded = true;
-  }
 
   return e('div', { className: 'min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-cyan-50' },
     e('div', { className: 'max-w-7xl mx-auto p-6' },
@@ -1398,10 +1240,8 @@ if (currentView === 'dashboard') {
         
         // Last sync status
         e('div', { className: 'text-center text-sm opacity-80' },
-          e('span', {}, '📱 Last sync: '),
-          e('span', {}, wearableData?.lastUpdated ? 
-            new Date(wearableData.lastUpdated).toLocaleTimeString() : 'Never'),
-          e('span', { className: 'ml-4' }, '☁️ Cloud backup: Active')
+          '📱 Last sync: ' + (wearableData?.lastUpdated ? 
+            new Date(wearableData.lastUpdated).toLocaleTimeString() : 'Never') + ' • ☁️ Cloud backup: Active'
         )
       ),
 
@@ -1493,189 +1333,54 @@ if (currentView === 'dashboard') {
         )
       ),
 
-      // Smart Recommendations
-      recommendations.length > 0 && e('div', { className: 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20 mb-8' },
+      // Simple Evening Journal Section (Static for now)
+      e('div', { className: 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20 mb-8' },
         e('h2', { className: 'text-2xl font-bold text-gray-800 mb-6 flex items-center' },
-          e('span', { className: 'mr-3 text-3xl' }, '💡'),
-          'Smart Recommendations'
+          e('span', { className: 'mr-3 text-3xl' }, '📝'),
+          'Evening Reflection'
         ),
-        e('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' },
-          ...recommendations.map(rec => 
-            e('div', { 
-              className: `p-4 rounded-2xl border-2 ${
-                rec.type === 'movement' ? 'border-green-200 bg-green-50' :
-                rec.type === 'recovery' ? 'border-blue-200 bg-blue-50' :
-                rec.type === 'sleep' ? 'border-purple-200 bg-purple-50' :
-                rec.type === 'symptom' ? 'border-red-200 bg-red-50' :
-                rec.type === 'energy' ? 'border-yellow-200 bg-yellow-50' :
-                'border-gray-200 bg-gray-50'
-              }`
-            },
-              e('div', { className: 'flex items-start space-x-3' },
-                e('div', { className: 'text-2xl' },
-                  rec.type === 'movement' ? '🚶' :
-                  rec.type === 'recovery' ? '💪' :
-                  rec.type === 'sleep' ? '😴' :
-                  rec.type === 'symptom' ? '⚠️' :
-                  rec.type === 'energy' ? '⚡' : 'ℹ️'
-                ),
-                e('div', { className: 'flex-1' },
-                  e('h4', { className: 'font-bold text-gray-800 mb-2' }, rec.title),
-                  e('p', { className: 'text-sm text-gray-700 mb-2' }, rec.message),
-                  e('p', { className: 'text-xs text-gray-600 italic' }, rec.action)
-                )
-              )
-            )
-          )
+        
+        e('div', { className: 'text-center py-8' },
+          e('div', { className: 'text-4xl mb-4' }, '🌙'),
+          e('h3', { className: 'text-lg font-bold text-gray-700 mb-2' }, 'Journal Feature Coming Soon!'),
+          e('p', { className: 'text-gray-600 mb-4' }, 'Track your daily energy, mood, and symptoms to unlock powerful insights.'),
+          e('button', { 
+            className: 'bg-gradient-to-r from-blue-600 to-teal-600 text-white px-6 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-teal-700 transition-all shadow-lg',
+            onclick: () => alert('Journal feature will be available soon! For now, enjoy the enhanced dashboard.')
+          }, '📝 Preview Journal')
         )
       ),
 
-      // Evening Journal Section
-      e('div', { className: 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20 mb-8' },
-        e('div', { className: 'flex items-center justify-between mb-6' },
-          e('h2', { className: 'text-2xl font-bold text-gray-800 flex items-center' },
-            e('span', { className: 'mr-3 text-3xl' }, '📝'),
-            'Evening Reflection'
-          ),
-          e('div', { className: 'flex items-center space-x-2' },
-            e('input', {
-              type: 'date',
-              id: 'journal-date-picker',
-              value: today,
-              max: today,
-              className: 'px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500',
-              onchange: `loadJournalForDate(this.value)`
-            }),
-            e('button', {
-              onclick: `loadJournalForDate(document.getElementById('journal-date-picker').value)`,
-              className: 'px-3 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors'
-            }, '📅 Load Day')
-          )
+      // Quick Stats Section
+      e('div', { className: 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-white/20' },
+        e('h2', { className: 'text-2xl font-bold text-gray-800 mb-6 flex items-center' },
+          e('span', { className: 'mr-3 text-3xl' }, '📊'),
+          'Today\'s Overview'
         ),
         
-        // Journal Form
-        e('div', { id: 'journal-form-container' },
-          // Static journal form
-          e('div', { className: 'space-y-6' },
-            e('div', { className: 'text-center text-lg font-medium text-gray-700 mb-6' }, 'How was your day overall?'),
-            
-            e('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6' },
-              // Overall Energy
-              e('div', { className: 'text-center' },
-                e('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Overall Energy'),
-                e('div', { className: 'flex justify-center space-x-1', id: 'energy-rating' },
-                  ...[1,2,3,4,5].map(i => 
-                    e('button', {
-                      onclick: `setJournalRating('energy', ${i})`,
-                      className: `w-8 h-8 rounded-full border-2 transition-all energy-btn ${
-                        (todayJournal?.energy || 0) >= i ? 
-                        'bg-blue-500 border-blue-500 text-white' : 
-                        'bg-white border-gray-300 hover:border-blue-400'
-                      }`
-                    }, i.toString())
-                  )
-                ),
-                e('div', { className: 'text-xs text-gray-500 mt-1' }, '1=Drained, 5=Energized')
-              ),
-
-              // Overall Mood
-              e('div', { className: 'text-center' },
-                e('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Overall Mood'),
-                e('div', { className: 'flex justify-center space-x-1', id: 'mood-rating' },
-                  ...[1,2,3,4,5].map(i => 
-                    e('button', {
-                      onclick: `setJournalRating('mood', ${i})`,
-                      className: `w-8 h-8 rounded-full border-2 transition-all mood-btn ${
-                        (todayJournal?.mood || 0) >= i ? 
-                        'bg-green-500 border-green-500 text-white' : 
-                        'bg-white border-gray-300 hover:border-green-400'
-                      }`
-                    }, i.toString())
-                  )
-                ),
-                e('div', { className: 'text-xs text-gray-500 mt-1' }, '1=Poor, 5=Great')
-              ),
-
-              // Meal Satisfaction
-              e('div', { className: 'text-center' },
-                e('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Meal Satisfaction'),
-                e('div', { className: 'flex justify-center space-x-1', id: 'satisfaction-rating' },
-                  ...[1,2,3,4,5].map(i => 
-                    e('button', {
-                      onclick: `setJournalRating('mealSatisfaction', ${i})`,
-                      className: `w-8 h-8 rounded-full border-2 transition-all satisfaction-btn ${
-                        (todayJournal?.mealSatisfaction || 0) >= i ? 
-                        'bg-orange-500 border-orange-500 text-white' : 
-                        'bg-white border-gray-300 hover:border-orange-400'
-                      }`
-                    }, i.toString())
-                  )
-                ),
-                e('div', { className: 'text-xs text-gray-500 mt-1' }, '1=Unsatisfied, 5=Perfect')
-              ),
-
-              // Water Intake
-              e('div', { className: 'text-center' },
-                e('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Water (Cups)'),
-                e('input', {
-                  type: 'number',
-                  id: 'water-input',
-                  value: todayJournal?.waterCups || '',
-                  placeholder: '8',
-                  min: '0',
-                  max: '20',
-                  className: 'w-16 h-10 text-center border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none'
-                }),
-                e('div', { className: 'text-xs text-gray-500 mt-1' }, 'Total cups today')
-              )
-            ),
-
-            // Symptoms
-            e('div', {},
-              e('label', { className: 'block text-sm font-bold text-gray-700 mb-3' }, 'Any symptoms today? (Check all that apply)'),
-              e('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-3' },
-                ...[
-                  { id: 'headache', label: 'Headache' },
-                  { id: 'fatigue', label: 'Fatigue' },
-                  { id: 'bloating', label: 'Bloating' },
-                  { id: 'stomach_pain', label: 'Stomach Pain' },
-                  { id: 'nausea', label: 'Nausea' },
-                  { id: 'brain_fog', label: 'Brain Fog' },
-                  { id: 'irritability', label: 'Irritability' },
-                  { id: 'food_cravings', label: 'Food Cravings' }
-                ].map(symptom => 
-                  e('label', { className: 'flex items-center space-x-2 cursor-pointer' },
-                    e('input', {
-                      type: 'checkbox',
-                      className: 'symptom-checkbox',
-                      'data-symptom': symptom.id,
-                      checked: (todayJournal?.symptoms || []).includes(symptom.id),
-                      onchange: 'updateJournalSymptoms()'
-                    }),
-                    e('span', { className: 'text-sm' }, symptom.label)
-                  )
-                )
-              )
-            ),
-
-            // Notes
-            e('div', {},
-              e('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Daily Notes'),
-              e('textarea', {
-                id: 'notes-input',
-                placeholder: 'How did your meals make you feel? Any observations about energy, mood, or symptoms?',
-                className: 'w-full h-20 p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none',
-                value: todayJournal?.notes || ''
-              })
-            ),
-
-            // Save Button
-            e('div', { className: 'text-center' },
-              e('button', {
-                onclick: 'saveCurrentJournalEntry()',
-                className: 'bg-gradient-to-r from-blue-600 to-teal-600 text-white px-8 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-teal-700 transition-all shadow-lg'
-              }, "💾 Save Today's Journal")
-            )
+        e('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
+          // Nutrition Summary
+          e('div', { className: 'text-center p-4 bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl border border-blue-200' },
+            e('div', { className: 'text-2xl mb-2' }, '🍽️'),
+            e('h4', { className: 'font-bold text-gray-800 mb-2' }, 'Nutrition Progress'),
+            e('div', { className: 'text-lg font-semibold text-blue-600' }, `${Math.round(nutritionProgress)}%`),
+            e('div', { className: 'text-sm text-gray-600' }, 'of daily calorie goal')
+          ),
+          
+          // Activity Summary
+          e('div', { className: 'text-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200' },
+            e('div', { className: 'text-2xl mb-2' }, '🚶'),
+            e('h4', { className: 'font-bold text-gray-800 mb-2' }, 'Movement Progress'),
+            e('div', { className: 'text-lg font-semibold text-green-600' }, `${Math.round(stepsProgress)}%`),
+            e('div', { className: 'text-sm text-gray-600' }, 'of step goal')
+          ),
+          
+          // Hydration Summary
+          e('div', { className: 'text-center p-4 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl border border-cyan-200' },
+            e('div', { className: 'text-2xl mb-2' }, '💧'),
+            e('h4', { className: 'font-bold text-gray-800 mb-2' }, 'Hydration Progress'),
+            e('div', { className: 'text-lg font-semibold text-cyan-600' }, `${Math.round(hydrationProgress)}%`),
+            e('div', { className: 'text-sm text-gray-600' }, 'of hydration goal')
           )
         )
       )
