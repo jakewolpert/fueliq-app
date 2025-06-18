@@ -406,13 +406,13 @@
                 React.createElement('div', { className: 'flex items-center gap-3' },
                     React.createElement('span', { className: 'text-2xl' }, icon),
                     React.createElement('h3', { className: 'text-xl font-bold text-gray-800' }, title),
-                    foods.length > 0 && React.createElement('span', { className: 'bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-sm font-semibold' }, 
+                    foods.length > 0 && React.createElement('span', { className: 'bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-semibold' }, 
                         `${Math.round(totalNutrition.calories)} cal`
                     )
                 ),
                 React.createElement('button', { 
                     onClick: () => setShowSearch(true),
-                    className: 'bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-all font-semibold' 
+                    className: 'bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white px-4 py-2 rounded-lg transition-all font-semibold' 
                 }, '+ Add Food')
             ),
 
@@ -535,19 +535,10 @@
         const isToday = formatDate(currentDate) === formatDate(new Date());
 
         return React.createElement('div', { className: 'max-w-6xl mx-auto p-6' },
-            // Success Alert
-            React.createElement('div', { className: 'bg-green-50 border border-green-200 rounded-xl p-4 mb-6' },
-                React.createElement('div', { className: 'flex items-center' },
-                    React.createElement('span', { className: 'text-2xl mr-3' }, '✅'),
-                    React.createElement('div', null,
-                        React.createElement('h3', { className: 'text-lg font-bold text-green-800' }, 'Meals Tab Successfully Restored!'),
-                        React.createElement('p', { className: 'text-green-700' }, 'Your sophisticated nutrition tracking system is now working with safe mounting.')
-                    )
-                )
-            ),
 
-            // Header (your original design)
-            React.createElement('div', { className: 'bg-orange-500 rounded-xl p-6 mb-6 text-white' },
+
+            // Header (updated to blue/teal Habbt branding)
+            React.createElement('div', { className: 'bg-gradient-to-r from-blue-600 to-teal-600 rounded-xl p-6 mb-6 text-white' },
                 React.createElement('div', { className: 'flex justify-between items-center mb-4' },
                     React.createElement('h1', { className: 'text-3xl font-bold' }, 'Daily Nutrition'),
                     React.createElement('div', { className: 'flex items-center gap-4' },
