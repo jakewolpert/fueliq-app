@@ -1,13 +1,11 @@
-// Safe Meals Tab Restoration - Your Working Code + Safe Mounting
-// This takes your existing sophisticated meals system and adds safe mounting
+// Enhanced Meals Tab with Natural Language Food Descriptions
+// Adds a "Describe" tab for convenient meal logging
 
 (function() {
     'use strict';
 
-    console.log('🔧 Restoring your working meals system with safe mounting...');
+    console.log('🔧 Loading enhanced meals system with natural language descriptions...');
 
-    // Your original sophisticated food system (keeping all functionality)
-    
     // USDA API Functions (your original code)
     const searchFoods = async (query) => {
         if (!query || query.length < 2) return [];
@@ -29,6 +27,179 @@
             console.error('Error getting food details:', error);
             return null;
         }
+    };
+
+    // Common Foods Database for Natural Language Processing
+    const commonFoods = {
+        // Breakfast items
+        'eggs': { calories: 70, protein: 6, carbs: 1, fat: 5 },
+        'toast': { calories: 80, protein: 3, carbs: 15, fat: 1 },
+        'bacon': { calories: 43, protein: 3, carbs: 0, fat: 3.3 },
+        'pancakes': { calories: 227, protein: 6, carbs: 28, fat: 9 },
+        'oatmeal': { calories: 147, protein: 5, carbs: 28, fat: 3 },
+        'cereal': { calories: 100, protein: 3, carbs: 22, fat: 1 },
+        'yogurt': { calories: 100, protein: 6, carbs: 16, fat: 2 },
+        'bagel': { calories: 245, protein: 10, carbs: 48, fat: 2 },
+        
+        // Lunch/Dinner mains
+        'chicken breast': { calories: 165, protein: 31, carbs: 0, fat: 3.6 },
+        'salmon': { calories: 208, protein: 22, carbs: 0, fat: 12 },
+        'steak': { calories: 271, protein: 26, carbs: 0, fat: 19 },
+        'pork chop': { calories: 231, protein: 23, carbs: 0, fat: 14 },
+        'hamburger': { calories: 540, protein: 25, carbs: 40, fat: 31 },
+        'cheeseburger': { calories: 535, protein: 26, carbs: 40, fat: 30 },
+        'pizza slice': { calories: 285, protein: 12, carbs: 36, fat: 10 },
+        'hot dog': { calories: 150, protein: 5, carbs: 2, fat: 13 },
+        'sandwich': { calories: 320, protein: 15, carbs: 35, fat: 14 },
+        'pasta': { calories: 220, protein: 8, carbs: 44, fat: 1 },
+        'spaghetti': { calories: 220, protein: 8, carbs: 44, fat: 1 },
+        'rice': { calories: 205, protein: 4, carbs: 45, fat: 0.5 },
+        'fried rice': { calories: 238, protein: 4, carbs: 34, fat: 10 },
+        
+        // Sides & vegetables
+        'french fries': { calories: 365, protein: 4, carbs: 63, fat: 17 },
+        'salad': { calories: 33, protein: 3, carbs: 6, fat: 0 },
+        'caesar salad': { calories: 170, protein: 3, carbs: 5, fat: 15 },
+        'mashed potatoes': { calories: 214, protein: 4, carbs: 35, fat: 9 },
+        'broccoli': { calories: 25, protein: 3, carbs: 5, fat: 0 },
+        'green beans': { calories: 31, protein: 2, carbs: 7, fat: 0 },
+        'corn': { calories: 86, protein: 3, carbs: 19, fat: 1 },
+        
+        // Popular restaurant items
+        'big mac': { calories: 563, protein: 26, carbs: 45, fat: 33 },
+        'whopper': { calories: 677, protein: 28, carbs: 49, fat: 40 },
+        'chicken nuggets': { calories: 280, protein: 13, carbs: 16, fat: 18 },
+        'taco': { calories: 170, protein: 8, carbs: 13, fat: 10 },
+        'burrito': { calories: 450, protein: 15, carbs: 65, fat: 15 },
+        'subway sandwich': { calories: 350, protein: 18, carbs: 45, fat: 12 },
+        'chipotle bowl': { calories: 500, protein: 25, carbs: 45, fat: 25 },
+        
+        // Snacks & desserts
+        'apple': { calories: 95, protein: 0, carbs: 25, fat: 0 },
+        'banana': { calories: 105, protein: 1, carbs: 27, fat: 0 },
+        'orange': { calories: 62, protein: 1, carbs: 15, fat: 0 },
+        'chips': { calories: 152, protein: 2, carbs: 15, fat: 10 },
+        'cookies': { calories: 142, protein: 2, carbs: 20, fat: 7 },
+        'ice cream': { calories: 137, protein: 2, carbs: 16, fat: 7 },
+        'chocolate': { calories: 150, protein: 2, carbs: 16, fat: 9 },
+        
+        // Drinks
+        'soda': { calories: 140, protein: 0, carbs: 39, fat: 0 },
+        'beer': { calories: 150, protein: 1, carbs: 13, fat: 0 },
+        'wine': { calories: 125, protein: 0, carbs: 4, fat: 0 },
+        'coffee': { calories: 2, protein: 0, carbs: 0, fat: 0 },
+        'latte': { calories: 190, protein: 12, carbs: 18, fat: 7 }
+    };
+
+    // Portion size multipliers
+    const portionSizes = {
+        'small': 0.7,
+        'medium': 1.0,
+        'large': 1.4,
+        'extra large': 1.8,
+        'huge': 2.0,
+        '1': 1.0,
+        '2': 2.0,
+        '3': 3.0,
+        '4': 4.0,
+        'half': 0.5,
+        'quarter': 0.25
+    };
+
+    // Natural Language Food Parser
+    const parseDescription = (description) => {
+        console.log('🤖 Parsing description:', description);
+        
+        const foods = [];
+        const text = description.toLowerCase().trim();
+        
+        // Look for portion indicators
+        let portionMultiplier = 1.0;
+        for (const [size, multiplier] of Object.entries(portionSizes)) {
+            if (text.includes(size)) {
+                portionMultiplier = multiplier;
+                break;
+            }
+        }
+        
+        // Look for numbers (2 slices, 3 tacos, etc.)
+        const numberMatch = text.match(/(\d+)\s*(slice|slices|piece|pieces|taco|tacos|cup|cups|bowl|bowls)?/);
+        if (numberMatch) {
+            const number = parseInt(numberMatch[1]);
+            if (number > 0 && number <= 10) {
+                portionMultiplier = number;
+            }
+        }
+        
+        // Search for known foods in the description
+        for (const [foodName, nutrition] of Object.entries(commonFoods)) {
+            if (text.includes(foodName)) {
+                const estimatedFood = {
+                    id: Date.now() + Math.random(),
+                    name: `${foodName} (estimated)`,
+                    servingSize: 100 * portionMultiplier,
+                    calories: nutrition.calories,
+                    protein: nutrition.protein,
+                    carbs: nutrition.carbs,
+                    fat: nutrition.fat,
+                    fiber: nutrition.fiber || 2,
+                    source: 'Natural Language',
+                    confidence: 'medium'
+                };
+                foods.push(estimatedFood);
+            }
+        }
+        
+        // Special handling for common restaurant combinations
+        if (text.includes('burger') && text.includes('fries')) {
+            foods.push({
+                id: Date.now() + Math.random(),
+                name: 'Burger & Fries Combo (estimated)',
+                servingSize: 100,
+                calories: 800,
+                protein: 30,
+                carbs: 75,
+                fat: 40,
+                fiber: 4,
+                source: 'Combo Estimate',
+                confidence: 'medium'
+            });
+        }
+        
+        if (text.includes('pizza') && !foods.find(f => f.name.includes('pizza'))) {
+            const sliceCount = numberMatch ? parseInt(numberMatch[1]) : 2;
+            foods.push({
+                id: Date.now() + Math.random(),
+                name: `${sliceCount} Pizza Slices (estimated)`,
+                servingSize: 100,
+                calories: 285 * sliceCount,
+                protein: 12 * sliceCount,
+                carbs: 36 * sliceCount,
+                fat: 10 * sliceCount,
+                fiber: 2 * sliceCount,
+                source: 'Pizza Estimate',
+                confidence: 'medium'
+            });
+        }
+        
+        // If no specific foods found, create a general estimate
+        if (foods.length === 0) {
+            foods.push({
+                id: Date.now() + Math.random(),
+                name: `"${description}" (rough estimate)`,
+                servingSize: 100,
+                calories: 400,
+                protein: 20,
+                carbs: 45,
+                fat: 15,
+                fiber: 3,
+                source: 'General Estimate',
+                confidence: 'low'
+            });
+        }
+        
+        console.log('🎯 Parsed foods:', foods);
+        return foods;
     };
 
     // Safe Storage Functions (your original code)
@@ -149,13 +320,18 @@
         };
     };
 
-    // Enhanced Food Search Component (your original code)
+    // Enhanced Food Search Component with Natural Language Tab
     const EnhancedFoodSearch = ({ onAddFood, onClose }) => {
         const [activeTab, setActiveTab] = React.useState('search');
         const [query, setQuery] = React.useState('');
         const [results, setResults] = React.useState([]);
         const [loading, setLoading] = React.useState(false);
         const [recentFoods, setRecentFoods] = React.useState(loadRecentFoods());
+        
+        // Natural language description state
+        const [description, setDescription] = React.useState('');
+        const [parsedFoods, setParsedFoods] = React.useState([]);
+        const [parseLoading, setParseLoading] = React.useState(false);
 
         React.useEffect(() => {
             const searchTimeout = setTimeout(async () => {
@@ -193,6 +369,35 @@
             }
         };
 
+        const handleParseDescription = () => {
+            if (!description.trim()) return;
+            
+            setParseLoading(true);
+            setTimeout(() => {
+                const foods = parseDescription(description);
+                setParsedFoods(foods);
+                setParseLoading(false);
+            }, 500); // Small delay for better UX
+        };
+
+        const handleAddParsedFood = (food) => {
+            const updatedRecent = [food, ...recentFoods.filter(f => f.id !== food.id)];
+            setRecentFoods(updatedRecent);
+            saveRecentFoods(updatedRecent);
+            
+            onAddFood(food);
+            onClose();
+        };
+
+        const getConfidenceColor = (confidence) => {
+            switch(confidence) {
+                case 'high': return 'text-green-600 bg-green-100';
+                case 'medium': return 'text-yellow-600 bg-yellow-100';
+                case 'low': return 'text-red-600 bg-red-100';
+                default: return 'text-gray-600 bg-gray-100';
+            }
+        };
+
         return React.createElement('div', { 
             className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50' 
         },
@@ -200,7 +405,7 @@
                 className: 'bg-white rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col' 
             },
                 React.createElement('div', { className: 'flex justify-between items-center mb-4' },
-                    React.createElement('h3', { className: 'text-xl font-bold text-gradient' }, 'Add Food'),
+                    React.createElement('h3', { className: 'text-xl font-bold text-gray-800' }, 'Add Food'),
                     React.createElement('button', { 
                         onClick: onClose,
                         className: 'text-gray-500 hover:text-gray-700 text-xl font-bold' 
@@ -213,7 +418,7 @@
                         onClick: () => setActiveTab('search'),
                         className: `px-4 py-2 font-semibold transition-colors ${
                             activeTab === 'search' 
-                                ? 'border-b-2 border-orange-500 text-orange-600' 
+                                ? 'border-b-2 border-blue-500 text-blue-600' 
                                 : 'text-gray-600 hover:text-gray-800'
                         }`
                     }, '🔍 Search'),
@@ -221,10 +426,18 @@
                         onClick: () => setActiveTab('recent'),
                         className: `px-4 py-2 font-semibold transition-colors ${
                             activeTab === 'recent' 
-                                ? 'border-b-2 border-orange-500 text-orange-600' 
+                                ? 'border-b-2 border-blue-500 text-blue-600' 
                                 : 'text-gray-600 hover:text-gray-800'
                         }`
-                    }, '⏰ Recent')
+                    }, '⏰ Recent'),
+                    React.createElement('button', {
+                        onClick: () => setActiveTab('describe'),
+                        className: `px-4 py-2 font-semibold transition-colors ${
+                            activeTab === 'describe' 
+                                ? 'border-b-2 border-blue-500 text-blue-600' 
+                                : 'text-gray-600 hover:text-gray-800'
+                        }`
+                    }, '💭 Describe')
                 ),
 
                 // Tab Content
@@ -237,18 +450,18 @@
                             placeholder: 'Search for foods...',
                             value: query,
                             onChange: (e) => setQuery(e.target.value),
-                            className: 'w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-orange-500'
+                            className: 'w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-blue-500'
                         }),
 
                         loading && React.createElement('div', { className: 'text-center py-8' },
-                            React.createElement('div', { className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto' })
+                            React.createElement('div', { className: 'animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto' })
                         ),
 
                         !loading && results.length > 0 && React.createElement('div', { className: 'space-y-2' },
                             ...results.map(food =>
                                 React.createElement('div', { 
                                     key: food.fdcId,
-                                    className: 'flex justify-between items-center p-3 border border-gray-200 rounded-lg hover:border-orange-300 cursor-pointer'
+                                    className: 'flex justify-between items-center p-3 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer'
                                 },
                                     React.createElement('div', null,
                                         React.createElement('div', { className: 'font-semibold text-gray-800' }, food.description),
@@ -256,7 +469,7 @@
                                     ),
                                     React.createElement('button', { 
                                         onClick: () => handleAddFood(food),
-                                        className: 'bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-all' 
+                                        className: 'bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all' 
                                     }, 'Add')
                                 )
                             )
@@ -287,11 +500,78 @@
                                         ),
                                         React.createElement('button', { 
                                             onClick: () => handleAddFood(food),
-                                            className: 'bg-orange-500 text-white px-3 py-1 rounded-lg text-sm' 
+                                            className: 'bg-blue-500 text-white px-3 py-1 rounded-lg text-sm' 
                                         }, 'Add')
                                     )
                                 )
                             )
+                    ),
+
+                    // NEW: Describe Tab
+                    activeTab === 'describe' && React.createElement('div', null,
+                        React.createElement('div', { className: 'bg-blue-50 p-4 rounded-lg mb-4' },
+                            React.createElement('div', { className: 'flex items-center gap-2 mb-2' },
+                                React.createElement('span', { className: 'text-blue-600 text-lg' }, '💡'),
+                                React.createElement('span', { className: 'font-semibold text-blue-800' }, 'Smart Meal Estimation')
+                            ),
+                            React.createElement('p', { className: 'text-sm text-blue-700' }, 
+                                'Describe what you ate and we\'ll estimate the nutrition. Great for restaurant meals, social dining, or quick logging!'
+                            )
+                        ),
+
+                        React.createElement('textarea', {
+                            placeholder: 'Describe what you ate...\n\nExamples:\n• "Chicken Caesar salad with garlic bread"\n• "2 slices pepperoni pizza and a Coke"\n• "Big Mac meal with medium fries"\n• "Homemade spaghetti with meatballs"',
+                            value: description,
+                            onChange: (e) => setDescription(e.target.value),
+                            className: 'w-full h-32 p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-blue-500 resize-none',
+                            rows: 4
+                        }),
+
+                        React.createElement('button', {
+                            onClick: handleParseDescription,
+                            disabled: !description.trim() || parseLoading,
+                            className: `w-full bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white px-4 py-3 rounded-lg transition-all font-semibold mb-4 ${
+                                (!description.trim() || parseLoading) ? 'opacity-50 cursor-not-allowed' : ''
+                            }`
+                        }, parseLoading ? 'Analyzing...' : '🤖 Estimate Nutrition'),
+
+                        parseLoading && React.createElement('div', { className: 'text-center py-4' },
+                            React.createElement('div', { className: 'animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto' })
+                        ),
+
+                        parsedFoods.length > 0 && React.createElement('div', { className: 'space-y-3' },
+                            React.createElement('div', { className: 'border-t pt-4' },
+                                React.createElement('h4', { className: 'font-semibold text-gray-800 mb-3' }, 'Estimated Foods:')
+                            ),
+                            ...parsedFoods.map(food =>
+                                React.createElement('div', { 
+                                    key: food.id,
+                                    className: 'border border-gray-200 rounded-lg p-3 bg-gray-50'
+                                },
+                                    React.createElement('div', { className: 'flex justify-between items-start mb-2' },
+                                        React.createElement('div', { className: 'flex-1' },
+                                            React.createElement('div', { className: 'font-semibold text-gray-800' }, food.name),
+                                            React.createElement('div', { className: 'flex items-center gap-2 mt-1' },
+                                                React.createElement('span', { 
+                                                    className: `text-xs px-2 py-1 rounded-full ${getConfidenceColor(food.confidence)}`
+                                                }, `${food.confidence} confidence`),
+                                                React.createElement('span', { className: 'text-xs text-gray-500' }, food.source)
+                                            )
+                                        ),
+                                        React.createElement('button', { 
+                                            onClick: () => handleAddParsedFood(food),
+                                            className: 'bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm ml-3' 
+                                        }, 'Add')
+                                    ),
+                                    React.createElement('div', { className: 'grid grid-cols-4 gap-2 text-sm text-gray-600' },
+                                        React.createElement('div', null, `${Math.round(food.calories)} cal`),
+                                        React.createElement('div', null, `${Math.round(food.protein)}g protein`),
+                                        React.createElement('div', null, `${Math.round(food.carbs)}g carbs`),
+                                        React.createElement('div', null, `${Math.round(food.fat)}g fat`)
+                                    )
+                                )
+                            )
+                        )
                     )
                 )
             )
@@ -332,7 +612,10 @@
 
         return React.createElement('div', { className: 'bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow' },
             React.createElement('div', { className: 'flex justify-between items-start mb-2' },
-                React.createElement('h4', { className: 'font-semibold text-gray-800 flex-1' }, food.name),
+                React.createElement('div', { className: 'flex-1' },
+                    React.createElement('h4', { className: 'font-semibold text-gray-800' }, food.name),
+                    food.source && React.createElement('div', { className: 'text-xs text-gray-500 mt-1' }, food.source)
+                ),
                 React.createElement('button', { 
                     onClick: () => onRemove(food.id),
                     className: 'text-red-500 hover:text-red-700 ml-2' 
@@ -370,14 +653,15 @@
         );
     };
 
-    // Progress Bar Component (your original code)
-    const ProgressBar = ({ label, current, goal, unit, color = 'orange' }) => {
+    // Progress Bar Component - Updated with blue/teal colors
+    const ProgressBar = ({ label, current, goal, unit, color = 'blue' }) => {
         const percentage = goal > 0 ? Math.min((current / goal) * 100, 100) : 0;
         const colorClasses = {
             orange: 'bg-orange-500',
             red: 'bg-red-500',
             green: 'bg-green-500',
-            blue: 'bg-blue-500'
+            blue: 'bg-blue-500',
+            teal: 'bg-teal-500'
         };
 
         return React.createElement('div', { className: 'mb-4' },
@@ -442,7 +726,7 @@
         );
     };
 
-    // Main Meals Component (your original code with success message)
+    // Main Meals Component 
     const SafeMealsTab = () => {
         const [currentDate, setCurrentDate] = React.useState(new Date());
         const [meals, setMeals] = React.useState(loadMealData(formatDate(currentDate)));
@@ -535,8 +819,6 @@
         const isToday = formatDate(currentDate) === formatDate(new Date());
 
         return React.createElement('div', { className: 'max-w-6xl mx-auto p-6' },
-
-
             // Header (updated to blue/teal Habbt branding)
             React.createElement('div', { className: 'bg-gradient-to-r from-blue-600 to-teal-600 rounded-xl p-6 mb-6 text-white' },
                 React.createElement('div', { className: 'flex justify-between items-center mb-4' },
@@ -556,7 +838,7 @@
                     )
                 ),
                 
-                // Daily Summary (your original design)
+                // Daily Summary
                 React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4' },
                     React.createElement('div', { className: 'text-center' },
                         React.createElement('div', { className: 'text-2xl font-bold' }, Math.round(dailyTotals.calories)),
@@ -577,7 +859,7 @@
                 )
             ),
 
-            // Progress Bars (your original design)
+            // Progress Bars with blue/teal colors
             React.createElement('div', { className: 'bg-white rounded-xl p-6 mb-6 shadow-lg' },
                 React.createElement('h2', { className: 'text-xl font-bold text-gray-800 mb-4' }, 'Daily Progress'),
                 React.createElement(ProgressBar, { 
@@ -585,14 +867,14 @@
                     current: dailyTotals.calories, 
                     goal: dailyGoals.calories, 
                     unit: '', 
-                    color: 'orange' 
+                    color: 'blue' 
                 }),
                 React.createElement(ProgressBar, { 
                     label: 'Protein', 
                     current: dailyTotals.protein, 
                     goal: dailyGoals.protein, 
                     unit: 'g', 
-                    color: 'red' 
+                    color: 'teal' 
                 }),
                 React.createElement(ProgressBar, { 
                     label: 'Carbohydrates', 
@@ -606,11 +888,11 @@
                     current: dailyTotals.fat, 
                     goal: dailyGoals.fat, 
                     unit: 'g', 
-                    color: 'green' 
+                    color: 'teal' 
                 })
             ),
 
-            // Meals Grid (your original design)
+            // Meals Grid
             React.createElement('div', { className: 'grid md:grid-cols-2 gap-6' },
                 React.createElement(MealSection, {
                     title: 'Breakfast',
@@ -653,7 +935,7 @@
     let contentVerificationId = null;
 
     const safeRenderMealsTab = (containerId = 'meals-container') => {
-        console.log('🔧 Safe rendering meals tab...');
+        console.log('🔧 Safe rendering enhanced meals tab...');
         
         const container = document.getElementById(containerId);
         if (!container) {
@@ -676,7 +958,7 @@
             ReactDOM.render(React.createElement(SafeMealsTab), wrapper);
             
             safeRenderingActive = true;
-            console.log('✅ Safe meals tab rendered successfully');
+            console.log('✅ Enhanced meals tab rendered successfully with natural language support');
             
             // Set up monitoring to re-render if overridden
             startSafeMonitoring(containerId);
@@ -739,15 +1021,15 @@
     };
 
     // Override the problematic functions
-    const originalTryRenderMeals = window.tryRenderMeals;
     window.tryRenderMeals = safeRenderMealsTab;
     window.renderMeals = safeRenderMealsTab;
     window.renderMealsTab = safeRenderMealsTab;
 
-    // Export your original system with safe mounting
+    // Export enhanced system
     window.FuelIQMeals = {
         SafeMealsTab,
         renderMealsTab: safeRenderMealsTab,
+        parseDescription,
         cleanup: () => {
             if (window.safeMealsCleanup) {
                 window.safeMealsCleanup();
@@ -758,7 +1040,7 @@
     // Also export as Habbt for compatibility
     window.HabbtMeals = window.FuelIQMeals;
 
-    console.log('✅ Your sophisticated meals system has been safely restored!');
-    console.log('🎯 All original functionality preserved with React conflict protection');
+    console.log('🎯 Enhanced meals system loaded with natural language support!');
+    console.log('💭 Users can now describe meals in plain English for quick estimation');
 
 })();
