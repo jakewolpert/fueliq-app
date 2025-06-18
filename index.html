@@ -1010,7 +1010,35 @@
           setTimeout(tryRenderWearables, 100);
         }
       }, [currentView]);
-
+useEffect(() => {
+  if (currentView === 'journal') {
+    clearContainer('journal-container');
+    
+    let retryCount = 0;
+    const maxRetries = 10;
+    
+    const tryRenderJournal = () => {
+      if (window.HabbtJournal && window.HabbtJournal.renderJournalTab) {
+        try {
+          window.HabbtJournal.renderJournalTab('journal-container');
+          console.log('✅ Journal tab rendered successfully');
+        } catch (error) {
+          console.error('Error rendering journal tab:', error);
+        }
+      } else {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Waiting for HabbtJournal module... (${retryCount}/${maxRetries})`);
+          setTimeout(tryRenderJournal, 200);
+        } else {
+          console.warn('❌ HabbtJournal module failed to load');
+        }
+      }
+    };
+    
+    setTimeout(tryRenderJournal, 100);
+  }
+}, [currentView]);
       // Navigation event listener
       useEffect(() => {
         const handleNavigation = (event) => {
