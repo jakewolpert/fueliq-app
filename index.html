@@ -1150,7 +1150,7 @@
         );
       }
 
-    // Enhanced Dashboard Integration for Habbt
+   // Enhanced Dashboard Integration for Habbt
 // Replace the dashboard section in your index.html with this enhanced version
 
 // Enhanced Dashboard view with wearables integration
@@ -1263,9 +1263,9 @@ if (currentView === 'dashboard') {
     
     if (healthData.steps && healthData.steps < 6000) {
       recommendations.push({
-        icon: '👟',
-        title: 'Low Activity Alert',
-        message: 'Only ' + healthData.steps + ' steps today. Take a 15-min walk to boost metabolism!',
+        icon: '🚶',
+        title: 'Gentle Movement',
+        message: 'Your body could use some gentle movement today. Even a short walk helps circulation and mood!',
         action: 'Take a Walk',
         priority: 'high'
       });
@@ -1283,19 +1283,19 @@ if (currentView === 'dashboard') {
     
     if (nutritionImpact && nutritionImpact.totalEarned > 100) {
       recommendations.push({
-        icon: '🔥',
-        title: 'Activity Bonus',
-        message: `Great activity! You've earned ${nutritionImpact.totalEarned} extra calories today.`,
-        action: 'Adjust Meals',
+        icon: '💪',
+        title: 'Recovery Support',
+        message: `That was great activity! Your body needs ${nutritionImpact.totalEarned} extra calories to recover properly.`,
+        action: 'Support Recovery',
         priority: 'good'
       });
     }
     
     if (healthData.heartRate && healthData.heartRate.resting > 75) {
       recommendations.push({
-        icon: '❤️',
+        icon: '🧘',
         title: 'Recovery Focus',
-        message: 'Elevated resting HR. Consider anti-inflammatory foods and lighter meals.',
+        message: 'Your body is working hard today. Consider nourishing, anti-inflammatory foods and gentle self-care.',
         action: 'Recovery Mode',
         priority: 'medium'
       });
@@ -1344,30 +1344,30 @@ if (currentView === 'dashboard') {
         )
       ),
 
-      // Nutrition Impact Alert (if active)
-      nutritionImpact && nutritionImpact.totalEarned > 50 && e('div', { className: "bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 mb-6" },
+      // Supportive Nutrition Guidance (if active)
+      nutritionImpact && nutritionImpact.totalEarned > 50 && e('div', { className: "bg-gradient-to-r from-blue-50 to-teal-50 border border-blue-200 rounded-2xl p-6 mb-6" },
         e('div', { className: "flex items-center justify-between" },
           e('div', { className: "flex items-center space-x-4" },
-            e('div', { className: "w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center" },
-              e('span', { className: "text-2xl text-white" }, '🔥')
+            e('div', { className: "w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center" },
+              e('span', { className: "text-2xl text-white" }, '💪')
             ),
             e('div', null,
-              e('h3', { className: "text-lg font-bold text-green-800" }, 'Activity Bonus Earned!'),
-              e('p', { className: "text-green-700" }, 
-                `Your ${healthData.steps?.toLocaleString() || 0} steps and activity earned you ${nutritionImpact.totalEarned} extra calories today!`
+              e('h3', { className: "text-lg font-bold text-blue-800" }, 'Great Activity Today!'),
+              e('p', { className: "text-blue-700" }, 
+                `That was ${healthData.steps?.toLocaleString() || 0} steps of hard work! Your body needs extra fuel to recover properly.`
               ),
-              e('p', { className: "text-sm text-green-600" }, 
-                `Adjusted target: ${nutritionImpact.adjustedTarget} calories (was ${profileGoals.calories})`
+              e('p', { className: "text-sm text-blue-600" }, 
+                `Recommended intake: ${nutritionImpact.adjustedTarget} calories to support recovery`
               )
             )
           ),
           dashboardSettings.autoAdjustCalories && e('button', {
             onClick: () => {
               // Auto-adjust meal plan calories
-              alert(`🎯 Meal plans auto-adjusted for ${nutritionImpact.totalEarned} bonus calories!`);
+              alert(`💪 Meal plans adjusted to support your recovery with ${nutritionImpact.totalEarned} additional calories for proper fuel!`);
             },
-            className: 'px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all'
-          }, 'Auto-Adjust Meals')
+            className: 'px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all'
+          }, 'Support Recovery')
         )
       ),
 
@@ -1411,8 +1411,8 @@ if (currentView === 'dashboard') {
               }
             })
           ),
-          nutritionImpact && nutritionImpact.totalEarned > 0 && e('div', { className: 'mt-2 text-xs text-green-600 bg-green-50 px-2 py-1 rounded' },
-            `+${nutritionImpact.totalEarned} bonus calories from activity`
+          nutritionImpact && nutritionImpact.totalEarned > 0 && e('div', { className: 'mt-2 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded' },
+            `+${nutritionImpact.totalEarned} calories to support your recovery`
           )
         ),
         
@@ -1552,12 +1552,14 @@ if (currentView === 'dashboard') {
                   e('p', { className: "text-sm text-gray-600 mb-3" }, rec.message),
                   e('button', {
                     onClick: () => {
-                      if (rec.action === 'Adjust Meals') {
+                      if (rec.action === 'Support Recovery') {
                         setCurrentView('planning');
                       } else if (rec.action === 'Take a Walk') {
-                        alert('💡 Try: 15-min walk, stairs, or desk exercises!');
+                        alert('🚶 Your body will thank you! Try: gentle walk, stretching, or light movement');
                       } else if (rec.action === 'View Sleep Foods') {
-                        alert('🥛 Try: magnesium-rich foods like almonds, spinach, or chamomile tea');
+                        alert('🌙 Nourish your recovery: magnesium-rich almonds, leafy greens, or calming chamomile tea');
+                      } else if (rec.action === 'Recovery Mode') {
+                        alert('🧘 Be gentle with yourself: focus on hydration, rest, and nourishing foods');
                       } else {
                         alert(`${rec.action} feature coming soon!`);
                       }
