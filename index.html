@@ -1316,7 +1316,71 @@ if (currentView === 'dashboard') {
   const waterCups = todayJournal?.waterCups || 0;
   const hydrationProgress = Math.min((waterCups / 8) * 100, 100);
 
-  container.innerHTML = e('div', { className: 'min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-cyan-50' },
+  // Global functions for journal interaction (set once)
+  if (!window.habbtJournalFunctionsLoaded) {
+    window.currentJournalDate = today;
+    window.currentJournalEntry = todayJournal || {};
+
+    window.setJournalRating = function(type, value) {
+      window.currentJournalEntry[type] = value;
+      
+      // Update UI
+      document.querySelectorAll('.' + type + '-btn').forEach((btn, index) => {
+        if (index < value) {
+          btn.className = btn.className.replace(/bg-white border-gray-300/, getJournalButtonColor(type) + ' text-white');
+        } else {
+          btn.className = btn.className.replace(getJournalButtonColor(type) + ' text-white', 'bg-white border-gray-300');
+        }
+      });
+    };
+
+    window.getJournalButtonColor = function(type) {
+      return type === 'energy' ? 'bg-blue-500 border-blue-500' :
+             type === 'mood' ? 'bg-green-500 border-green-500' :
+             'bg-orange-500 border-orange-500';
+    };
+
+    window.updateJournalSymptoms = function() {
+      const checkedSymptoms = Array.from(document.querySelectorAll('.symptom-checkbox:checked'))
+        .map(cb => cb.dataset.symptom);
+      window.currentJournalEntry.symptoms = checkedSymptoms;
+    };
+
+    window.loadJournalForDate = function(date) {
+      window.currentJournalDate = date;
+      const journalEntry = getJournalEntry(date) || {};
+      window.currentJournalEntry = journalEntry;
+      switchView('dashboard'); // Refresh dashboard
+    };
+
+    window.saveCurrentJournalEntry = function() {
+      const waterInput = document.getElementById('water-input');
+      const notesInput = document.getElementById('notes-input');
+      
+      if (waterInput && waterInput.value) window.currentJournalEntry.waterCups = parseInt(waterInput.value);
+      if (notesInput && notesInput.value) window.currentJournalEntry.notes = notesInput.value;
+      
+      const success = saveJournalEntry(window.currentJournalDate, window.currentJournalEntry);
+      
+      if (success) {
+        const isToday = window.currentJournalDate === new Date().toISOString().split('T')[0];
+        alert(`✅ Journal entry saved for ${isToday ? 'today' : new Date(window.currentJournalDate).toLocaleDateString()}!`);
+        
+        // Refresh dashboard if saving today's entry
+        if (isToday) {
+          setTimeout(() => {
+            switchView('dashboard');
+          }, 1000);
+        }
+      } else {
+        alert('❌ Failed to save journal entry. Please try again.');
+      }
+    };
+
+    window.habbtJournalFunctionsLoaded = true;
+  }
+
+  return e('div', { className: 'min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-cyan-50' },
     e('div', { className: 'max-w-7xl mx-auto p-6' },
       
       // Header with AI Coach Quick Access
@@ -1480,10 +1544,10 @@ if (currentView === 'dashboard') {
               value: today,
               max: today,
               className: 'px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500',
-              onchange: 'loadJournalForDate(this.value)'
+              onchange: `loadJournalForDate(this.value)`
             }),
             e('button', {
-              onclick: 'loadJournalForDate(document.getElementById("journal-date-picker").value)',
+              onclick: `loadJournalForDate(document.getElementById('journal-date-picker').value)`,
               className: 'px-3 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors'
             }, '📅 Load Day')
           )
@@ -1491,201 +1555,132 @@ if (currentView === 'dashboard') {
         
         // Journal Form
         e('div', { id: 'journal-form-container' },
-          // This will be populated by JavaScript
+          // Static journal form
+          e('div', { className: 'space-y-6' },
+            e('div', { className: 'text-center text-lg font-medium text-gray-700 mb-6' }, 'How was your day overall?'),
+            
+            e('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6' },
+              // Overall Energy
+              e('div', { className: 'text-center' },
+                e('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Overall Energy'),
+                e('div', { className: 'flex justify-center space-x-1', id: 'energy-rating' },
+                  ...[1,2,3,4,5].map(i => 
+                    e('button', {
+                      onclick: `setJournalRating('energy', ${i})`,
+                      className: `w-8 h-8 rounded-full border-2 transition-all energy-btn ${
+                        (todayJournal?.energy || 0) >= i ? 
+                        'bg-blue-500 border-blue-500 text-white' : 
+                        'bg-white border-gray-300 hover:border-blue-400'
+                      }`
+                    }, i.toString())
+                  )
+                ),
+                e('div', { className: 'text-xs text-gray-500 mt-1' }, '1=Drained, 5=Energized')
+              ),
+
+              // Overall Mood
+              e('div', { className: 'text-center' },
+                e('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Overall Mood'),
+                e('div', { className: 'flex justify-center space-x-1', id: 'mood-rating' },
+                  ...[1,2,3,4,5].map(i => 
+                    e('button', {
+                      onclick: `setJournalRating('mood', ${i})`,
+                      className: `w-8 h-8 rounded-full border-2 transition-all mood-btn ${
+                        (todayJournal?.mood || 0) >= i ? 
+                        'bg-green-500 border-green-500 text-white' : 
+                        'bg-white border-gray-300 hover:border-green-400'
+                      }`
+                    }, i.toString())
+                  )
+                ),
+                e('div', { className: 'text-xs text-gray-500 mt-1' }, '1=Poor, 5=Great')
+              ),
+
+              // Meal Satisfaction
+              e('div', { className: 'text-center' },
+                e('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Meal Satisfaction'),
+                e('div', { className: 'flex justify-center space-x-1', id: 'satisfaction-rating' },
+                  ...[1,2,3,4,5].map(i => 
+                    e('button', {
+                      onclick: `setJournalRating('mealSatisfaction', ${i})`,
+                      className: `w-8 h-8 rounded-full border-2 transition-all satisfaction-btn ${
+                        (todayJournal?.mealSatisfaction || 0) >= i ? 
+                        'bg-orange-500 border-orange-500 text-white' : 
+                        'bg-white border-gray-300 hover:border-orange-400'
+                      }`
+                    }, i.toString())
+                  )
+                ),
+                e('div', { className: 'text-xs text-gray-500 mt-1' }, '1=Unsatisfied, 5=Perfect')
+              ),
+
+              // Water Intake
+              e('div', { className: 'text-center' },
+                e('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Water (Cups)'),
+                e('input', {
+                  type: 'number',
+                  id: 'water-input',
+                  value: todayJournal?.waterCups || '',
+                  placeholder: '8',
+                  min: '0',
+                  max: '20',
+                  className: 'w-16 h-10 text-center border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none'
+                }),
+                e('div', { className: 'text-xs text-gray-500 mt-1' }, 'Total cups today')
+              )
+            ),
+
+            // Symptoms
+            e('div', {},
+              e('label', { className: 'block text-sm font-bold text-gray-700 mb-3' }, 'Any symptoms today? (Check all that apply)'),
+              e('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-3' },
+                ...[
+                  { id: 'headache', label: 'Headache' },
+                  { id: 'fatigue', label: 'Fatigue' },
+                  { id: 'bloating', label: 'Bloating' },
+                  { id: 'stomach_pain', label: 'Stomach Pain' },
+                  { id: 'nausea', label: 'Nausea' },
+                  { id: 'brain_fog', label: 'Brain Fog' },
+                  { id: 'irritability', label: 'Irritability' },
+                  { id: 'food_cravings', label: 'Food Cravings' }
+                ].map(symptom => 
+                  e('label', { className: 'flex items-center space-x-2 cursor-pointer' },
+                    e('input', {
+                      type: 'checkbox',
+                      className: 'symptom-checkbox',
+                      'data-symptom': symptom.id,
+                      checked: (todayJournal?.symptoms || []).includes(symptom.id),
+                      onchange: 'updateJournalSymptoms()'
+                    }),
+                    e('span', { className: 'text-sm' }, symptom.label)
+                  )
+                )
+              )
+            ),
+
+            // Notes
+            e('div', {},
+              e('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Daily Notes'),
+              e('textarea', {
+                id: 'notes-input',
+                placeholder: 'How did your meals make you feel? Any observations about energy, mood, or symptoms?',
+                className: 'w-full h-20 p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none',
+                value: todayJournal?.notes || ''
+              })
+            ),
+
+            // Save Button
+            e('div', { className: 'text-center' },
+              e('button', {
+                onclick: 'saveCurrentJournalEntry()',
+                className: 'bg-gradient-to-r from-blue-600 to-teal-600 text-white px-8 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-teal-700 transition-all shadow-lg'
+              }, "💾 Save Today's Journal")
+            )
+          )
         )
       )
     )
   );
-
-  // Journal form rendering function
-  function renderJournalForm(date, journalEntry = {}) {
-    const isToday = date === new Date().toISOString().split('T')[0];
-    const formTitle = isToday ? "How was your day overall?" : `How was ${new Date(date).toLocaleDateString()}?`;
-    
-    document.getElementById('journal-form-container').innerHTML = `
-      <div class="space-y-6">
-        <div class="text-center text-lg font-medium text-gray-700 mb-6">${formTitle}</div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <!-- Overall Energy -->
-          <div class="text-center">
-            <label class="block text-sm font-bold text-gray-700 mb-2">Overall Energy</label>
-            <div class="flex justify-center space-x-1" id="energy-rating">
-              ${[1,2,3,4,5].map(i => `
-                <button onclick="setJournalRating('energy', ${i})" 
-                        class="w-8 h-8 rounded-full border-2 transition-all energy-btn ${
-                          (journalEntry.energy || 0) >= i ? 
-                          'bg-blue-500 border-blue-500 text-white' : 
-                          'bg-white border-gray-300 hover:border-blue-400'
-                        }">
-                  ${i}
-                </button>
-              `).join('')}
-            </div>
-            <div class="text-xs text-gray-500 mt-1">1=Drained, 5=Energized</div>
-          </div>
-
-          <!-- Overall Mood -->
-          <div class="text-center">
-            <label class="block text-sm font-bold text-gray-700 mb-2">Overall Mood</label>
-            <div class="flex justify-center space-x-1" id="mood-rating">
-              ${[1,2,3,4,5].map(i => `
-                <button onclick="setJournalRating('mood', ${i})" 
-                        class="w-8 h-8 rounded-full border-2 transition-all mood-btn ${
-                          (journalEntry.mood || 0) >= i ? 
-                          'bg-green-500 border-green-500 text-white' : 
-                          'bg-white border-gray-300 hover:border-green-400'
-                        }">
-                  ${i}
-                </button>
-              `).join('')}
-            </div>
-            <div class="text-xs text-gray-500 mt-1">1=Poor, 5=Great</div>
-          </div>
-
-          <!-- Meal Satisfaction -->
-          <div class="text-center">
-            <label class="block text-sm font-bold text-gray-700 mb-2">Meal Satisfaction</label>
-            <div class="flex justify-center space-x-1" id="satisfaction-rating">
-              ${[1,2,3,4,5].map(i => `
-                <button onclick="setJournalRating('mealSatisfaction', ${i})" 
-                        class="w-8 h-8 rounded-full border-2 transition-all satisfaction-btn ${
-                          (journalEntry.mealSatisfaction || 0) >= i ? 
-                          'bg-orange-500 border-orange-500 text-white' : 
-                          'bg-white border-gray-300 hover:border-orange-400'
-                        }">
-                  ${i}
-                </button>
-              `).join('')}
-            </div>
-            <div class="text-xs text-gray-500 mt-1">1=Unsatisfied, 5=Perfect</div>
-          </div>
-
-          <!-- Water Intake -->
-          <div class="text-center">
-            <label class="block text-sm font-bold text-gray-700 mb-2">Water (Cups)</label>
-            <input type="number" 
-                   id="water-input"
-                   value="${journalEntry.waterCups || ''}"
-                   placeholder="8"
-                   min="0" max="20"
-                   class="w-16 h-10 text-center border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none">
-            <div class="text-xs text-gray-500 mt-1">Total cups today</div>
-          </div>
-        </div>
-
-        <!-- Symptoms -->
-        <div>
-          <label class="block text-sm font-bold text-gray-700 mb-3">Any symptoms today? (Check all that apply)</label>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            ${[
-              { id: 'headache', label: 'Headache' },
-              { id: 'fatigue', label: 'Fatigue' },
-              { id: 'bloating', label: 'Bloating' },
-              { id: 'stomach_pain', label: 'Stomach Pain' },
-              { id: 'nausea', label: 'Nausea' },
-              { id: 'brain_fog', label: 'Brain Fog' },
-              { id: 'irritability', label: 'Irritability' },
-              { id: 'food_cravings', label: 'Food Cravings' }
-            ].map(symptom => `
-              <label class="flex items-center space-x-2 cursor-pointer">
-                <input type="checkbox" 
-                       class="symptom-checkbox"
-                       data-symptom="${symptom.id}"
-                       ${(journalEntry.symptoms || []).includes(symptom.id) ? 'checked' : ''}
-                       onchange="updateJournalSymptoms()">
-                <span class="text-sm">${symptom.label}</span>
-              </label>
-            `).join('')}
-          </div>
-        </div>
-
-        <!-- Notes -->
-        <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">Daily Notes</label>
-          <textarea id="notes-input" 
-                    placeholder="How did your meals make you feel? Any observations about energy, mood, or symptoms?"
-                    class="w-full h-20 p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none resize-none">${journalEntry.notes || ''}</textarea>
-        </div>
-
-        <!-- Save Button -->
-        <div class="text-center">
-          <button onclick="saveCurrentJournalEntry()" 
-                  class="bg-gradient-to-r from-blue-600 to-teal-600 text-white px-8 py-3 rounded-xl font-bold hover:from-blue-700 hover:to-teal-700 transition-all shadow-lg">
-            💾 Save ${isToday ? "Today's" : "This Day's"} Journal
-          </button>
-          ${!isToday ? `
-            <div class="mt-2 text-xs text-gray-500">
-              Editing entry from ${new Date(date).toLocaleDateString()}
-            </div>
-          ` : ''}
-        </div>
-      </div>
-    `;
-  }
-
-  // Initialize journal form for today
-  renderJournalForm(today, todayJournal);
-
-  // Global functions for journal interaction
-  window.currentJournalDate = today;
-  window.currentJournalEntry = todayJournal || {};
-
-  window.setJournalRating = function(type, value) {
-    window.currentJournalEntry[type] = value;
-    
-    // Update UI
-    document.querySelectorAll('.' + type + '-btn').forEach((btn, index) => {
-      if (index < value) {
-        btn.className = btn.className.replace(/bg-white border-gray-300/, getJournalButtonColor(type) + ' text-white');
-      } else {
-        btn.className = btn.className.replace(getJournalButtonColor(type) + ' text-white', 'bg-white border-gray-300');
-      }
-    });
-  };
-
-  window.getJournalButtonColor = function(type) {
-    return type === 'energy' ? 'bg-blue-500 border-blue-500' :
-           type === 'mood' ? 'bg-green-500 border-green-500' :
-           'bg-orange-500 border-orange-500';
-  };
-
-  window.updateJournalSymptoms = function() {
-    const checkedSymptoms = Array.from(document.querySelectorAll('.symptom-checkbox:checked'))
-      .map(cb => cb.dataset.symptom);
-    window.currentJournalEntry.symptoms = checkedSymptoms;
-  };
-
-  window.loadJournalForDate = function(date) {
-    window.currentJournalDate = date;
-    const journalEntry = getJournalEntry(date) || {};
-    window.currentJournalEntry = journalEntry;
-    renderJournalForm(date, journalEntry);
-  };
-
-  window.saveCurrentJournalEntry = function() {
-    const waterInput = document.getElementById('water-input').value;
-    const notesInput = document.getElementById('notes-input').value;
-    
-    if (waterInput) window.currentJournalEntry.waterCups = parseInt(waterInput);
-    if (notesInput) window.currentJournalEntry.notes = notesInput;
-    
-    const success = saveJournalEntry(window.currentJournalDate, window.currentJournalEntry);
-    
-    if (success) {
-      const isToday = window.currentJournalDate === new Date().toISOString().split('T')[0];
-      alert(`✅ Journal entry saved for ${isToday ? 'today' : new Date(window.currentJournalDate).toLocaleDateString()}!`);
-      
-      // Refresh dashboard if saving today's entry to update hydration
-      if (isToday) {
-        setTimeout(() => {
-          switchView('dashboard');
-        }, 1000);
-      }
-    } else {
-      alert('❌ Failed to save journal entry. Please try again.');
-    }
-  };
 }
       // All other view handlers (same structure but with Habbt naming)
       if (currentView === 'meals') {
