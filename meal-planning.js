@@ -20,10 +20,10 @@
                 scalability: 'excellent', // How well it scales up/down
                 proteinDensity: 6.7, // protein per 100 calories
                 ingredients: [
-                    { name: 'rolled oats', pantryItem: true, allergens: ['gluten-option'] },
-                    { name: 'protein powder', pantryItem: true, allergens: ['dairy-option'] },
-                    { name: 'banana', pantryItem: false, allergens: [] },
-                    { name: 'almond butter', pantryItem: true, allergens: ['nuts'] }
+                    { name: 'rolled oats', amount: '1/2 cup', pantryItem: true, allergens: ['gluten-option'] },
+                    { name: 'protein powder', amount: '1 scoop', pantryItem: true, allergens: ['dairy-option'] },
+                    { name: 'banana', amount: '1 medium', pantryItem: false, allergens: [] },
+                    { name: 'almond butter', amount: '1 tbsp', pantryItem: true, allergens: ['nuts'] }
                 ]
             },
             {
@@ -41,10 +41,11 @@
                 scalability: 'excellent',
                 proteinDensity: 7.4,
                 ingredients: [
-                    { name: 'eggs', pantryItem: true, allergens: ['eggs'] },
-                    { name: 'spinach', pantryItem: false, allergens: [] },
-                    { name: 'feta cheese', pantryItem: false, allergens: ['dairy'] },
-                    { name: 'olive oil', pantryItem: true, allergens: [] }
+                    { name: 'eggs', amount: '3 large', pantryItem: true, allergens: ['eggs'] },
+                    { name: 'fresh spinach', amount: '1 cup', pantryItem: false, allergens: [] },
+                    { name: 'feta cheese', amount: '1/4 cup', pantryItem: false, allergens: ['dairy'] },
+                    { name: 'cherry tomatoes', amount: '1/2 cup', pantryItem: false, allergens: [] },
+                    { name: 'olive oil', amount: '1 tbsp', pantryItem: true, allergens: [] }
                 ]
             },
             {
@@ -62,10 +63,10 @@
                 scalability: 'good',
                 proteinDensity: 3.5,
                 ingredients: [
-                    { name: 'chia seeds', pantryItem: true, allergens: [] },
-                    { name: 'coconut milk', pantryItem: true, allergens: [] },
-                    { name: 'mango', pantryItem: false, allergens: [] },
-                    { name: 'maple syrup', pantryItem: true, allergens: [] }
+                    { name: 'chia seeds', amount: '3 tbsp', pantryItem: true, allergens: [] },
+                    { name: 'coconut milk', amount: '1 cup', pantryItem: true, allergens: [] },
+                    { name: 'fresh mango', amount: '1/2 cup diced', pantryItem: false, allergens: [] },
+                    { name: 'maple syrup', amount: '1 tbsp', pantryItem: true, allergens: [] }
                 ]
             },
             {
@@ -83,10 +84,10 @@
                 scalability: 'excellent',
                 proteinDensity: 8.9,
                 ingredients: [
-                    { name: 'mixed berries', pantryItem: false, allergens: [] },
-                    { name: 'protein powder', pantryItem: true, allergens: ['dairy-option'] },
-                    { name: 'spinach', pantryItem: false, allergens: [] },
-                    { name: 'almond milk', pantryItem: true, allergens: ['nuts'] }
+                    { name: 'mixed berries', amount: '1 cup frozen', pantryItem: false, allergens: [] },
+                    { name: 'protein powder', amount: '1 scoop', pantryItem: true, allergens: ['dairy-option'] },
+                    { name: 'baby spinach', amount: '1 cup', pantryItem: false, allergens: [] },
+                    { name: 'almond milk', amount: '1 cup', pantryItem: true, allergens: ['nuts'] }
                 ]
             }
         ],
@@ -107,10 +108,11 @@
                 scalability: 'excellent',
                 proteinDensity: 8.1,
                 ingredients: [
-                    { name: 'chicken breast', pantryItem: false, allergens: [] },
-                    { name: 'quinoa', pantryItem: true, allergens: [] },
-                    { name: 'cucumber', pantryItem: false, allergens: [] },
-                    { name: 'tahini', pantryItem: true, allergens: ['sesame'] }
+                    { name: 'chicken breast', amount: '6 oz', pantryItem: false, allergens: [] },
+                    { name: 'quinoa', amount: '1/2 cup dry', pantryItem: true, allergens: [] },
+                    { name: 'cucumber', amount: '1 medium', pantryItem: false, allergens: [] },
+                    { name: 'red bell pepper', amount: '1 medium', pantryItem: false, allergens: [] },
+                    { name: 'tahini', amount: '2 tbsp', pantryItem: true, allergens: ['sesame'] }
                 ]
             },
             {
@@ -128,10 +130,11 @@
                 scalability: 'good',
                 proteinDensity: 7.3,
                 ingredients: [
-                    { name: 'salmon fillet', pantryItem: false, allergens: ['fish'] },
-                    { name: 'mixed greens', pantryItem: false, allergens: [] },
-                    { name: 'sesame oil', pantryItem: true, allergens: ['sesame'] },
-                    { name: 'ginger', pantryItem: true, allergens: [] }
+                    { name: 'salmon fillet', amount: '6 oz', pantryItem: false, allergens: ['fish'] },
+                    { name: 'mixed salad greens', amount: '4 cups', pantryItem: false, allergens: [] },
+                    { name: 'sesame oil', amount: '1 tbsp', pantryItem: true, allergens: ['sesame'] },
+                    { name: 'fresh ginger', amount: '1 tbsp minced', pantryItem: true, allergens: [] },
+                    { name: 'soy sauce', amount: '2 tbsp', pantryItem: true, allergens: ['soy'] }
                 ]
             },
             {
@@ -149,10 +152,11 @@
                 scalability: 'excellent',
                 proteinDensity: 9.0,
                 ingredients: [
-                    { name: 'chicken breast', pantryItem: false, allergens: [] },
-                    { name: 'brown rice', pantryItem: true, allergens: [] },
-                    { name: 'mixed vegetables', pantryItem: false, allergens: [] },
-                    { name: 'herbs', pantryItem: true, allergens: [] }
+                    { name: 'chicken breast', amount: '6 oz', pantryItem: false, allergens: [] },
+                    { name: 'brown rice', amount: '1/2 cup dry', pantryItem: true, allergens: [] },
+                    { name: 'broccoli', amount: '1 cup', pantryItem: false, allergens: [] },
+                    { name: 'carrots', amount: '1/2 cup', pantryItem: false, allergens: [] },
+                    { name: 'mixed herbs', amount: '1 tbsp', pantryItem: true, allergens: [] }
                 ]
             }
         ],
@@ -173,10 +177,12 @@
                 scalability: 'good',
                 proteinDensity: 7.3,
                 ingredients: [
-                    { name: 'salmon fillet', pantryItem: false, allergens: ['fish'] },
-                    { name: 'sweet potato', pantryItem: false, allergens: [] },
-                    { name: 'broccoli', pantryItem: false, allergens: [] },
-                    { name: 'olive oil', pantryItem: true, allergens: [] }
+                    { name: 'salmon fillet', amount: '8 oz', pantryItem: false, allergens: ['fish'] },
+                    { name: 'sweet potato', amount: '1 large', pantryItem: false, allergens: [] },
+                    { name: 'broccoli', amount: '2 cups', pantryItem: false, allergens: [] },
+                    { name: 'asparagus', amount: '1 bunch', pantryItem: false, allergens: [] },
+                    { name: 'olive oil', amount: '2 tbsp', pantryItem: true, allergens: [] },
+                    { name: 'fresh herbs', amount: '2 tbsp', pantryItem: true, allergens: [] }
                 ]
             },
             {
@@ -194,10 +200,11 @@
                 scalability: 'excellent',
                 proteinDensity: 10.0,
                 ingredients: [
-                    { name: 'cod fillet', pantryItem: false, allergens: ['fish'] },
-                    { name: 'lemon', pantryItem: false, allergens: [] },
-                    { name: 'herbs', pantryItem: true, allergens: [] },
-                    { name: 'vegetables', pantryItem: false, allergens: [] }
+                    { name: 'cod fillet', amount: '6 oz', pantryItem: false, allergens: ['fish'] },
+                    { name: 'lemon', amount: '1 whole', pantryItem: false, allergens: [] },
+                    { name: 'fresh herbs', amount: '2 tbsp', pantryItem: true, allergens: [] },
+                    { name: 'green beans', amount: '1 cup', pantryItem: false, allergens: [] },
+                    { name: 'zucchini', amount: '1 medium', pantryItem: false, allergens: [] }
                 ]
             }
         ],
@@ -218,10 +225,10 @@
                 scalability: 'excellent',
                 proteinDensity: 6.7,
                 ingredients: [
-                    { name: 'protein powder', pantryItem: true, allergens: ['dairy-option'] },
-                    { name: 'oats', pantryItem: true, allergens: ['gluten-option'] },
-                    { name: 'almond butter', pantryItem: true, allergens: ['nuts'] },
-                    { name: 'dark chocolate chips', pantryItem: true, allergens: ['dairy-option'] }
+                    { name: 'protein powder', amount: '1 scoop', pantryItem: true, allergens: ['dairy-option'] },
+                    { name: 'rolled oats', amount: '1/4 cup', pantryItem: true, allergens: ['gluten-option'] },
+                    { name: 'almond butter', amount: '2 tbsp', pantryItem: true, allergens: ['nuts'] },
+                    { name: 'dark chocolate chips', amount: '1 tbsp', pantryItem: true, allergens: ['dairy-option'] }
                 ]
             },
             {
@@ -239,9 +246,9 @@
                 scalability: 'excellent',
                 proteinDensity: 10.7,
                 ingredients: [
-                    { name: 'greek yogurt', pantryItem: false, allergens: ['dairy'] },
-                    { name: 'mixed berries', pantryItem: false, allergens: [] },
-                    { name: 'honey', pantryItem: true, allergens: [] }
+                    { name: 'greek yogurt', amount: '1 cup', pantryItem: false, allergens: ['dairy'] },
+                    { name: 'mixed berries', amount: '1/2 cup', pantryItem: false, allergens: [] },
+                    { name: 'honey', amount: '1 tbsp', pantryItem: true, allergens: [] }
                 ]
             }
         ]
@@ -545,6 +552,7 @@
                             if (!missingIngredients[ingredient.name]) {
                                 missingIngredients[ingredient.name] = {
                                     name: ingredient.name,
+                                    amount: ingredient.amount || 'as needed',
                                     allergens: ingredient.allergens || [],
                                     usedIn: [],
                                     deliveryReady: true
@@ -561,6 +569,137 @@
         });
 
         return Object.values(missingIngredients);
+    };
+
+    // FIXED: Real delivery integration function
+    const addToGroceryList = (meal) => {
+        try {
+            const pantryItemNames = (loadPlanningPantryData().items || []).map(item => item.name.toLowerCase());
+            
+            // Get missing ingredients for this specific meal
+            const missingForMeal = meal.ingredients ? meal.ingredients.filter(ingredient => 
+                !pantryItemNames.includes(ingredient.name.toLowerCase()) && !ingredient.pantryItem
+            ) : [];
+            
+            if (missingForMeal.length === 0) {
+                alert('🎉 All ingredients are already in your pantry!');
+                return;
+            }
+
+            // Load existing pending grocery list
+            const existingList = JSON.parse(localStorage.getItem('fueliq_pending_grocery_list') || '[]');
+            
+            // Format ingredients for delivery tab
+            const newItems = missingForMeal.map(ingredient => ({
+                id: `meal_${meal.id}_${ingredient.name.replace(/\s+/g, '_')}`,
+                name: ingredient.name,
+                amount: ingredient.amount || 'as needed',
+                category: categorizeIngredient(ingredient.name),
+                allergens: ingredient.allergens || [],
+                addedFrom: 'meal_planning',
+                mealName: meal.name,
+                mealId: meal.id,
+                timestamp: new Date().toISOString()
+            }));
+
+            // Merge with existing (avoid duplicates)
+            const existingNames = existingList.map(item => item.name.toLowerCase());
+            const uniqueNewItems = newItems.filter(item => 
+                !existingNames.includes(item.name.toLowerCase())
+            );
+
+            const updatedList = [...existingList, ...uniqueNewItems];
+            
+            // Save to delivery tab storage
+            localStorage.setItem('fueliq_pending_grocery_list', JSON.stringify(updatedList));
+            
+            // Show success message
+            if (uniqueNewItems.length > 0) {
+                alert(`🛒 Added ${uniqueNewItems.length} ingredients to delivery list!\n\n` +
+                      `Ingredients added:\n${uniqueNewItems.map(item => `• ${item.name} (${item.amount})`).join('\n')}\n\n` +
+                      `💡 Switch to Delivery tab to complete your order!`);
+            } else {
+                alert('✅ All ingredients from this meal are already in your delivery list!');
+            }
+            
+            console.log('🛒 Ingredients added to delivery:', uniqueNewItems);
+            
+        } catch (error) {
+            console.error('Error adding to grocery list:', error);
+            alert('❌ Sorry, there was an error adding ingredients to your delivery list. Please try again.');
+        }
+    };
+
+    // Helper function to categorize ingredients
+    const categorizeIngredient = (ingredientName) => {
+        const name = ingredientName.toLowerCase();
+        
+        if (name.includes('chicken') || name.includes('salmon') || name.includes('cod') || name.includes('fish') || name.includes('meat')) {
+            return 'proteins';
+        } else if (name.includes('spinach') || name.includes('broccoli') || name.includes('tomato') || name.includes('pepper') || name.includes('onion') || name.includes('cucumber') || name.includes('carrot') || name.includes('lettuce') || name.includes('beans') || name.includes('asparagus') || name.includes('zucchini')) {
+            return 'vegetables';
+        } else if (name.includes('banana') || name.includes('berries') || name.includes('mango') || name.includes('lemon') || name.includes('apple')) {
+            return 'fruits';
+        } else if (name.includes('milk') || name.includes('yogurt') || name.includes('cheese') || name.includes('feta') || name.includes('dairy')) {
+            return 'dairy';
+        } else if (name.includes('oats') || name.includes('quinoa') || name.includes('rice') || name.includes('bread') || name.includes('pasta')) {
+            return 'grains';
+        } else if (name.includes('oil') || name.includes('butter') || name.includes('nuts') || name.includes('seeds') || name.includes('tahini')) {
+            return 'oils_nuts';
+        } else {
+            return 'pantry';
+        }
+    };
+
+    // FIXED: Bulk order function for "Order All" button
+    const orderAllMissingIngredients = (missingIngredients) => {
+        try {
+            if (missingIngredients.length === 0) {
+                alert('🎉 No missing ingredients! All meals use items from your pantry.');
+                return;
+            }
+
+            // Load existing pending grocery list
+            const existingList = JSON.parse(localStorage.getItem('fueliq_pending_grocery_list') || '[]');
+            
+            // Format ingredients for delivery tab
+            const newItems = missingIngredients.map(ingredient => ({
+                id: `bulk_${ingredient.name.replace(/\s+/g, '_')}_${Date.now()}`,
+                name: ingredient.name,
+                amount: ingredient.amount || 'as needed',
+                category: categorizeIngredient(ingredient.name),
+                allergens: ingredient.allergens || [],
+                addedFrom: 'meal_planning_bulk',
+                usedIn: ingredient.usedIn,
+                timestamp: new Date().toISOString()
+            }));
+
+            // Merge with existing (avoid duplicates)
+            const existingNames = existingList.map(item => item.name.toLowerCase());
+            const uniqueNewItems = newItems.filter(item => 
+                !existingNames.includes(item.name.toLowerCase())
+            );
+
+            const updatedList = [...existingList, ...uniqueNewItems];
+            
+            // Save to delivery tab storage
+            localStorage.setItem('fueliq_pending_grocery_list', JSON.stringify(updatedList));
+            
+            // Show success message
+            if (uniqueNewItems.length > 0) {
+                alert(`🛒 Added ${uniqueNewItems.length} ingredients to delivery list!\n\n` +
+                      `Ready to order all ingredients for your weekly meal plan.\n\n` +
+                      `💡 Switch to Delivery tab to complete your order!`);
+            } else {
+                alert('✅ All ingredients are already in your delivery list!');
+            }
+            
+            console.log('🛒 Bulk ingredients added to delivery:', uniqueNewItems);
+            
+        } catch (error) {
+            console.error('Error adding bulk ingredients:', error);
+            alert('❌ Sorry, there was an error adding ingredients to your delivery list. Please try again.');
+        }
     };
 
     // Storage functions
@@ -590,7 +729,7 @@
         return new Date(d.setDate(diff)).toISOString().split('T')[0];
     };
 
-    // Enhanced Meal Card with scaling information
+    // Enhanced Meal Card with working delivery integration
     const MealCard = ({ meal, day, mealType, onViewRecipe, onSwapMeal, onAddToGrocery, onMarkAsEaten }) => {
         const isScaled = meal.scaleFactor && meal.scaleFactor !== 1.0;
         
@@ -666,10 +805,11 @@
                         onClick: () => onSwapMeal(day, mealType, meal),
                         className: 'px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs rounded-lg font-semibold transition-all duration-200'
                     }, '🔄'),
+                    // FIXED: Working delivery integration
                     React.createElement('button', {
                         onClick: () => onAddToGrocery(meal),
-                        className: 'px-2 py-1 bg-green-100 hover:bg-green-200 text-green-700 text-xs rounded-lg font-semibold transition-all duration-200'
-                    }, '🛒')
+                        className: 'px-2 py-1 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-xs rounded-lg font-semibold transition-all duration-200'
+                    }, '🛒 Order')
                 ),
                 
                 // Adaptive planning button
@@ -920,20 +1060,6 @@
             }
         };
 
-        const addToGroceryList = (meal) => {
-            const missingForMeal = meal.ingredients ? meal.ingredients.filter(ingredient => 
-                !pantryItems.some(item => item.name.toLowerCase() === ingredient.name.toLowerCase()) && 
-                !ingredient.pantryItem
-            ) : [];
-            
-            if (missingForMeal.length > 0) {
-                const deliveryMessage = `🛒 Ready to order ${missingForMeal.length} ingredients for ${meal.name}!\n\nIngredients needed:\n${missingForMeal.map(ing => `• ${ing.name}`).join('\n')}\n\nWould you like to:\n1. Add to grocery delivery cart\n2. View in delivery tab\n3. Save for later`;
-                alert(deliveryMessage);
-            } else {
-                alert('🎉 All ingredients are already in your pantry!');
-            }
-        };
-
         const navigateWeek = (direction) => {
             const newDate = new Date(currentWeekStart);
             newDate.setDate(newDate.getDate() + (direction * 7));
@@ -1088,8 +1214,8 @@
                             React.createElement('div', { className: 'text-2xl font-bold text-orange-600' }, missingIngredients.length),
                             React.createElement('div', { className: 'text-sm text-gray-600' }, 'items to order'),
                             missingIngredients.length > 0 ? React.createElement('button', {
-                                onClick: () => alert(`🚚 Opening delivery with ${missingIngredients.length} items...`),
-                                className: 'mt-2 text-sm px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg'
+                                onClick: () => orderAllMissingIngredients(missingIngredients),
+                                className: 'mt-2 text-sm px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-all duration-200'
                             }, 'Order All') : React.createElement('div', { className: 'text-xs text-green-600 mt-1' }, 'All ingredients available! 🎉')
                         )
                     ),
@@ -1214,12 +1340,15 @@
         scaleRecipe,
         adaptDayPlan,
         filterMealsForPreferences,
-        selectOptimalMeal
+        selectOptimalMeal,
+        // FIXED: Export working delivery functions
+        addToGroceryList,
+        orderAllMissingIngredients
     };
 
     window.FuelIQMealPlanning = window.HabbtMealPlanning;
     window.renderMealPlanning = renderMealPlanning;
 
-    console.log('🎯 Intelligent Adaptive Meal Planning System loaded - Precision targeting with real-time adaptation');
+    console.log('🎯 Intelligent Adaptive Meal Planning System loaded - Precision targeting with working delivery integration! 🛒');
 
 })();
