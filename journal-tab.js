@@ -96,55 +96,55 @@ window.HabbtJournal = (function() {
                   <!-- Overall Energy -->
                   <div>
                     <label class="block text-sm font-bold text-gray-700 mb-3">How was your energy today?</label>
-                    <div class="flex justify-center space-x-2" id="energy-rating">
+                    <div class="flex justify-center space-x-3" id="energy-rating">
                       ${[1,2,3,4,5].map(i => `
                         <button onclick="setRating('energy', ${i})" 
-                                class="w-12 h-12 rounded-full border-2 transition-all energy-btn text-sm font-bold ${
+                                class="w-16 h-16 rounded-full border-3 transition-all energy-btn text-lg font-bold shadow-md hover:shadow-lg hover:scale-105 ${
                                   (todayEntry.energy || 0) >= i ? 
-                                  'bg-blue-500 border-blue-500 text-white' : 
-                                  'bg-white border-gray-300 hover:border-blue-400 text-gray-600'
+                                  'bg-blue-500 border-blue-500 text-white shadow-blue-200' : 
+                                  'bg-white border-gray-300 hover:border-blue-400 text-gray-600 hover:bg-blue-50'
                                 }">
                           ${i}
                         </button>
                       `).join('')}
                     </div>
-                    <div class="text-center text-xs text-gray-500 mt-2">1 = Drained • 5 = Energized</div>
+                    <div class="text-center text-xs text-gray-500 mt-3">1 = Drained • 5 = Energized</div>
                   </div>
 
                   <!-- Overall Mood -->
                   <div>
                     <label class="block text-sm font-bold text-gray-700 mb-3">How was your mood today?</label>
-                    <div class="flex justify-center space-x-2" id="mood-rating">
+                    <div class="flex justify-center space-x-3" id="mood-rating">
                       ${[1,2,3,4,5].map(i => `
                         <button onclick="setRating('mood', ${i})" 
-                                class="w-12 h-12 rounded-full border-2 transition-all mood-btn text-sm font-bold ${
+                                class="w-16 h-16 rounded-full border-3 transition-all mood-btn text-lg font-bold shadow-md hover:shadow-lg hover:scale-105 ${
                                   (todayEntry.mood || 0) >= i ? 
-                                  'bg-green-500 border-green-500 text-white' : 
-                                  'bg-white border-gray-300 hover:border-green-400 text-gray-600'
+                                  'bg-green-500 border-green-500 text-white shadow-green-200' : 
+                                  'bg-white border-gray-300 hover:border-green-400 text-gray-600 hover:bg-green-50'
                                 }">
                           ${i}
                         </button>
                       `).join('')}
                     </div>
-                    <div class="text-center text-xs text-gray-500 mt-2">1 = Poor • 5 = Great</div>
+                    <div class="text-center text-xs text-gray-500 mt-3">1 = Poor • 5 = Great</div>
                   </div>
 
                   <!-- Meal Satisfaction -->
                   <div>
                     <label class="block text-sm font-bold text-gray-700 mb-3">How satisfied were you with your meals?</label>
-                    <div class="flex justify-center space-x-2" id="satisfaction-rating">
+                    <div class="flex justify-center space-x-3" id="satisfaction-rating">
                       ${[1,2,3,4,5].map(i => `
                         <button onclick="setRating('mealSatisfaction', ${i})" 
-                                class="w-12 h-12 rounded-full border-2 transition-all satisfaction-btn text-sm font-bold ${
+                                class="w-16 h-16 rounded-full border-3 transition-all satisfaction-btn text-lg font-bold shadow-md hover:shadow-lg hover:scale-105 ${
                                   (todayEntry.mealSatisfaction || 0) >= i ? 
-                                  'bg-orange-500 border-orange-500 text-white' : 
-                                  'bg-white border-gray-300 hover:border-orange-400 text-gray-600'
+                                  'bg-orange-500 border-orange-500 text-white shadow-orange-200' : 
+                                  'bg-white border-gray-300 hover:border-orange-400 text-gray-600 hover:bg-orange-50'
                                 }">
                           ${i}
                         </button>
                       `).join('')}
                     </div>
-                    <div class="text-center text-xs text-gray-500 mt-2">1 = Unsatisfied • 5 = Perfect</div>
+                    <div class="text-center text-xs text-gray-500 mt-3">1 = Unsatisfied • 5 = Perfect</div>
                   </div>
 
                   <!-- Water Intake -->
