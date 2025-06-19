@@ -452,17 +452,468 @@
     };
 
     // Goals & Activity Component with Habbt design and timeline
-    const GoalsActivity = ({ profile, onChange }) => {
-        const handleChange = (field, value) => {
-            const [section, key] = field.split('.');
+   const GoalsActivity = ({ profile, onChange }) => {
+    // Add state for goal customization method
+    const [goalMethod, setGoalMethod] = React.useState(
+        profile.goals.isCustom ? 'custom' : 'calculated'
+    );
+    const [showTargetWeight, setShowTargetWeight] = React.useState(
+        Boolean(profile.goals.targetWeight)
+    );
+
+    const handleChange = (field, value) => {
+        const [section, key] = field.split('.');
+        onChange({
+            ...profile,
+            [section]: {
+                ...profile[section],
+                [key]: value
+            }
+        });
+    };
+
+    // Enhanced goal change handler for custom goals
+    const handleGoalChange = (goalType, value) => {
+        const numValue = parseInt(value) || 0;
+        onChange({
+            ...profile,
+            goals: {
+                ...profile.goals,
+                [goalType]: numValue,
+                isCustom: true // Mark as custom when manually changed
+            }
+        });
+    };
+
+    // Calculate suggested goals (using your existing calculateGoals logic)
+    const calculateSuggestedGoals = () => {
+        return calculateGoals(profile);
+    };
+
+    // Switch between calculated and custom goals
+    const handleGoalMethodChange = (method) => {
+        setGoalMethod(method);
+        
+        if (method === 'calculated') {
+            const calculatedGoals = calculateSuggestedGoals();
             onChange({
                 ...profile,
-                [section]: {
-                    ...profile[section],
-                    [key]: value
+                goals: {
+                    ...profile.goals,
+                    ...calculatedGoals,
+                    isCustom: false
                 }
             });
+        } else {
+            onChange({
+                ...profile,
+                goals: {
+                    ...profile.goals,
+                    isCustom: true
+                }
+            });
+        }
+    };
+
+    // Goal presets for custom mode
+    const applyGoalPreset = (presetType) => {
+        const currentGoals = calculateSuggestedGoals();
+        let calories, protein, carbs, fat;
+        
+        switch(presetType) {
+            case 'aggressive':
+                calories = Math.round(currentGoals.calories * 0.85);
+                protein = Math.round(parseFloat(profile.current.weight) * 1.2);
+                carbs = Math.round(calories * 0.25 / 4);
+                fat = Math.round((calories - (protein * 4) - (carbs * 4)) / 9);
+                break;
+            case 'moderate':
+                calories = Math.round(currentGoals.calories * 0.9);
+                protein = Math.round(parseFloat(profile.current.weight) * 1.0);
+                carbs = Math.round(calories * 0.35 / 4);
+                fat = Math.round((calories - (protein * 4) - (carbs * 4)) / 9);
+                break;
+            case 'maintenance':
+                calories = currentGoals.calories;
+                protein = Math.round(parseFloat(profile.current.weight) * 0.8);
+                carbs = Math.round(calories * 0.45 / 4);
+                fat = Math.round((calories - (protein * 4) - (carbs * 4)) / 9);
+                break;
+        }
+        
+        onChange({
+            ...profile,
+            goals: {
+                ...profile.goals,
+                calories,
+                protein,
+                carbs,
+                fat,
+                isCustom: true
+            }
+        });
+    };
+
+    const getGoalTimeline = () => {
+        if (!showTargetWeight) return null;
+        
+        const currentWeight = parseFloat(profile.current.weight);
+        const targetWeight = parseFloat(profile.goals.targetWeight);
+        const targetDate = profile.goals.targetDate;
+        
+        if (!currentWeight || !targetWeight || !targetDate) return null;
+        
+        const weightToChange = currentWeight - targetWeight;
+        const isGainGoal = weightToChange < 0;
+        const today = new Date();
+        const target = new Date(targetDate);
+        const daysToGoal = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+        const weeksToGoal = daysToGoal / 7;
+        
+        if (weeksToGoal <= 0) return null;
+        
+        const weeklyRate = Math.abs(weightToChange / weeksToGoal);
+        
+        return {
+            weightToChange: Math.abs(weightToChange),
+            weeksToGoal: Math.round(weeksToGoal),
+            daysToGoal,
+            weeklyRate,
+            isGainGoal,
+            isTooAggressive: weeklyRate > 2.5 && !isGainGoal,
+            isTooSlow: weeklyRate < 0.5 && !isGainGoal
         };
+    };
+
+    const suggestedGoals = calculateSuggestedGoals();
+    const timeline = getGoalTimeline();
+
+    // Update macro breakdown percentages
+    const getPercentages = () => {
+        const { calories, protein, carbs, fat } = profile.goals;
+        const proteinCals = protein * 4;
+        const carbsCals = carbs * 4;
+        const fatCals = fat * 9;
+        const totalMacroCals = proteinCals + carbsCals + fatCals;
+        
+        if (totalMacroCals === 0) return { protein: 0, carbs: 0, fat: 0 };
+        
+        return {
+            protein: Math.round((proteinCals / totalMacroCals) * 100),
+            carbs: Math.round((carbsCals / totalMacroCals) * 100),
+            fat: Math.round((fatCals / totalMacroCals) * 100)
+        };
+    };
+
+    const percentages = getPercentages();
+
+    return React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 mb-6' },
+        React.createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4 flex items-center' },
+            React.createElement('span', { className: 'text-2xl mr-3' }, '🎯'),
+            'Goals & Activity'
+        ),
+        
+        // Basic activity and goal selection
+        React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4 mb-6' },
+            React.createElement('div', null,
+                React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Activity Level'),
+                React.createElement('select', {
+                    value: profile.current.activityLevel,
+                    onChange: (e) => handleChange('current.activityLevel', e.target.value),
+                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200'
+                },
+                    React.createElement('option', { value: 'sedentary' }, 'Sedentary (desk job, no exercise)'),
+                    React.createElement('option', { value: 'light' }, 'Light (light exercise 1-3 days/week)'),
+                    React.createElement('option', { value: 'moderate' }, 'Moderate (moderate exercise 3-5 days/week)'),
+                    React.createElement('option', { value: 'active' }, 'Active (hard exercise 6-7 days/week)'),
+                    React.createElement('option', { value: 'very_active' }, 'Very Active (2x/day, intense training)')
+                )
+            ),
+            
+            React.createElement('div', null,
+                React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Primary Goal'),
+                React.createElement('select', {
+                    value: profile.goals.primaryGoal,
+                    onChange: (e) => handleChange('goals.primaryGoal', e.target.value),
+                    className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200'
+                },
+                    React.createElement('option', { value: 'fat_loss' }, 'Fat Loss'),
+                    React.createElement('option', { value: 'muscle_gain' }, 'Muscle Gain'),
+                    React.createElement('option', { value: 'maintenance' }, 'Maintenance'),
+                    React.createElement('option', { value: 'recomp' }, 'Body Recomposition')
+                )
+            )
+        ),
+
+        // NEW: Optional Target Weight Section
+        React.createElement('div', { className: 'bg-gradient-to-r from-blue-50 to-teal-50 border-2 border-blue-200 rounded-2xl p-6 mb-6' },
+            React.createElement('h4', { className: 'text-lg font-bold text-blue-800 mb-4 flex items-center' },
+                React.createElement('span', { className: 'text-blue-600 mr-3' }, '⚡'),
+                'Target Weight & Timeline (Optional)'
+            ),
+            
+            React.createElement('div', { className: 'flex items-center mb-4' },
+                React.createElement('input', {
+                    type: 'checkbox',
+                    id: 'showTargetWeight',
+                    checked: showTargetWeight,
+                    onChange: (e) => setShowTargetWeight(e.target.checked),
+                    className: 'mr-4 w-5 h-5 text-blue-600 focus:ring-blue-500 border-2 border-gray-300 rounded'
+                }),
+                React.createElement('label', { 
+                    htmlFor: 'showTargetWeight',
+                    className: 'text-lg font-medium text-gray-800 cursor-pointer' 
+                }, 'I have a specific target weight and timeline')
+            ),
+            
+            showTargetWeight && React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+                React.createElement('div', null,
+                    React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Target Weight (lbs)'),
+                    React.createElement('input', {
+                        type: 'number',
+                        value: profile.goals.targetWeight,
+                        onChange: (e) => handleChange('goals.targetWeight', e.target.value),
+                        className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200',
+                        placeholder: 'Goal weight'
+                    })
+                ),
+                
+                React.createElement('div', null,
+                    React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Target Date'),
+                    React.createElement('input', {
+                        type: 'date',
+                        value: profile.goals.targetDate,
+                        onChange: (e) => handleChange('goals.targetDate', e.target.value),
+                        className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200',
+                        min: formatDate(new Date())
+                    })
+                )
+            ),
+            
+            !showTargetWeight && React.createElement('p', { className: 'text-sm text-blue-600 bg-white/50 p-3 rounded-xl' },
+                '💡 Focus on building healthy habits rather than specific targets - a sustainable approach!'
+            )
+        ),
+
+        // NEW: Goal Method Selection
+        React.createElement('div', { className: 'mb-6' },
+            React.createElement('h4', { className: 'text-lg font-bold text-gray-800 mb-4' }, 'How would you like to set your nutrition goals?'),
+            
+            React.createElement('div', { className: 'space-y-3' },
+                React.createElement('label', { className: 'flex items-start p-4 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-blue-300 hover:bg-blue-50/50 transition-all' },
+                    React.createElement('input', {
+                        type: 'radio',
+                        name: 'goalMethod',
+                        value: 'calculated',
+                        checked: goalMethod === 'calculated',
+                        onChange: () => handleGoalMethodChange('calculated'),
+                        className: 'mt-1 mr-4 text-blue-600 focus:ring-blue-500 w-5 h-5'
+                    }),
+                    React.createElement('div', null,
+                        React.createElement('div', { className: 'text-lg font-bold text-gray-800' }, 'Use Calculated Goals'),
+                        React.createElement('div', { className: 'text-gray-600 mb-2' }, 'Based on your profile and primary goal'),
+                        React.createElement('div', { className: 'text-blue-600 font-bold' },
+                            `Recommended: ${suggestedGoals.calories} cal • ${suggestedGoals.protein}g protein • ${suggestedGoals.carbs}g carbs • ${suggestedGoals.fat}g fat`
+                        )
+                    )
+                ),
+                
+                React.createElement('label', { className: 'flex items-start p-4 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-blue-300 hover:bg-blue-50/50 transition-all' },
+                    React.createElement('input', {
+                        type: 'radio',
+                        name: 'goalMethod',
+                        value: 'custom',
+                        checked: goalMethod === 'custom',
+                        onChange: () => handleGoalMethodChange('custom'),
+                        className: 'mt-1 mr-4 text-blue-600 focus:ring-blue-500 w-5 h-5'
+                    }),
+                    React.createElement('div', null,
+                        React.createElement('div', { className: 'text-lg font-bold text-gray-800' }, 'Set Custom Goals'),
+                        React.createElement('div', { className: 'text-gray-600' }, 'Fine-tune your targets based on your preferences')
+                    )
+                )
+            )
+        ),
+
+        // Goal Display Section
+        goalMethod === 'calculated' 
+            // Calculated Goals Display
+            ? React.createElement('div', { className: 'p-4 bg-gradient-to-r from-blue-50 to-teal-50 rounded-lg border border-blue-200' },
+                React.createElement('h4', { className: 'font-bold text-blue-800 mb-3' }, '📊 Your Calculated Daily Targets'),
+                React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-4' },
+                    React.createElement('div', null,
+                        React.createElement('div', { className: 'text-2xl font-bold text-blue-600' }, profile.goals.calories || '--'),
+                        React.createElement('div', { className: 'text-sm text-gray-600' }, 'Calories')
+                    ),
+                    React.createElement('div', null,
+                        React.createElement('div', { className: 'text-2xl font-bold text-green-600' }, `${profile.goals.protein || '--'}g`),
+                        React.createElement('div', { className: 'text-sm text-gray-600' }, 'Protein')
+                    ),
+                    React.createElement('div', null,
+                        React.createElement('div', { className: 'text-2xl font-bold text-blue-600' }, `${profile.goals.carbs || '--'}g`),
+                        React.createElement('div', { className: 'text-sm text-gray-600' }, 'Carbs')
+                    ),
+                    React.createElement('div', null,
+                        React.createElement('div', { className: 'text-2xl font-bold text-orange-600' }, `${profile.goals.fat || '--'}g`),
+                        React.createElement('div', { className: 'text-sm text-gray-600' }, 'Fat')
+                    )
+                ),
+                React.createElement('p', { className: 'text-sm text-blue-600 bg-white/50 p-3 rounded-xl' },
+                    `Based on: ${calculateAge(profile.personal.birthday) || 'X'}-year-old ${profile.current.activityLevel || 'moderate'} ${profile.personal.gender || 'person'}, ${profile.personal.height || 'X'}" tall, ${profile.current.weight || 'X'} lbs, ${profile.goals.primaryGoal || 'fat loss'} goal`
+                )
+            )
+            // Custom Goals Interface
+            : React.createElement('div', { className: 'bg-gradient-to-r from-teal-50 to-blue-50 border-2 border-teal-200 rounded-2xl p-6' },
+                React.createElement('h4', { className: 'text-lg font-bold text-teal-800 mb-4' }, '🎯 Your Custom Goals'),
+                
+                // Goal Sliders
+                React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6 mb-6' },
+                    React.createElement('div', null,
+                        React.createElement('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Calories (1,200 - 4,000)'),
+                        React.createElement('input', {
+                            type: 'number',
+                            value: profile.goals.calories || '',
+                            onChange: (e) => handleGoalChange('calories', e.target.value),
+                            min: 1200,
+                            max: 4000,
+                            className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition-all duration-200 mb-2'
+                        }),
+                        React.createElement('input', {
+                            type: 'range',
+                            value: profile.goals.calories || 2000,
+                            onChange: (e) => handleGoalChange('calories', e.target.value),
+                            min: 1200,
+                            max: 4000,
+                            className: 'w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer'
+                        })
+                    ),
+                    
+                    React.createElement('div', null,
+                        React.createElement('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Protein (50 - 300g)'),
+                        React.createElement('input', {
+                            type: 'number',
+                            value: profile.goals.protein || '',
+                            onChange: (e) => handleGoalChange('protein', e.target.value),
+                            min: 50,
+                            max: 300,
+                            className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition-all duration-200 mb-2'
+                        }),
+                        React.createElement('input', {
+                            type: 'range',
+                            value: profile.goals.protein || 150,
+                            onChange: (e) => handleGoalChange('protein', e.target.value),
+                            min: 50,
+                            max: 300,
+                            className: 'w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer'
+                        }),
+                        profile.current.weight && React.createElement('div', { className: 'text-xs text-gray-600 mt-1 bg-white/70 p-2 rounded' },
+                            `~${(profile.goals.protein / parseFloat(profile.current.weight)).toFixed(1)}g per lb bodyweight`
+                        )
+                    ),
+                    
+                    React.createElement('div', null,
+                        React.createElement('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Carbs (50 - 500g)'),
+                        React.createElement('input', {
+                            type: 'number',
+                            value: profile.goals.carbs || '',
+                            onChange: (e) => handleGoalChange('carbs', e.target.value),
+                            min: 50,
+                            max: 500,
+                            className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition-all duration-200 mb-2'
+                        }),
+                        React.createElement('input', {
+                            type: 'range',
+                            value: profile.goals.carbs || 250,
+                            onChange: (e) => handleGoalChange('carbs', e.target.value),
+                            min: 50,
+                            max: 500,
+                            className: 'w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer'
+                        })
+                    ),
+                    
+                    React.createElement('div', null,
+                        React.createElement('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Fat (30 - 200g)'),
+                        React.createElement('input', {
+                            type: 'number',
+                            value: profile.goals.fat || '',
+                            onChange: (e) => handleGoalChange('fat', e.target.value),
+                            min: 30,
+                            max: 200,
+                            className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition-all duration-200 mb-2'
+                        }),
+                        React.createElement('input', {
+                            type: 'range',
+                            value: profile.goals.fat || 67,
+                            onChange: (e) => handleGoalChange('fat', e.target.value),
+                            min: 30,
+                            max: 200,
+                            className: 'w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer'
+                        })
+                    )
+                ),
+
+                // Macro Breakdown
+                React.createElement('div', { className: 'bg-white/80 rounded-2xl border border-gray-200 p-4 mb-6' },
+                    React.createElement('h5', { className: 'font-bold text-gray-800 mb-3' }, 'Macro Breakdown'),
+                    React.createElement('div', { className: 'grid grid-cols-3 gap-4 text-center' },
+                        React.createElement('div', null,
+                            React.createElement('div', { className: 'text-2xl font-bold text-green-600' }, `${percentages.protein}%`),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Protein')
+                        ),
+                        React.createElement('div', null,
+                            React.createElement('div', { className: 'text-2xl font-bold text-blue-600' }, `${percentages.carbs}%`),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Carbs')
+                        ),
+                        React.createElement('div', null,
+                            React.createElement('div', { className: 'text-2xl font-bold text-orange-600' }, `${percentages.fat}%`),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Fat')
+                        )
+                    )
+                ),
+
+                // Quick Presets
+                React.createElement('div', null,
+                    React.createElement('h5', { className: 'font-bold text-gray-800 mb-3' }, 'Quick Presets'),
+                    React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-3' },
+                        React.createElement('button', {
+                            onClick: () => applyGoalPreset('aggressive'),
+                            className: 'p-3 bg-red-50 border-2 border-red-200 rounded-2xl text-left hover:bg-red-100 hover:border-red-300 transition-all transform hover:scale-105'
+                        },
+                            React.createElement('div', { className: 'font-bold text-red-800' }, 'Aggressive Cut'),
+                            React.createElement('div', { className: 'text-sm text-red-600' }, 'High protein, lower calories')
+                        ),
+                        React.createElement('button', {
+                            onClick: () => applyGoalPreset('moderate'),
+                            className: 'p-3 bg-green-50 border-2 border-green-200 rounded-2xl text-left hover:bg-green-100 hover:border-green-300 transition-all transform hover:scale-105'
+                        },
+                            React.createElement('div', { className: 'font-bold text-green-800' }, 'Moderate Cut'),
+                            React.createElement('div', { className: 'text-sm text-green-600' }, 'Balanced approach')
+                        ),
+                        React.createElement('button', {
+                            onClick: () => applyGoalPreset('maintenance'),
+                            className: 'p-3 bg-blue-50 border-2 border-blue-200 rounded-2xl text-left hover:bg-blue-100 hover:border-blue-300 transition-all transform hover:scale-105'
+                        },
+                            React.createElement('div', { className: 'font-bold text-blue-800' }, 'Maintenance'),
+                            React.createElement('div', { className: 'text-sm text-blue-600' }, 'Maintain current weight')
+                        )
+                    )
+                )
+            ),
+
+        // Goal Timeline (only show if target weight is enabled)
+        timeline && React.createElement('div', { className: 'pt-4 border-t border-blue-200 mt-4' },
+            React.createElement('div', { className: 'text-center' },
+                React.createElement('h5', { className: 'font-bold text-blue-800 mb-2' }, '🎯 Your Goal Timeline'),
+                React.createElement('p', { className: 'text-sm text-blue-700 mb-1' },
+                    `${timeline.isGainGoal ? 'Gain' : 'Lose'} ${timeline.weightToChange.toFixed(1)} lbs in ${timeline.weeksToGoal} weeks`
+                ),
+                React.createElement('p', { className: 'text-sm text-blue-600 mb-2' },
+                    `Target rate: ${timeline.weeklyRate.toFixed(1)} lbs per week ${timeline.isGainGoal ? 'gain' : 'loss'}`
+                ),
+                timeline.isTooAggressive && React.createElement('p', { className: 'text-xs text-red-600 bg-red-50 rounded p-2' },
+                    '⚠️ This rate may be too aggressive for healthy weight loss. Consider extending your timeline.'
+                ),
+                timeline.isTooSlow && React.createElement('p', { className: 'text-xs text-yellow-600 bg-yellow-50 rounded p-2' },
 
         // Calculate goal timeline
         const getGoalTimeline = () => {
