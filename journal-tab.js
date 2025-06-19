@@ -288,49 +288,97 @@ window.HabbtJournal = (function() {
                   <li>• Energy optimization tips</li>
                 </ul>
               </div>
+
+              <!-- Debug Panel -->
+              <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <h4 class="text-sm font-bold text-gray-700 mb-2">🔧 Debug Panel</h4>
+                <button onclick="testJournalFunctions()" 
+                        class="px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 mb-2">
+                  Test Functions
+                </button>
+                <div class="text-xs text-gray-600">
+                  Having issues? Click "Test Functions" to verify everything is working.
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     `;
 
-    // Initialize current entry
+    // Initialize current entry and attach functions immediately
     window.currentJournalEntry = todayEntry;
     window.currentJournalDate = today;
+    
+    // Debug: Log that functions are being attached
+    console.log('📝 Journal functions attached to window');
+    console.log('Current entry:', window.currentJournalEntry);
   }
 
-  // Global functions for interactions
+  // Enhanced global functions for interactions
   window.setRating = function(type, value) {
+    console.log(`Setting ${type} rating to ${value}`);
+    
+    // Initialize journal entry if it doesn't exist
+    if (!window.currentJournalEntry) {
+      window.currentJournalEntry = {};
+    }
+    
     window.currentJournalEntry[type] = value;
     
-    // Update UI
-    document.querySelectorAll(`.${type}-btn`).forEach((btn, index) => {
-      const isActive = index < value;
-      const colorClass = type === 'energy' ? 'bg-blue-500 border-blue-500' :
-                         type === 'mood' ? 'bg-green-500 border-green-500' :
-                         'bg-orange-500 border-orange-500';
+    // Update UI with a more robust approach
+    const buttons = document.querySelectorAll(`.${type}-btn`);
+    console.log(`Found ${buttons.length} ${type} buttons`);
+    
+    buttons.forEach((btn, index) => {
+      const isActive = (index + 1) <= value; // index is 0-based, value is 1-based
+      
+      // Remove all existing classes and add new ones
+      btn.className = btn.className
+        .replace(/bg-blue-500|bg-green-500|bg-orange-500/g, '')
+        .replace(/border-blue-500|border-green-500|border-orange-500/g, '')
+        .replace(/text-white/g, '')
+        .replace(/bg-white|border-gray-300|text-gray-600/g, '');
       
       if (isActive) {
-        btn.className = btn.className.replace(/bg-white border-gray-300 text-gray-600/, `${colorClass} text-white`);
+        // Active state
+        if (type === 'energy') {
+          btn.className += ' bg-blue-500 border-blue-500 text-white shadow-blue-200';
+        } else if (type === 'mood') {
+          btn.className += ' bg-green-500 border-green-500 text-white shadow-green-200';
+        } else {
+          btn.className += ' bg-orange-500 border-orange-500 text-white shadow-orange-200';
+        }
       } else {
-        btn.className = btn.className.replace(new RegExp(`${colorClass} text-white`), 'bg-white border-gray-300 text-gray-600');
+        // Inactive state
+        btn.className += ' bg-white border-gray-300 text-gray-600';
       }
+      
+      // Clean up extra spaces
+      btn.className = btn.className.replace(/\s+/g, ' ').trim();
     });
   };
 
   window.updateSymptoms = function() {
+    console.log('Updating symptoms...');
+    if (!window.currentJournalEntry) {
+      window.currentJournalEntry = {};
+    }
     const checkedSymptoms = Array.from(document.querySelectorAll('.symptom-checkbox:checked'))
       .map(cb => cb.dataset.symptom);
     window.currentJournalEntry.symptoms = checkedSymptoms;
+    console.log('Symptoms updated:', checkedSymptoms);
   };
 
   window.loadJournalDate = function() {
+    console.log('Loading journal date...');
     const dateInput = document.getElementById('journal-date-picker');
     const selectedDate = dateInput.value;
     loadSpecificDate(selectedDate);
   };
 
   window.loadSpecificDate = function(date) {
+    console.log('Loading specific date:', date);
     window.currentJournalDate = date;
     const entry = getJournalEntry(date) || {};
     window.currentJournalEntry = entry;
@@ -340,6 +388,11 @@ window.HabbtJournal = (function() {
   };
 
   window.saveCurrentEntry = function() {
+    console.log('Saving current entry...');
+    if (!window.currentJournalEntry) {
+      window.currentJournalEntry = {};
+    }
+    
     const waterInput = document.getElementById('water-input');
     const notesInput = document.getElementById('notes-input');
     
@@ -363,6 +416,15 @@ window.HabbtJournal = (function() {
     } else {
       alert('❌ Failed to save journal entry. Please try again.');
     }
+  };
+
+  // Test function to verify everything is working
+  window.testJournalFunctions = function() {
+    console.log('🧪 Testing journal functions...');
+    console.log('setRating exists:', typeof window.setRating);
+    console.log('updateSymptoms exists:', typeof window.updateSymptoms);
+    console.log('saveCurrentEntry exists:', typeof window.saveCurrentEntry);
+    alert('✅ All journal functions are loaded! Check console for details.');
   };
 
   // Cleanup function
@@ -389,5 +451,45 @@ window.HabbtJournal = (function() {
 // Compatibility exports
 window.FuelIQJournal = window.HabbtJournal;
 window.renderJournalTab = window.HabbtJournal.renderJournalTab;
+
+// Immediately attach global functions (backup in case they don't get attached in renderJournalTab)
+if (!window.setRating) {
+  window.setRating = function(type, value) {
+    console.log(`Setting ${type} rating to ${value}`);
+    
+    if (!window.currentJournalEntry) {
+      window.currentJournalEntry = {};
+    }
+    
+    window.currentJournalEntry[type] = value;
+    
+    const buttons = document.querySelectorAll(`.${type}-btn`);
+    console.log(`Found ${buttons.length} ${type} buttons`);
+    
+    buttons.forEach((btn, index) => {
+      const isActive = (index + 1) <= value;
+      
+      btn.className = btn.className
+        .replace(/bg-blue-500|bg-green-500|bg-orange-500/g, '')
+        .replace(/border-blue-500|border-green-500|border-orange-500/g, '')
+        .replace(/text-white/g, '')
+        .replace(/bg-white|border-gray-300|text-gray-600/g, '');
+      
+      if (isActive) {
+        if (type === 'energy') {
+          btn.className += ' bg-blue-500 border-blue-500 text-white shadow-blue-200';
+        } else if (type === 'mood') {
+          btn.className += ' bg-green-500 border-green-500 text-white shadow-green-200';
+        } else {
+          btn.className += ' bg-orange-500 border-orange-500 text-white shadow-orange-200';
+        }
+      } else {
+        btn.className += ' bg-white border-gray-300 text-gray-600';
+      }
+      
+      btn.className = btn.className.replace(/\s+/g, ' ').trim();
+    });
+  };
+}
 
 console.log('📝 Habbt Evening Journal loaded - Track daily wellness for powerful insights!');
