@@ -1,354 +1,388 @@
-// Unified FuelIQ Data Manager - Prevents data conflicts and resets
-window.FuelIQDataManager = (function() {
-    'use strict';
+// Enhanced Habbt Firebase Sync Manager
+// Add this to your index.html right after the unified data manager script
+
+window.HabbtSyncManager = (function() {
+  'use strict';
+
+  let isOnline = navigator.onLine;
+  let syncQueue = [];
+  let lastSyncTime = null;
+
+  // Key mapping between localStorage and Firebase
+  const KEY_MAPPING = {
+    'habbt_profile_data': 'profile',
+    'habbt_user_goals': 'goals',
+    'habbt_meals_': 'meals',
+    'habbt_journal_': 'journal',
+    'habbt_dashboard_health_data': 'health',
+    'habbt_dashboard_settings': 'settings'
+  };
+
+  // Initialize sync manager
+  function init() {
+    console.log('🔄 Initializing Habbt Firebase Sync Manager...');
     
-    // Storage keys
-    const STORAGE_KEYS = {
-        USER_GOALS: 'fueliq_user_goals',
-        USER_PROFILE: 'fueliq_user_profile', 
-        MEALS: 'fueliq_meals_', // + date
-        JOURNAL: 'fueliq_journal_', // + date
-        ACTIVITY: 'fueliq_activity_', // + date
-        RECENT_FOODS: 'fueliq_recent_foods',
-        MEAL_PLAN: 'fueliq_meal_plan',
-        PANTRY: 'fueliq_pantry'
-    };
+    // Monitor online/offline status
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    // Monitor localStorage changes
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Periodic sync
+    setInterval(performPeriodicSync, 30000); // Every 30 seconds
+    
+    console.log('✅ Habbt Sync Manager initialized');
+  }
 
-    // Default data structures
-    const DEFAULT_GOALS = {
-        calories: 2000,
-        protein: 150,
-        carbs: 250,
-        fat: 67
-    };
+  // Enhanced save with immediate Firebase sync
+  async function saveData(key, data, skipSync = false) {
+    try {
+      // Save to localStorage first (immediate access)
+      localStorage.setItem(key, JSON.stringify(data));
+      console.log(`💾 Saved locally: ${key}`);
+      
+      // Queue for Firebase sync if user is logged in
+      if (!skipSync && window.firebaseAuth?.currentUser) {
+        await syncToFirebase(key, data);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error(`❌ Failed to save ${key}:`, error);
+      return false;
+    }
+  }
 
-    const DEFAULT_PROFILE = {
-        name: '',
-        age: '',
-        gender: '',
-        height: '',
-        weight: '',
-        activityLevel: 'moderate',
-        goal: 'maintain'
-    };
+  // Enhanced load with Firebase fallback
+  async function loadData(key, defaultValue = null) {
+    try {
+      // Try localStorage first
+      const localData = localStorage.getItem(key);
+      if (localData) {
+        const parsed = JSON.parse(localData);
+        console.log(`📁 Loaded locally: ${key}`);
+        return parsed;
+      }
+      
+      // Fallback to Firebase if user is logged in
+      if (window.firebaseAuth?.currentUser) {
+        console.log(`☁️ Loading from Firebase: ${key}`);
+        const firebaseData = await loadFromFirebase(key);
+        if (firebaseData) {
+          // Save back to localStorage for faster access
+          localStorage.setItem(key, JSON.stringify(firebaseData));
+          console.log(`✅ Restored from Firebase: ${key}`);
+          return firebaseData;
+        }
+      }
+      
+      return defaultValue;
+    } catch (error) {
+      console.error(`❌ Failed to load ${key}:`, error);
+      return defaultValue;
+    }
+  }
 
-    // Safe storage operations
-    const safeGet = (key, defaultValue = null) => {
+  // Sync specific data to Firebase
+  async function syncToFirebase(key, data) {
+    if (!window.firebaseAuth?.currentUser || !window.CloudDataManager) {
+      console.log('⏳ Queueing for sync:', key);
+      syncQueue.push({ key, data, action: 'save' });
+      return false;
+    }
+
+    try {
+      const userId = window.firebaseAuth.currentUser.uid;
+      const firebaseKey = getFirebaseKey(key);
+      
+      if (key === 'habbt_profile_data') {
+        await window.CloudDataManager.saveProfile(userId, data);
+      } else if (key === 'habbt_user_goals') {
+        // Save goals as part of profile
+        const existingProfile = await window.CloudDataManager.loadProfile(userId) || {};
+        await window.CloudDataManager.saveProfile(userId, { ...existingProfile, goals: data });
+      } else if (key.startsWith('habbt_meals_')) {
+        const date = key.replace('habbt_meals_', '');
+        await window.CloudDataManager.saveMealData(userId, date, data);
+      } else if (key.startsWith('habbt_journal_')) {
+        const date = key.replace('habbt_journal_', '');
+        await saveJournalToFirebase(userId, date, data);
+      } else {
+        // Generic data save
+        await saveGenericDataToFirebase(userId, firebaseKey, data);
+      }
+      
+      console.log(`☁️ Synced to Firebase: ${key}`);
+      lastSyncTime = new Date().toISOString();
+      return true;
+    } catch (error) {
+      console.error(`❌ Firebase sync failed for ${key}:`, error);
+      syncQueue.push({ key, data, action: 'save' });
+      return false;
+    }
+  }
+
+  // Load specific data from Firebase
+  async function loadFromFirebase(key) {
+    if (!window.firebaseAuth?.currentUser || !window.CloudDataManager) {
+      return null;
+    }
+
+    try {
+      const userId = window.firebaseAuth.currentUser.uid;
+      
+      if (key === 'habbt_profile_data') {
+        return await window.CloudDataManager.loadProfile(userId);
+      } else if (key === 'habbt_user_goals') {
+        const profile = await window.CloudDataManager.loadProfile(userId);
+        return profile?.goals || null;
+      } else if (key.startsWith('habbt_meals_')) {
+        const date = key.replace('habbt_meals_', '');
+        return await window.CloudDataManager.loadMealData(userId, date);
+      } else if (key.startsWith('habbt_journal_')) {
+        const date = key.replace('habbt_journal_', '');
+        return await loadJournalFromFirebase(userId, date);
+      } else {
+        const firebaseKey = getFirebaseKey(key);
+        return await loadGenericDataFromFirebase(userId, firebaseKey);
+      }
+    } catch (error) {
+      console.error(`❌ Firebase load failed for ${key}:`, error);
+      return null;
+    }
+  }
+
+  // Journal-specific Firebase functions
+  async function saveJournalToFirebase(userId, date, journalData) {
+    const docRef = window.firebaseUtils.doc(window.firebaseDB, 'userJournals', `${userId}_${date}`);
+    await window.firebaseUtils.setDoc(docRef, {
+      ...journalData,
+      userId,
+      date,
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  async function loadJournalFromFirebase(userId, date) {
+    const docRef = window.firebaseUtils.doc(window.firebaseDB, 'userJournals', `${userId}_${date}`);
+    const docSnap = await window.firebaseUtils.getDoc(docRef);
+    return docSnap.exists() ? docSnap.data() : null;
+  }
+
+  // Generic data Firebase functions
+  async function saveGenericDataToFirebase(userId, firebaseKey, data) {
+    const docRef = window.firebaseUtils.doc(window.firebaseDB, 'userData', `${userId}_${firebaseKey}`);
+    await window.firebaseUtils.setDoc(docRef, {
+      data,
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  async function loadGenericDataFromFirebase(userId, firebaseKey) {
+    const docRef = window.firebaseUtils.doc(window.firebaseDB, 'userData', `${userId}_${firebaseKey}`);
+    const docSnap = await window.firebaseUtils.getDoc(docRef);
+    return docSnap.exists() ? docSnap.data().data : null;
+  }
+
+  // Utility functions
+  function getFirebaseKey(localKey) {
+    return KEY_MAPPING[localKey] || localKey.replace('habbt_', '');
+  }
+
+  function handleOnline() {
+    console.log('🌐 Connection restored - processing sync queue...');
+    isOnline = true;
+    processSyncQueue();
+  }
+
+  function handleOffline() {
+    console.log('📵 Connection lost - queuing changes...');
+    isOnline = false;
+  }
+
+  function handleStorageChange(event) {
+    // Sync changes from other tabs
+    if (event.key?.startsWith('habbt_') && event.newValue) {
+      try {
+        const data = JSON.parse(event.newValue);
+        syncToFirebase(event.key, data);
+      } catch (error) {
+        console.warn('Failed to sync storage change:', error);
+      }
+    }
+  }
+
+  // Process queued sync operations
+  async function processSyncQueue() {
+    if (!isOnline || !window.firebaseAuth?.currentUser || syncQueue.length === 0) {
+      return;
+    }
+
+    console.log(`🔄 Processing ${syncQueue.length} queued operations...`);
+    const operations = [...syncQueue];
+    syncQueue = [];
+
+    for (const operation of operations) {
+      try {
+        if (operation.action === 'save') {
+          await syncToFirebase(operation.key, operation.data);
+        }
+      } catch (error) {
+        console.error('Failed to process queued operation:', error);
+        syncQueue.push(operation); // Re-queue failed operations
+      }
+    }
+  }
+
+  // Periodic sync to catch any missed changes
+  async function performPeriodicSync() {
+    if (!isOnline || !window.firebaseAuth?.currentUser) {
+      return;
+    }
+
+    // Sync any unsaved localStorage changes
+    const habbtKeys = Object.keys(localStorage).filter(key => key.startsWith('habbt_'));
+    for (const key of habbtKeys) {
+      try {
+        const data = JSON.parse(localStorage.getItem(key));
+        // Only sync if data is recent (to avoid unnecessary uploads)
+        const shouldSync = !lastSyncTime || (Date.now() - new Date(lastSyncTime).getTime()) > 300000; // 5 minutes
+        if (shouldSync) {
+          await syncToFirebase(key, data);
+        }
+      } catch (error) {
+        // Skip invalid JSON
+      }
+    }
+  }
+
+  // Full data restore from Firebase
+  async function restoreAllDataFromFirebase() {
+    if (!window.firebaseAuth?.currentUser) {
+      console.log('❌ No user logged in for restore');
+      return false;
+    }
+
+    try {
+      console.log('🔄 Restoring all data from Firebase...');
+      const userId = window.firebaseAuth.currentUser.uid;
+
+      // Restore profile and goals
+      const profile = await window.CloudDataManager.loadProfile(userId);
+      if (profile) {
+        await saveData('habbt_profile_data', profile, true);
+        if (profile.goals) {
+          await saveData('habbt_user_goals', profile.goals, true);
+        }
+      }
+
+      // Restore recent meal data (last 30 days)
+      const today = new Date();
+      for (let i = 0; i < 30; i++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        const mealData = await window.CloudDataManager.loadMealData(userId, dateStr);
+        if (mealData) {
+          await saveData(`habbt_meals_${dateStr}`, mealData, true);
+        }
+
+        const journalData = await loadJournalFromFirebase(userId, dateStr);
+        if (journalData) {
+          await saveData(`habbt_journal_${dateStr}`, journalData, true);
+        }
+      }
+
+      console.log('✅ Data restore completed');
+      return true;
+    } catch (error) {
+      console.error('❌ Data restore failed:', error);
+      return false;
+    }
+  }
+
+  // Enhanced wrapper for existing localStorage functions
+  function wrapLocalStorage() {
+    const originalSetItem = localStorage.setItem.bind(localStorage);
+    
+    localStorage.setItem = function(key, value) {
+      originalSetItem(key, value);
+      
+      // Auto-sync Habbt data to Firebase
+      if (key.startsWith('habbt_')) {
         try {
-            const value = localStorage.getItem(key);
-            return value ? JSON.parse(value) : defaultValue;
+          const data = JSON.parse(value);
+          syncToFirebase(key, data);
         } catch (error) {
-            console.error(`Failed to get ${key}:`, error);
-            return defaultValue;
+          // Skip non-JSON values
         }
+      }
     };
+  }
 
-    const safeSet = (key, value) => {
-        try {
-            localStorage.setItem(key, JSON.stringify(value));
-            console.log(`✅ Saved ${key}:`, value);
-            return true;
-        } catch (error) {
-            console.error(`Failed to set ${key}:`, error);
-            return false;
-        }
-    };
-
-    // Unified goal management
-    const getGoals = () => {
-        // Try multiple sources and merge
-        const goals = safeGet(STORAGE_KEYS.USER_GOALS, {});
-        const profile = safeGet(STORAGE_KEYS.USER_PROFILE, {});
-        
-        // Merge and prioritize goals over profile
-        const mergedGoals = {
-            ...DEFAULT_GOALS,
-            ...profile, // Profile might have goal data
-            ...goals   // Goals take priority
-        };
-
-        // Ensure we have the right property names
-        const finalGoals = {
-            calories: mergedGoals.calories || mergedGoals.dailyCalories || DEFAULT_GOALS.calories,
-            protein: mergedGoals.protein || DEFAULT_GOALS.protein,
-            carbs: mergedGoals.carbs || mergedGoals.carbohydrates || DEFAULT_GOALS.carbs,
-            fat: mergedGoals.fat || DEFAULT_GOALS.fat
-        };
-
-        console.log('📊 Unified goals loaded:', finalGoals);
-        return finalGoals;
-    };
-
-    const setGoals = (newGoals) => {
-        // Get existing goals and merge
-        const currentGoals = getGoals();
-        const updatedGoals = {
-            ...currentGoals,
-            ...newGoals
-        };
-
-        // Save to goals storage
-        const success = safeSet(STORAGE_KEYS.USER_GOALS, updatedGoals);
-        
-        if (success) {
-            // Notify all tabs about the update
-            broadcastGoalsUpdate(updatedGoals);
-            console.log('🎯 Goals updated successfully:', updatedGoals);
-        }
-        
-        return success;
-    };
-
-    // Profile management
-    const getProfile = () => {
-        const profile = safeGet(STORAGE_KEYS.USER_PROFILE, {});
-        return {
-            ...DEFAULT_PROFILE,
-            ...profile
-        };
-    };
-
-    const setProfile = (newProfile) => {
-        const currentProfile = getProfile();
-        const updatedProfile = {
-            ...currentProfile,
-            ...newProfile
-        };
-        
-        return safeSet(STORAGE_KEYS.USER_PROFILE, updatedProfile);
-    };
-
-    // Meal data management
-    const getMealData = (date) => {
-        const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0];
-        const key = STORAGE_KEYS.MEALS + dateStr;
-        
-        return safeGet(key, {
-            breakfast: [],
-            lunch: [],
-            dinner: [],
-            snacks: []
-        });
-    };
-
-    const setMealData = (date, mealData) => {
-        const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0];
-        const key = STORAGE_KEYS.MEALS + dateStr;
-        
-        return safeSet(key, mealData);
-    };
-
-    // Journal data management
-    const getJournalData = (date) => {
-        const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0];
-        const key = STORAGE_KEYS.JOURNAL + dateStr;
-        
-        return safeGet(key, {});
-    };
-
-    const setJournalData = (date, journalData) => {
-        const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0];
-        const key = STORAGE_KEYS.JOURNAL + dateStr;
-        
-        return safeSet(key, {
-            ...journalData,
-            date: dateStr,
-            timestamp: new Date().toISOString()
-        });
-    };
-
-    // Activity data management
-    const getActivityData = (date) => {
-        const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0];
-        const key = STORAGE_KEYS.ACTIVITY + dateStr;
-        
-        return safeGet(key, {});
-    };
-
-    const setActivityData = (date, activityData) => {
-        const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0];
-        const key = STORAGE_KEYS.ACTIVITY + dateStr;
-        
-        return safeSet(key, {
-            ...activityData,
-            date: dateStr,
-            timestamp: new Date().toISOString()
-        });
-    };
-
-    // Cross-tab communication
-    const broadcastGoalsUpdate = (goals) => {
-        // Use storage events to notify other tabs
-        window.dispatchEvent(new CustomEvent('fueliq-goals-updated', {
-            detail: { goals }
-        }));
-    };
-
-    // Listen for goal updates from other tabs
-    const onGoalsUpdated = (callback) => {
-        window.addEventListener('fueliq-goals-updated', (event) => {
-            callback(event.detail.goals);
-        });
-    };
-
-    // Data validation
-    const validateGoals = (goals) => {
-        const errors = [];
-        
-        if (!goals.calories || goals.calories < 800 || goals.calories > 5000) {
-            errors.push('Calories must be between 800-5000');
-        }
-        
-        if (!goals.protein || goals.protein < 10 || goals.protein > 300) {
-            errors.push('Protein must be between 10-300g');
-        }
-        
-        if (!goals.carbs || goals.carbs < 20 || goals.carbs > 500) {
-            errors.push('Carbs must be between 20-500g');
-        }
-        
-        if (!goals.fat || goals.fat < 10 || goals.fat > 200) {
-            errors.push('Fat must be between 10-200g');
-        }
-        
-        return {
-            isValid: errors.length === 0,
-            errors
-        };
-    };
-
-    // Data backup and restore
-    const backupAllData = () => {
-        try {
-            const backup = {
-                timestamp: new Date().toISOString(),
-                goals: getGoals(),
-                profile: getProfile(),
-                meals: {},
-                journals: {},
-                activities: {}
-            };
-            
-            // Get all dated data
-            const allKeys = Object.keys(localStorage).filter(key => key.startsWith('fueliq_'));
-            allKeys.forEach(key => {
-                if (key.includes('meals_')) {
-                    const date = key.split('meals_')[1];
-                    backup.meals[date] = safeGet(key, {});
-                } else if (key.includes('journal_')) {
-                    const date = key.split('journal_')[1];
-                    backup.journals[date] = safeGet(key, {});
-                } else if (key.includes('activity_')) {
-                    const date = key.split('activity_')[1];
-                    backup.activities[date] = safeGet(key, {});
-                }
-            });
-            
-            return backup;
-        } catch (error) {
-            console.error('Backup failed:', error);
-            return null;
-        }
-    };
-
-    const restoreFromBackup = (backup) => {
-        try {
-            // Restore goals and profile
-            setGoals(backup.goals);
-            setProfile(backup.profile);
-            
-            // Restore meal data
-            Object.entries(backup.meals || {}).forEach(([date, data]) => {
-                setMealData(date, data);
-            });
-            
-            // Restore journal data
-            Object.entries(backup.journals || {}).forEach(([date, data]) => {
-                setJournalData(date, data);
-            });
-            
-            // Restore activity data
-            Object.entries(backup.activities || {}).forEach(([date, data]) => {
-                setActivityData(date, data);
-            });
-            
-            console.log('✅ Data restored successfully');
-            return true;
-        } catch (error) {
-            console.error('Restore failed:', error);
-            return false;
-        }
-    };
-
-    // Debug utilities
-    const debugStorage = () => {
-        console.log('=== FUELIQ STORAGE DEBUG ===');
-        console.log('Goals:', getGoals());
-        console.log('Profile:', getProfile());
-        
-        const allKeys = Object.keys(localStorage).filter(key => key.startsWith('fueliq_'));
-        console.log('All FuelIQ keys:', allKeys);
-        
-        return {
-            goals: getGoals(),
-            profile: getProfile(),
-            allKeys
-        };
-    };
-
-    // Initialize data manager
-    const init = () => {
-        console.log('🚀 FuelIQ Data Manager initialized');
-        
-        // Ensure goals exist
-        const goals = getGoals();
-        const profile = getProfile();
-        
-        // Auto-save goals if they don't exist
-        if (!safeGet(STORAGE_KEYS.USER_GOALS)) {
-            setGoals(goals);
-        }
-        
-        return {
-            goals,
-            profile
-        };
-    };
-
-    // Public API
-    return {
-        // Goal management
-        getGoals,
-        setGoals,
-        onGoalsUpdated,
-        validateGoals,
-        
-        // Profile management
-        getProfile,
-        setProfile,
-        
-        // Data management
-        getMealData,
-        setMealData,
-        getJournalData,
-        setJournalData,
-        getActivityData,
-        setActivityData,
-        
-        // Utility
-        backupAllData,
-        restoreFromBackup,
-        debugStorage,
-        init,
-        
-        // Constants
-        STORAGE_KEYS,
-        DEFAULT_GOALS,
-        DEFAULT_PROFILE
-    };
+  // Public API
+  return {
+    init,
+    saveData,
+    loadData,
+    syncToFirebase,
+    loadFromFirebase,
+    restoreAllDataFromFirebase,
+    processSyncQueue,
+    
+    // Status
+    getStatus: () => ({
+      isOnline,
+      queueLength: syncQueue.length,
+      lastSync: lastSyncTime,
+      hasUser: !!window.firebaseAuth?.currentUser
+    }),
+    
+    // Debug
+    debugSync: () => {
+      console.log('=== HABBT SYNC DEBUG ===');
+      console.log('Online:', isOnline);
+      console.log('Queue length:', syncQueue.length);
+      console.log('Last sync:', lastSyncTime);
+      console.log('Firebase user:', window.firebaseAuth?.currentUser?.email);
+      console.log('Sync queue:', syncQueue);
+    }
+  };
 })();
 
-// Auto-initialize
-window.FuelIQDataManager.init();
+// Auto-initialize when Firebase is ready
+function initSyncWhenReady() {
+  if (window.firebaseAuth && window.firebaseDB) {
+    window.HabbtSyncManager.init();
+    
+    // Restore data on login
+    window.firebaseUtils.onAuthStateChanged(window.firebaseAuth, async (user) => {
+      if (user) {
+        console.log('👤 User logged in - checking for data restore...');
+        
+        // Check if we need to restore data (localStorage mostly empty)
+        const hasLocalData = localStorage.getItem('habbt_profile_data') || localStorage.getItem('habbt_user_goals');
+        
+        if (!hasLocalData) {
+          console.log('📥 Restoring data from Firebase...');
+          await window.HabbtSyncManager.restoreAllDataFromFirebase();
+          
+          // Trigger a refresh of the current view to show restored data
+          if (window.setCurrentView && typeof window.setCurrentView === 'function') {
+            const currentView = document.querySelector('.bg-teal-500')?.textContent?.toLowerCase() || 'dashboard';
+            setTimeout(() => window.setCurrentView(currentView), 1000);
+          }
+        }
+      }
+    });
+  } else {
+    setTimeout(initSyncWhenReady, 100);
+  }
+}
 
-console.log('✅ Unified FuelIQ Data Manager loaded - prevents goal resets!');
+// Start initialization
+initSyncWhenReady();
+
+console.log('🔄 Habbt Firebase Sync Manager loaded!');
