@@ -1,4 +1,4 @@
-// Habbt Profile Tab - COMPLETE ENHANCED VERSION with Goal Customization
+// Habbt Profile Tab - FULL FEATURED VERSION with Beautiful Blue-Teal Design
 (function() {
     // Prevent multiple loading
     if (window.HabbtProfile || window.FuelIQProfile) {
@@ -115,11 +115,10 @@
                 primaryGoal: 'fat_loss',
                 targetWeight: '',
                 targetDate: '',
-                calories: 2300,
-                protein: 175,
-                carbs: 230,
-                fat: 77,
-                isCustom: false
+                calories: 2000,
+                protein: 150,
+                carbs: 250,
+                fat: 67
             },
             dietary: {
                 restrictions: [],
@@ -151,6 +150,13 @@
         return age;
     };
 
+    const calculateBirthday = (age) => {
+        if (!age) return '';
+        const today = new Date();
+        const birthYear = today.getFullYear() - parseInt(age);
+        return `${birthYear}-01-01`;
+    };
+
     const formatDate = (date) => {
         return date.toISOString().split('T')[0];
     };
@@ -178,10 +184,11 @@
         // Validate inputs to prevent NaN
         if (!age || !weight || !height || isNaN(age) || isNaN(weight) || isNaN(height)) {
             return {
-                calories: 2300,
-                protein: 175,
-                carbs: 230,
-                fat: 77
+                ...profile.goals,
+                calories: profile.goals.calories || 2000,
+                protein: profile.goals.protein || 150,
+                carbs: profile.goals.carbs || 250,
+                fat: profile.goals.fat || 67
             };
         }
         
@@ -207,7 +214,7 @@
         const tdee = bmr * (activityMultipliers[activityLevel] || 1.55);
         
         const goalAdjustments = {
-            fat_loss: -400,
+            fat_loss: -500,
             muscle_gain: 300,
             maintenance: 0,
             recomp: -200
@@ -215,12 +222,11 @@
         
         const targetCalories = tdee + (goalAdjustments[primaryGoal] || 0);
         
-        // Adjusted protein calculation for better results
-        const proteinPerKg = primaryGoal === 'muscle_gain' ? 2.4 : primaryGoal === 'fat_loss' ? 2.2 : 2.0;
+        const proteinPerKg = primaryGoal === 'muscle_gain' ? 2.2 : primaryGoal === 'fat_loss' ? 2.0 : 1.8;
         const proteinGrams = (weightKg * proteinPerKg);
         const proteinCalories = proteinGrams * 4;
         
-        const fatPercentage = primaryGoal === 'fat_loss' ? 0.25 : 0.28;
+        const fatPercentage = primaryGoal === 'fat_loss' ? 0.25 : 0.30;
         const fatCalories = targetCalories * fatPercentage;
         const fatGrams = fatCalories / 9;
         
@@ -228,6 +234,7 @@
         const carbGrams = carbCalories / 4;
         
         return {
+            ...profile.goals,
             calories: Math.round(targetCalories),
             protein: Math.round(proteinGrams),
             carbs: Math.round(carbGrams),
@@ -257,6 +264,15 @@
             detail: { tab: tabName }
         }));
         
+        // Method 4: Simulate tab click
+        const tabButtons = document.querySelectorAll(`[data-tab="${tabName}"], button[onclick*="${tabName}"]`);
+        if (tabButtons.length > 0) {
+            console.log('🖱️ Simulating tab click');
+            tabButtons[0].click();
+            return true;
+        }
+        
+        console.log('❌ All navigation methods failed');
         return false;
     };
 
@@ -279,6 +295,7 @@
         const weightTrend = recentWeights.length >= 2 ? 
             recentWeights[0].weight - recentWeights[1].weight : 0;
 
+        // Personalized message for habit building
         const getPersonalizedMessage = () => {
             const name = profile.personal.name;
             const goal = profile.goals.primaryGoal;
@@ -297,6 +314,7 @@
                 `${profile.personal.name ? `${profile.personal.name}'s` : 'Your'} Quick Stats`
             ),
             
+            // Personalized message with Habbt branding
             React.createElement('div', { className: 'bg-gradient-to-r from-blue-50 to-teal-50 rounded-lg p-3 mb-4 border-l-4 border-blue-500' },
                 React.createElement('p', { className: 'text-sm text-blue-800 font-medium' }, 
                     getPersonalizedMessage()
@@ -330,6 +348,7 @@
                 )
             ),
 
+            // Quick Weight Entry with Habbt colors
             React.createElement('form', { onSubmit: handleQuickWeight, className: 'flex gap-2' },
                 React.createElement('input', {
                     type: 'number',
@@ -349,7 +368,7 @@
         );
     };
 
-    // Basic Info Component
+    // Basic Info Component with Habbt styling
     const BasicInfo = ({ profile, onChange }) => {
         const handleChange = (field, value) => {
             if (field.includes('.')) {
@@ -432,15 +451,8 @@
         );
     };
 
-    // Enhanced Goals & Activity Component
+    // Goals & Activity Component with Habbt design and timeline
     const GoalsActivity = ({ profile, onChange }) => {
-        const [goalMethod, setGoalMethod] = React.useState(
-            profile.goals.isCustom ? 'custom' : 'calculated'
-        );
-        const [showTargetWeight, setShowTargetWeight] = React.useState(
-            Boolean(profile.goals.targetWeight)
-        );
-
         const handleChange = (field, value) => {
             const [section, key] = field.split('.');
             onChange({
@@ -452,87 +464,8 @@
             });
         };
 
-        const handleGoalChange = (goalType, value) => {
-            const numValue = parseInt(value) || 0;
-            onChange({
-                ...profile,
-                goals: {
-                    ...profile.goals,
-                    [goalType]: numValue,
-                    isCustom: true
-                }
-            });
-        };
-
-        const calculateSuggestedGoals = () => {
-            return calculateGoals(profile);
-        };
-
-        const handleGoalMethodChange = (method) => {
-            setGoalMethod(method);
-            
-            if (method === 'calculated') {
-                const calculatedGoals = calculateSuggestedGoals();
-                onChange({
-                    ...profile,
-                    goals: {
-                        ...profile.goals,
-                        ...calculatedGoals,
-                        isCustom: false
-                    }
-                });
-            } else {
-                onChange({
-                    ...profile,
-                    goals: {
-                        ...profile.goals,
-                        isCustom: true
-                    }
-                });
-            }
-        };
-
-        const applyGoalPreset = (presetType) => {
-            const currentGoals = calculateSuggestedGoals();
-            let calories, protein, carbs, fat;
-            
-            switch(presetType) {
-                case 'aggressive':
-                    calories = Math.round(currentGoals.calories * 0.85);
-                    protein = Math.round(parseFloat(profile.current.weight) * 1.2);
-                    carbs = Math.round(calories * 0.25 / 4);
-                    fat = Math.round((calories - (protein * 4) - (carbs * 4)) / 9);
-                    break;
-                case 'moderate':
-                    calories = Math.round(currentGoals.calories * 0.9);
-                    protein = Math.round(parseFloat(profile.current.weight) * 1.0);
-                    carbs = Math.round(calories * 0.35 / 4);
-                    fat = Math.round((calories - (protein * 4) - (carbs * 4)) / 9);
-                    break;
-                case 'maintenance':
-                    calories = currentGoals.calories;
-                    protein = Math.round(parseFloat(profile.current.weight) * 0.8);
-                    carbs = Math.round(calories * 0.45 / 4);
-                    fat = Math.round((calories - (protein * 4) - (carbs * 4)) / 9);
-                    break;
-            }
-            
-            onChange({
-                ...profile,
-                goals: {
-                    ...profile.goals,
-                    calories,
-                    protein,
-                    carbs,
-                    fat,
-                    isCustom: true
-                }
-            });
-        };
-
+        // Calculate goal timeline
         const getGoalTimeline = () => {
-            if (!showTargetWeight) return null;
-            
             const currentWeight = parseFloat(profile.current.weight);
             const targetWeight = parseFloat(profile.goals.targetWeight);
             const targetDate = profile.goals.targetDate;
@@ -561,25 +494,7 @@
             };
         };
 
-        const getPercentages = () => {
-            const { calories, protein, carbs, fat } = profile.goals;
-            const proteinCals = protein * 4;
-            const carbsCals = carbs * 4;
-            const fatCals = fat * 9;
-            const totalMacroCals = proteinCals + carbsCals + fatCals;
-            
-            if (totalMacroCals === 0) return { protein: 0, carbs: 0, fat: 0 };
-            
-            return {
-                protein: Math.round((proteinCals / totalMacroCals) * 100),
-                carbs: Math.round((carbsCals / totalMacroCals) * 100),
-                fat: Math.round((fatCals / totalMacroCals) * 100)
-            };
-        };
-
-        const suggestedGoals = calculateSuggestedGoals();
         const timeline = getGoalTimeline();
-        const percentages = getPercentages();
 
         return React.createElement('div', { className: 'bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 mb-6' },
             React.createElement('h3', { className: 'text-xl font-bold text-gray-800 mb-4 flex items-center' },
@@ -587,7 +502,6 @@
                 'Goals & Activity'
             ),
             
-            // Basic activity and goal selection
             React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4 mb-6' },
                 React.createElement('div', null,
                     React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Activity Level'),
@@ -616,284 +530,76 @@
                         React.createElement('option', { value: 'maintenance' }, 'Maintenance'),
                         React.createElement('option', { value: 'recomp' }, 'Body Recomposition')
                     )
-                )
-            ),
-
-            // Optional Target Weight Section
-            React.createElement('div', { className: 'bg-gradient-to-r from-blue-50 to-teal-50 border-2 border-blue-200 rounded-2xl p-6 mb-6' },
-                React.createElement('h4', { className: 'text-lg font-bold text-blue-800 mb-4 flex items-center' },
-                    React.createElement('span', { className: 'text-blue-600 mr-3' }, '⚡'),
-                    'Target Weight & Timeline (Optional)'
                 ),
                 
-                React.createElement('div', { className: 'flex items-center mb-4' },
+                React.createElement('div', null,
+                    React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Target Weight (lbs)'),
                     React.createElement('input', {
-                        type: 'checkbox',
-                        id: 'showTargetWeight',
-                        checked: showTargetWeight,
-                        onChange: (e) => setShowTargetWeight(e.target.checked),
-                        className: 'mr-4 w-5 h-5 text-blue-600 focus:ring-blue-500 border-2 border-gray-300 rounded'
-                    }),
-                    React.createElement('label', { 
-                        htmlFor: 'showTargetWeight',
-                        className: 'text-lg font-medium text-gray-800 cursor-pointer' 
-                    }, 'I have a specific target weight and timeline')
+                        type: 'number',
+                        value: profile.goals.targetWeight,
+                        onChange: (e) => handleChange('goals.targetWeight', e.target.value),
+                        className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200',
+                        placeholder: 'Goal weight'
+                    })
                 ),
                 
-                showTargetWeight && React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
-                    React.createElement('div', null,
-                        React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Target Weight (lbs)'),
-                        React.createElement('input', {
-                            type: 'number',
-                            value: profile.goals.targetWeight,
-                            onChange: (e) => handleChange('goals.targetWeight', e.target.value),
-                            className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200',
-                            placeholder: 'Goal weight'
-                        })
-                    ),
-                    
-                    React.createElement('div', null,
-                        React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Target Date'),
-                        React.createElement('input', {
-                            type: 'date',
-                            value: profile.goals.targetDate,
-                            onChange: (e) => handleChange('goals.targetDate', e.target.value),
-                            className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200',
-                            min: formatDate(new Date())
-                        })
-                    )
-                ),
-                
-                !showTargetWeight && React.createElement('p', { className: 'text-sm text-blue-600 bg-white/50 p-3 rounded-xl' },
-                    '💡 Focus on building healthy habits rather than specific targets - a sustainable approach!'
+                React.createElement('div', null,
+                    React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Target Date'),
+                    React.createElement('input', {
+                        type: 'date',
+                        value: profile.goals.targetDate,
+                        onChange: (e) => handleChange('goals.targetDate', e.target.value),
+                        className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200',
+                        min: formatDate(new Date())
+                    })
                 )
             ),
 
-            // Goal Method Selection
-            React.createElement('div', { className: 'mb-6' },
-                React.createElement('h4', { className: 'text-lg font-bold text-gray-800 mb-4' }, 'How would you like to set your nutrition goals?'),
-                
-                React.createElement('div', { className: 'space-y-3' },
-                    React.createElement('label', { className: 'flex items-start p-4 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-blue-300 hover:bg-blue-50/50 transition-all' },
-                        React.createElement('input', {
-                            type: 'radio',
-                            name: 'goalMethod',
-                            value: 'calculated',
-                            checked: goalMethod === 'calculated',
-                            onChange: () => handleGoalMethodChange('calculated'),
-                            className: 'mt-1 mr-4 text-blue-600 focus:ring-blue-500 w-5 h-5'
-                        }),
-                        React.createElement('div', null,
-                            React.createElement('div', { className: 'text-lg font-bold text-gray-800' }, 'Use Calculated Goals'),
-                            React.createElement('div', { className: 'text-gray-600 mb-2' }, 'Based on your profile and primary goal'),
-                            React.createElement('div', { className: 'text-blue-600 font-bold' },
-                                `Recommended: ${suggestedGoals.calories} cal • ${suggestedGoals.protein}g protein • ${suggestedGoals.carbs}g carbs • ${suggestedGoals.fat}g fat`
-                            )
-                        )
-                    ),
-                    
-                    React.createElement('label', { className: 'flex items-start p-4 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-blue-300 hover:bg-blue-50/50 transition-all' },
-                        React.createElement('input', {
-                            type: 'radio',
-                            name: 'goalMethod',
-                            value: 'custom',
-                            checked: goalMethod === 'custom',
-                            onChange: () => handleGoalMethodChange('custom'),
-                            className: 'mt-1 mr-4 text-blue-600 focus:ring-blue-500 w-5 h-5'
-                        }),
-                        React.createElement('div', null,
-                            React.createElement('div', { className: 'text-lg font-bold text-gray-800' }, 'Set Custom Goals'),
-                            React.createElement('div', { className: 'text-gray-600' }, 'Fine-tune your targets based on your preferences')
-                        )
-                    )
-                )
-            ),
-
-            // Goal Display Section
-            goalMethod === 'calculated' 
-                ? React.createElement('div', { className: 'p-4 bg-gradient-to-r from-blue-50 to-teal-50 rounded-lg border border-blue-200' },
-                    React.createElement('h4', { className: 'font-bold text-blue-800 mb-3' }, '📊 Your Calculated Daily Targets'),
-                    React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-4' },
-                        React.createElement('div', null,
-                            React.createElement('div', { className: 'text-2xl font-bold text-blue-600' }, profile.goals.calories || '--'),
-                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Calories')
-                        ),
-                        React.createElement('div', null,
-                            React.createElement('div', { className: 'text-2xl font-bold text-green-600' }, `${profile.goals.protein || '--'}g`),
-                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Protein')
-                        ),
-                        React.createElement('div', null,
-                            React.createElement('div', { className: 'text-2xl font-bold text-blue-600' }, `${profile.goals.carbs || '--'}g`),
-                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Carbs')
-                        ),
-                        React.createElement('div', null,
-                            React.createElement('div', { className: 'text-2xl font-bold text-orange-600' }, `${profile.goals.fat || '--'}g`),
-                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Fat')
-                        )
-                    ),
-                    React.createElement('p', { className: 'text-sm text-blue-600 bg-white/50 p-3 rounded-xl' },
-                        `Based on: ${calculateAge(profile.personal.birthday) || 'X'}-year-old ${profile.current.activityLevel || 'moderate'} ${profile.personal.gender || 'person'}, ${profile.personal.height || 'X'}" tall, ${profile.current.weight || 'X'} lbs, ${profile.goals.primaryGoal || 'fat loss'} goal`
-                    )
-                )
-                : React.createElement('div', { className: 'bg-gradient-to-r from-teal-50 to-blue-50 border-2 border-teal-200 rounded-2xl p-6' },
-                    React.createElement('h4', { className: 'text-lg font-bold text-teal-800 mb-4' }, '🎯 Your Custom Goals'),
-                    
-                    // Goal Sliders
-                    React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6 mb-6' },
-                        React.createElement('div', null,
-                            React.createElement('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Calories (1,200 - 4,000)'),
-                            React.createElement('input', {
-                                type: 'number',
-                                value: profile.goals.calories || '',
-                                onChange: (e) => handleGoalChange('calories', e.target.value),
-                                min: 1200,
-                                max: 4000,
-                                className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition-all duration-200 mb-2'
-                            }),
-                            React.createElement('input', {
-                                type: 'range',
-                                value: profile.goals.calories || 2000,
-                                onChange: (e) => handleGoalChange('calories', e.target.value),
-                                min: 1200,
-                                max: 4000,
-                                className: 'w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer'
-                            })
-                        ),
-                        
-                        React.createElement('div', null,
-                            React.createElement('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Protein (50 - 300g)'),
-                            React.createElement('input', {
-                                type: 'number',
-                                value: profile.goals.protein || '',
-                                onChange: (e) => handleGoalChange('protein', e.target.value),
-                                min: 50,
-                                max: 300,
-                                className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition-all duration-200 mb-2'
-                            }),
-                            React.createElement('input', {
-                                type: 'range',
-                                value: profile.goals.protein || 150,
-                                onChange: (e) => handleGoalChange('protein', e.target.value),
-                                min: 50,
-                                max: 300,
-                                className: 'w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer'
-                            }),
-                            profile.current.weight && React.createElement('div', { className: 'text-xs text-gray-600 mt-1 bg-white/70 p-2 rounded' },
-                                `~${(profile.goals.protein / parseFloat(profile.current.weight)).toFixed(1)}g per lb bodyweight`
-                            )
-                        ),
-                        
-                        React.createElement('div', null,
-                            React.createElement('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Carbs (50 - 500g)'),
-                            React.createElement('input', {
-                                type: 'number',
-                                value: profile.goals.carbs || '',
-                                onChange: (e) => handleGoalChange('carbs', e.target.value),
-                                min: 50,
-                                max: 500,
-                                className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition-all duration-200 mb-2'
-                            }),
-                            React.createElement('input', {
-                                type: 'range',
-                                value: profile.goals.carbs || 250,
-                                onChange: (e) => handleGoalChange('carbs', e.target.value),
-                                min: 50,
-                                max: 500,
-                                className: 'w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer'
-                            })
-                        ),
-                        
-                        React.createElement('div', null,
-                            React.createElement('label', { className: 'block text-sm font-bold text-gray-700 mb-2' }, 'Fat (30 - 200g)'),
-                            React.createElement('input', {
-                                type: 'number',
-                                value: profile.goals.fat || '',
-                                onChange: (e) => handleGoalChange('fat', e.target.value),
-                                min: 30,
-                                max: 200,
-                                className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/20 transition-all duration-200 mb-2'
-                            }),
-                            React.createElement('input', {
-                                type: 'range',
-                                value: profile.goals.fat || 67,
-                                onChange: (e) => handleGoalChange('fat', e.target.value),
-                                min: 30,
-                                max: 200,
-                                className: 'w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer'
-                            })
-                        )
-                    ),
-
-                    // Macro Breakdown
-                    React.createElement('div', { className: 'bg-white/80 rounded-2xl border border-gray-200 p-4 mb-6' },
-                        React.createElement('h5', { className: 'font-bold text-gray-800 mb-3' }, 'Macro Breakdown'),
-                        React.createElement('div', { className: 'grid grid-cols-3 gap-4 text-center' },
-                            React.createElement('div', null,
-                                React.createElement('div', { className: 'text-2xl font-bold text-green-600' }, `${percentages.protein}%`),
-                                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Protein')
-                            ),
-                            React.createElement('div', null,
-                                React.createElement('div', { className: 'text-2xl font-bold text-blue-600' }, `${percentages.carbs}%`),
-                                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Carbs')
-                            ),
-                            React.createElement('div', null,
-                                React.createElement('div', { className: 'text-2xl font-bold text-orange-600' }, `${percentages.fat}%`),
-                                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Fat')
-                            )
-                        )
-                    ),
-
-                    // Quick Presets
+            // Calculated Goals Display with Habbt blue-teal theme
+            profile.goals.calories && React.createElement('div', { className: 'p-4 bg-gradient-to-r from-blue-50 to-teal-50 rounded-lg border border-blue-200' },
+                React.createElement('h4', { className: 'font-bold text-blue-800 mb-3' }, 'Calculated Daily Targets'),
+                React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-4' },
                     React.createElement('div', null,
-                        React.createElement('h5', { className: 'font-bold text-gray-800 mb-3' }, 'Quick Presets'),
-                        React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-3' },
-                            React.createElement('button', {
-                                onClick: () => applyGoalPreset('aggressive'),
-                                className: 'p-3 bg-red-50 border-2 border-red-200 rounded-2xl text-left hover:bg-red-100 hover:border-red-300 transition-all transform hover:scale-105'
-                            },
-                                React.createElement('div', { className: 'font-bold text-red-800' }, 'Aggressive Cut'),
-                                React.createElement('div', { className: 'text-sm text-red-600' }, 'High protein, lower calories')
-                            ),
-                            React.createElement('button', {
-                                onClick: () => applyGoalPreset('moderate'),
-                                className: 'p-3 bg-green-50 border-2 border-green-200 rounded-2xl text-left hover:bg-green-100 hover:border-green-300 transition-all transform hover:scale-105'
-                            },
-                                React.createElement('div', { className: 'font-bold text-green-800' }, 'Moderate Cut'),
-                                React.createElement('div', { className: 'text-sm text-green-600' }, 'Balanced approach')
-                            ),
-                            React.createElement('button', {
-                                onClick: () => applyGoalPreset('maintenance'),
-                                className: 'p-3 bg-blue-50 border-2 border-blue-200 rounded-2xl text-left hover:bg-blue-100 hover:border-blue-300 transition-all transform hover:scale-105'
-                            },
-                                React.createElement('div', { className: 'font-bold text-blue-800' }, 'Maintenance'),
-                                React.createElement('div', { className: 'text-sm text-blue-600' }, 'Maintain current weight')
-                            )
-                        )
+                        React.createElement('div', { className: 'text-2xl font-bold text-blue-600' }, profile.goals.calories || '--'),
+                        React.createElement('div', { className: 'text-sm text-gray-600' }, 'Calories')
+                    ),
+                    React.createElement('div', null,
+                        React.createElement('div', { className: 'text-2xl font-bold text-teal-500' }, `${profile.goals.protein || '--'}g`),
+                        React.createElement('div', { className: 'text-sm text-gray-600' }, 'Protein')
+                    ),
+                    React.createElement('div', null,
+                        React.createElement('div', { className: 'text-2xl font-bold text-green-500' }, `${profile.goals.carbs || '--'}g`),
+                        React.createElement('div', { className: 'text-sm text-gray-600' }, 'Carbs')
+                    ),
+                    React.createElement('div', null,
+                        React.createElement('div', { className: 'text-2xl font-bold text-cyan-500' }, `${profile.goals.fat || '--'}g`),
+                        React.createElement('div', { className: 'text-sm text-gray-600' }, 'Fat')
                     )
                 ),
-
-            // Goal Timeline (only show if target weight is enabled)
-            timeline && React.createElement('div', { className: 'pt-4 border-t border-blue-200 mt-4' },
-                React.createElement('div', { className: 'text-center' },
-                    React.createElement('h5', { className: 'font-bold text-blue-800 mb-2' }, '🎯 Your Goal Timeline'),
-                    React.createElement('p', { className: 'text-sm text-blue-700 mb-1' },
-                        `${timeline.isGainGoal ? 'Gain' : 'Lose'} ${timeline.weightToChange.toFixed(1)} lbs in ${timeline.weeksToGoal} weeks`
-                    ),
-                    React.createElement('p', { className: 'text-sm text-blue-600 mb-2' },
-                        `Target rate: ${timeline.weeklyRate.toFixed(1)} lbs per week ${timeline.isGainGoal ? 'gain' : 'loss'}`
-                    ),
-                    timeline.isTooAggressive && React.createElement('p', { className: 'text-xs text-red-600 bg-red-50 rounded p-2' },
-                        '⚠️ This rate may be too aggressive for healthy weight loss. Consider extending your timeline.'
-                    ),
-                    timeline.isTooSlow && React.createElement('p', { className: 'text-xs text-yellow-600 bg-yellow-50 rounded p-2' },
-                        '💡 This is a very gradual approach - perfect for sustainable long-term results!'
+                
+                // Goal Timeline with Habbt colors
+                timeline && React.createElement('div', { className: 'pt-4 border-t border-blue-200' },
+                    React.createElement('div', { className: 'text-center' },
+                        React.createElement('h5', { className: 'font-bold text-blue-800 mb-2' }, '🎯 Your Goal Timeline'),
+                        React.createElement('p', { className: 'text-sm text-blue-700 mb-1' },
+                            `${timeline.isGainGoal ? 'Gain' : 'Lose'} ${timeline.weightToChange.toFixed(1)} lbs in ${timeline.weeksToGoal} weeks`
+                        ),
+                        React.createElement('p', { className: 'text-sm text-blue-600 mb-2' },
+                            `Target rate: ${timeline.weeklyRate.toFixed(1)} lbs per week ${timeline.isGainGoal ? 'gain' : 'loss'}`
+                        ),
+                        timeline.isTooAggressive && React.createElement('p', { className: 'text-xs text-red-600 bg-red-50 rounded p-2' },
+                            '⚠️ This rate may be too aggressive for healthy weight loss. Consider extending your timeline.'
+                        ),
+                        timeline.isTooSlow && React.createElement('p', { className: 'text-xs text-yellow-600 bg-yellow-50 rounded p-2' },
+                            '💡 This is a very gradual approach - perfect for sustainable long-term results!'
+                        )
                     )
                 )
             )
         );
     };
 
-    // Advanced Settings Component
+    // FULL COMPREHENSIVE Advanced Settings Component with Habbt design
     const AdvancedSettings = ({ profile, onChange, isVisible, onToggle }) => {
         const dietaryOptions = [
             'Vegetarian', 'Vegan', 'Pescatarian', 'Keto', 'Paleo', 'Mediterranean', 
@@ -971,7 +677,7 @@
             ),
             
             isVisible && React.createElement('div', { className: 'px-6 pb-6 space-y-6' },
-                // Dietary Restrictions
+                // Dietary Restrictions with Habbt colors
                 React.createElement('div', null,
                     React.createElement('h4', { className: 'text-lg font-bold text-gray-800 mb-3' }, 'Dietary Preferences'),
                     React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-2' },
@@ -989,7 +695,7 @@
                     )
                 ),
 
-                // Allergies
+                // Allergies with Habbt colors
                 React.createElement('div', null,
                     React.createElement('h4', { className: 'text-lg font-bold text-gray-800 mb-3' }, 'Allergies & Intolerances'),
                     React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-2' },
@@ -1007,7 +713,7 @@
                     )
                 ),
 
-                // Health Concerns
+                // Health Concerns with Habbt colors
                 React.createElement('div', null,
                     React.createElement('h4', { className: 'text-lg font-bold text-gray-800 mb-3' }, 'Health Concerns'),
                     React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-3 gap-2' },
@@ -1025,7 +731,7 @@
                     )
                 ),
 
-                // Foods I Love
+                // Foods I Love with Habbt colors
                 React.createElement('div', null,
                     React.createElement('h4', { className: 'text-lg font-bold text-gray-800 mb-3' }, 'Foods I Love'),
                     React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-2' },
@@ -1043,7 +749,7 @@
                     )
                 ),
 
-                // Foods I Avoid
+                // Foods I Avoid with Habbt colors
                 React.createElement('div', null,
                     React.createElement('h4', { className: 'text-lg font-bold text-gray-800 mb-3' }, 'Foods I Avoid'),
                     React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-2' },
@@ -1061,7 +767,7 @@
                     )
                 ),
 
-                // Cuisine Preferences
+                // Cuisine Preferences with Habbt colors
                 React.createElement('div', null,
                     React.createElement('h4', { className: 'text-lg font-bold text-gray-800 mb-3' }, 'Favorite Cuisines'),
                     React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-2' },
@@ -1079,7 +785,7 @@
                     )
                 ),
 
-                // Anti-Bloat Preference
+                // Anti-Bloat Preference with Habbt colors
                 React.createElement('div', null,
                     React.createElement('h4', { className: 'text-lg font-bold text-gray-800 mb-3' }, 'Special Preferences'),
                     React.createElement('label', { className: 'flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer' },
@@ -1097,7 +803,7 @@
         );
     };
 
-    // Weight History Component
+    // Weight History Component (unchanged but with Habbt colors)
     const WeightHistory = ({ profile }) => {
         const sortedHistory = [...profile.weightHistory].sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
 
@@ -1148,7 +854,7 @@
         );
     };
 
-    // Personalized Analysis Component
+    // FULL COMPREHENSIVE Personalized Analysis Component with Habbt branding
     const PersonalizedAnalysis = ({ profile, onComplete }) => {
         const [isGenerating, setIsGenerating] = React.useState(false);
         const [showAnalysis, setShowAnalysis] = React.useState(profile.planGenerated || false);
@@ -1178,6 +884,7 @@
 
             const insights = [];
 
+            // Goal-specific insights with Habbt language
             if (primaryGoal === 'fat_loss') {
                 insights.push(`${name}, your fat loss system combines a ${profile.goals.calories}-calorie target with ${profile.goals.protein}g protein to preserve muscle while burning fat systematically.`);
             } else if (primaryGoal === 'muscle_gain') {
@@ -1186,16 +893,25 @@
                 insights.push(`${name}, your maintenance system keeps you balanced at ${profile.goals.calories} calories with optimal macros for sustained energy and health.`);
             }
 
+            // Activity-specific insights
             if (activityLevel === 'very_active') {
                 insights.push("Your high activity level means we've increased your carb intake to fuel those intense training sessions - your system adapts to your lifestyle.");
             } else if (activityLevel === 'sedentary') {
                 insights.push("We've optimized your macros for a desk-based lifestyle while keeping you energized throughout the day - smart habits for your routine.");
             }
 
+            // Dietary preference insights
             if (restrictions.includes('Vegetarian') || restrictions.includes('Vegan')) {
                 insights.push("Your plant-based approach is built into every recommendation - we'll focus on complete proteins and B12-rich foods for optimal nutrition.");
             }
+            if (restrictions.includes('Keto')) {
+                insights.push("Your ketogenic targets emphasize healthy fats while keeping carbs minimal for optimal ketosis - your system for metabolic flexibility.");
+            }
+            if (restrictions.includes('Mediterranean')) {
+                insights.push("Your Mediterranean approach prioritizes olive oil, fish, and fresh vegetables for heart-healthy nutrition - a proven system for longevity.");
+            }
 
+            // Health concern insights
             if (healthConcerns.length > 0) {
                 if (healthConcerns.includes('High Blood Pressure')) {
                     insights.push("We've programmed low-sodium alternatives and DASH diet principles to support your blood pressure goals systematically.");
@@ -1205,15 +921,28 @@
                 }
             }
 
+            // Food preference insights
             if (foodsLoved.length > 0) {
                 const favorites = foodsLoved.slice(0, 3).join(', ');
                 insights.push(`We've noted your love for ${favorites} - expect meal suggestions featuring these favorites regularly in your personalized system!`);
             }
+            if (foodsAvoided.length > 0) {
+                const avoided = foodsAvoided.slice(0, 2).join(' and ');
+                insights.push(`Don't worry - you'll never see ${avoided} in your recommendations. Your preferences are completely respected in your personal system.`);
+            }
 
+            // Cuisine insights
+            if (cuisines.length > 0) {
+                const favCuisines = cuisines.slice(0, 2).join(' and ');
+                insights.push(`Your love for ${favCuisines} cuisine is reflected in our meal database - authentic flavors that fit your goals and systematic approach.`);
+            }
+
+            // Allergy safety
             if (allergies.length > 0) {
                 insights.push(`Your ${allergies.join(', ')} allergies are programmed into our safety filters - every suggestion is automatically screened for your protection.`);
             }
 
+            // Anti-bloat preference
             if (profile.preferences.antiBloutPreference) {
                 insights.push("Your anti-bloat preference means we prioritize easily digestible, low-FODMAP options to keep you feeling comfortable - your system for digestive wellness.");
             }
@@ -1225,7 +954,8 @@
             return profile.personal.name && 
                    profile.personal.birthday && 
                    profile.personal.height && 
-                   profile.current.weight;
+                   profile.current.weight &&
+                   profile.goals.targetWeight;
         };
 
         if (!isProfileComplete()) {
@@ -1289,19 +1019,35 @@
                 React.createElement('div', { className: 'flex gap-3 mt-6' },
                     React.createElement('button', {
                         onClick: () => {
-                            const success = navigateToTab('meals');
-                            if (!success) {
-                                alert('Please click the Nutrition tab manually to continue.');
-                            }
+                            const button = event.target;
+                            button.innerHTML = '🍽️ Loading Nutrition...';
+                            button.disabled = true;
+                            
+                            setTimeout(() => {
+                                const success = navigateToTab('meals');
+                                if (!success) {
+                                    button.innerHTML = '🍽️ Click Nutrition Tab Manually';
+                                    button.disabled = false;
+                                    alert('Please click the Nutrition tab manually - navigation issue detected.');
+                                }
+                            }, 300);
                         },
                         className: 'flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white rounded-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200'
                     }, '🍽️ Start Tracking Nutrition'),
                     React.createElement('button', {
                         onClick: () => {
-                            const success = navigateToTab('dashboard');
-                            if (!success) {
-                                alert('Please click the Dashboard tab manually to continue.');
-                            }
+                            const button = event.target;
+                            button.innerHTML = '📊 Loading Dashboard...';
+                            button.disabled = true;
+                            
+                            setTimeout(() => {
+                                const success = navigateToTab('dashboard');
+                                if (!success) {
+                                    button.innerHTML = '📊 Click Dashboard Tab Manually';
+                                    button.disabled = false;
+                                    alert('Please click the Dashboard tab manually - navigation issue detected.');
+                                }
+                            }, 300);
                         },
                         className: 'flex-1 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white rounded-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200'
                     }, '📊 View Dashboard')
@@ -1341,28 +1087,25 @@
         );
     };
 
-    // Main Profile Component
+    // Main Profile Component with Habbt design
     const ProfileTab = () => {
         const [profile, setProfile] = React.useState(loadProfileData());
         const [showAdvanced, setShowAdvanced] = React.useState(false);
         const [isFirstTime, setIsFirstTime] = React.useState(!profile.personal.name);
 
+        // Auto-save profile changes with proper data manager integration
         React.useEffect(() => {
-            if (profile.personal.name) {
+            if (profile.personal.name) { // Only save if there's actual data
                 const updatedProfile = {
                     ...profile,
-                    goals: profile.goals.isCustom ? profile.goals : {
-                        ...calculateGoals(profile),
-                        isCustom: false
-                    }
+                    goals: calculateGoals(profile)
                 };
-                if (JSON.stringify(updatedProfile) !== JSON.stringify(profile)) {
-                    setProfile(updatedProfile);
-                    saveProfileData(updatedProfile);
-                }
+                setProfile(updatedProfile);
+                saveProfileData(updatedProfile);
             }
-        }, [profile.personal, profile.current, profile.goals.primaryGoal, profile.dietary, profile.preferences]);
+        }, [profile.personal, profile.current, profile.goals.primaryGoal, profile.goals.targetWeight, profile.dietary, profile.preferences]);
 
+        // Show advanced on first time
         React.useEffect(() => {
             if (isFirstTime) {
                 setShowAdvanced(true);
@@ -1402,6 +1145,7 @@
 
         return React.createElement('div', { className: 'min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-cyan-50' },
             React.createElement('div', { className: 'max-w-6xl mx-auto p-6' },
+                // Header with Habbt branding
                 React.createElement('div', { className: 'bg-gradient-to-r from-blue-600 to-teal-600 rounded-3xl shadow-2xl p-6 mb-6 text-white' },
                     React.createElement('h1', { className: 'text-3xl font-bold mb-2' }, 
                         profile.personal.name ? `${profile.personal.name}'s Profile` : 'Your Profile'
@@ -1411,21 +1155,25 @@
                     )
                 ),
 
+                // Quick Stats (always visible)
                 React.createElement(QuickStats, { 
                     profile: profile, 
                     onQuickWeightUpdate: handleQuickWeightUpdate 
                 }),
 
+                // Basic Info (always visible)
                 React.createElement(BasicInfo, { 
                     profile: profile, 
                     onChange: setProfile 
                 }),
 
+                // Goals & Activity (always visible)
                 React.createElement(GoalsActivity, { 
                     profile: profile, 
                     onChange: setProfile 
                 }),
 
+                // Advanced Settings (collapsible) - FULL FEATURED VERSION
                 React.createElement(AdvancedSettings, { 
                     profile: profile, 
                     onChange: setProfile,
@@ -1433,17 +1181,19 @@
                     onToggle: () => setShowAdvanced(!showAdvanced)
                 }),
 
+                // Personalized Analysis & Plan Generation - FULL FEATURED VERSION
                 React.createElement(PersonalizedAnalysis, {
                     profile: profile,
                     onComplete: handlePlanGenerated
                 }),
 
+                // Weight History
                 React.createElement(WeightHistory, { profile: profile })
             )
         );
     };
 
-    // Export functions
+    // Export for integration with both Habbt and FuelIQ (backward compatibility)
     const renderProfileTab = (containerId) => {
         const container = document.getElementById(containerId);
         if (container) {
@@ -1451,7 +1201,7 @@
         }
     };
 
-    // Make available globally
+    // Make available globally with both naming conventions
     window.HabbtProfile = {
         ProfileTab,
         renderProfileTab,
@@ -1461,6 +1211,6 @@
     // Backward compatibility
     window.FuelIQProfile = window.HabbtProfile;
 
-    console.log('✅ Habbt Profile tab loaded - COMPLETE ENHANCED VERSION with goal customization and optional targets');
+    console.log('✅ Habbt Profile tab loaded - FULL COMPREHENSIVE VERSION with beautiful blue-teal design');
 
 })();
