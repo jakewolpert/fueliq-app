@@ -1,5 +1,5 @@
-// Enhanced Habbt Firebase Sync Manager
-// Add this to your index.html right after the unified data manager script
+// Enhanced Habbt Firebase Sync Manager with Meal Planning
+// Replace your existing sync manager file with this complete version
 
 window.HabbtSyncManager = (function() {
   'use strict';
@@ -18,6 +18,239 @@ window.HabbtSyncManager = (function() {
     'habbt_dashboard_settings': 'settings'
   };
 
+  // Initialize meal planning system
+  function ensureMealPlanningSystem() {
+    console.log('🍽️ Initializing meal planning system...');
+    
+    // Ensure HabbtMealPlanning exists
+    if (!window.HabbtMealPlanning) {
+      window.HabbtMealPlanning = {};
+    }
+    
+    // Add comprehensive meal database
+    if (!window.HabbtMealPlanning.COMPREHENSIVE_MEAL_DATABASE) {
+      window.HabbtMealPlanning.COMPREHENSIVE_MEAL_DATABASE = {
+        breakfast: [
+          { 
+            id: "big_breakfast", 
+            name: "Big Protein Breakfast", 
+            calories: 650, 
+            protein: 35, 
+            carbs: 50, 
+            fat: 25, 
+            fiber: 8, 
+            ingredients: ["eggs", "bacon", "toast", "avocado"], 
+            prepTime: 15, 
+            difficulty: "easy", 
+            tags: ["high-protein", "filling"] 
+          },
+          { 
+            id: "power_smoothie", 
+            name: "Power Smoothie Bowl", 
+            calories: 720, 
+            protein: 40, 
+            carbs: 60, 
+            fat: 20, 
+            fiber: 10, 
+            ingredients: ["protein powder", "banana", "oats", "berries"], 
+            prepTime: 10, 
+            difficulty: "easy", 
+            tags: ["post-workout", "quick"] 
+          },
+          { 
+            id: "protein_pancakes", 
+            name: "Protein Pancakes Stack", 
+            calories: 580, 
+            protein: 32, 
+            carbs: 65, 
+            fat: 18, 
+            fiber: 6, 
+            ingredients: ["protein powder", "oats", "eggs", "banana"], 
+            prepTime: 20, 
+            difficulty: "medium", 
+            tags: ["weekend", "satisfying"] 
+          }
+        ],
+        lunch: [
+          { 
+            id: "big_bowl", 
+            name: "Large Quinoa Power Bowl", 
+            calories: 900, 
+            protein: 45, 
+            carbs: 80, 
+            fat: 30, 
+            fiber: 12, 
+            ingredients: ["quinoa", "grilled chicken", "vegetables", "tahini"], 
+            prepTime: 25, 
+            difficulty: "medium", 
+            tags: ["balanced", "meal-prep"] 
+          },
+          { 
+            id: "hearty_salad", 
+            name: "Hearty Chicken Caesar", 
+            calories: 850, 
+            protein: 50, 
+            carbs: 35, 
+            fat: 45, 
+            fiber: 8, 
+            ingredients: ["chicken breast", "romaine", "parmesan", "croutons"], 
+            prepTime: 15, 
+            difficulty: "easy", 
+            tags: ["low-carb", "protein-rich"] 
+          },
+          { 
+            id: "wrap_combo", 
+            name: "Turkey Avocado Wrap & Chips", 
+            calories: 780, 
+            protein: 38, 
+            carbs: 75, 
+            fat: 35, 
+            fiber: 10, 
+            ingredients: ["turkey", "avocado", "tortilla", "baked chips"], 
+            prepTime: 10, 
+            difficulty: "easy", 
+            tags: ["portable", "quick"] 
+          }
+        ],
+        dinner: [
+          { 
+            id: "big_stir_fry", 
+            name: "Large Beef Stir Fry", 
+            calories: 850, 
+            protein: 45, 
+            carbs: 60, 
+            fat: 35, 
+            fiber: 8, 
+            ingredients: ["lean beef", "brown rice", "mixed vegetables", "teriyaki"], 
+            prepTime: 25, 
+            difficulty: "medium", 
+            tags: ["iron-rich", "vegetables"] 
+          },
+          { 
+            id: "salmon_dinner", 
+            name: "Salmon with Sweet Potato", 
+            calories: 920, 
+            protein: 42, 
+            carbs: 75, 
+            fat: 35, 
+            fiber: 10, 
+            ingredients: ["salmon fillet", "roasted sweet potato", "asparagus"], 
+            prepTime: 30, 
+            difficulty: "medium", 
+            tags: ["omega-3", "heart-healthy"] 
+          },
+          { 
+            id: "pasta_dish", 
+            name: "Chicken Alfredo Pasta", 
+            calories: 880, 
+            protein: 40, 
+            carbs: 85, 
+            fat: 32, 
+            fiber: 4, 
+            ingredients: ["chicken breast", "fettuccine", "alfredo sauce", "broccoli"], 
+            prepTime: 20, 
+            difficulty: "easy", 
+            tags: ["comfort-food", "satisfying"] 
+          }
+        ],
+        snacks: [
+          { 
+            id: "protein_snack", 
+            name: "Protein Bar & Nuts", 
+            calories: 280, 
+            protein: 15, 
+            carbs: 20, 
+            fat: 15, 
+            fiber: 5, 
+            ingredients: ["protein bar", "mixed almonds"], 
+            prepTime: 1, 
+            difficulty: "easy", 
+            tags: ["quick", "portable"] 
+          },
+          { 
+            id: "greek_yogurt_big", 
+            name: "Large Greek Yogurt Bowl", 
+            calories: 320, 
+            protein: 22, 
+            carbs: 35, 
+            fat: 12, 
+            fiber: 4, 
+            ingredients: ["greek yogurt", "granola", "berries", "honey"], 
+            prepTime: 3, 
+            difficulty: "easy", 
+            tags: ["probiotics", "antioxidants"] 
+          },
+          { 
+            id: "apple_peanut_butter", 
+            name: "Apple with Peanut Butter", 
+            calories: 250, 
+            protein: 8, 
+            carbs: 28, 
+            fat: 16, 
+            fiber: 6, 
+            ingredients: ["large apple", "natural peanut butter"], 
+            prepTime: 2, 
+            difficulty: "easy", 
+            tags: ["natural", "fiber"] 
+          }
+        ]
+      };
+      console.log('✅ Meal database initialized with', 
+        Object.keys(window.HabbtMealPlanning.COMPREHENSIVE_MEAL_DATABASE)
+          .map(cat => `${cat}: ${window.HabbtMealPlanning.COMPREHENSIVE_MEAL_DATABASE[cat].length}`)
+          .join(', ')
+      );
+    }
+    
+    // Add findSuitableMeals function
+    if (!window.HabbtMealPlanning.findSuitableMeals) {
+      window.HabbtMealPlanning.findSuitableMeals = function(category, preferences, maxCalories, maxProtein) {
+        console.log(`🔍 Finding ${category} meals (max: ${maxCalories} cal, ${maxProtein}g protein)`);
+        
+        const database = window.HabbtMealPlanning.COMPREHENSIVE_MEAL_DATABASE;
+        if (!database || !database[category]) {
+          console.log(`❌ No ${category} meals in database`);
+          return [];
+        }
+        
+        const results = database[category].filter(meal => {
+          const calorieOk = meal.calories <= (maxCalories + 200); // Extra flexibility for high targets
+          const proteinOk = !maxProtein || meal.protein <= (maxProtein + 10); // Protein flexibility
+          
+          console.log(`  ${meal.name}: ${meal.calories} cal, ${meal.protein}g protein (${calorieOk && proteinOk ? 'MATCH' : 'NO MATCH'})`);
+          return calorieOk && proteinOk;
+        });
+        
+        console.log(`✅ Found ${results.length} suitable ${category} meals`);
+        return results;
+      };
+      console.log('✅ findSuitableMeals function added');
+    }
+    
+    // Ensure window variables for meal planning
+    const goals = JSON.parse(localStorage.getItem('habbt_user_goals') || '{"calories":2890,"protein":158,"carbs":347,"fat":96}');
+    const profile = JSON.parse(localStorage.getItem('habbt_profile_data') || '{}');
+    
+    // Lock these variables to prevent overwrites
+    Object.defineProperty(window, 'userGoals', {
+      value: goals,
+      writable: true,
+      configurable: true
+    });
+    
+    Object.defineProperty(window, 'userPreferences', {
+      value: profile.preferences || {},
+      writable: true,
+      configurable: true
+    });
+    
+    console.log('✅ Meal planning system ready with goals:', goals);
+    
+    // Test the system
+    const testResults = window.HabbtMealPlanning.findSuitableMeals('breakfast', {}, 1000, 50);
+    console.log(`🧪 System test: Found ${testResults.length} breakfast options`);
+  }
+
   // Initialize sync manager
   function init() {
     console.log('🔄 Initializing Habbt Firebase Sync Manager...');
@@ -32,7 +265,10 @@ window.HabbtSyncManager = (function() {
     // Periodic sync
     setInterval(performPeriodicSync, 30000); // Every 30 seconds
     
-    console.log('✅ Habbt Sync Manager initialized');
+    // Initialize meal planning system
+    ensureMealPlanningSystem();
+    
+    console.log('✅ Habbt Sync Manager initialized with meal planning');
   }
 
   // Enhanced save with immediate Firebase sync
@@ -296,6 +532,10 @@ window.HabbtSyncManager = (function() {
       }
 
       console.log('✅ Data restore completed');
+      
+      // Reinitialize meal planning with restored data
+      ensureMealPlanningSystem();
+      
       return true;
     } catch (error) {
       console.error('❌ Data restore failed:', error);
@@ -331,6 +571,7 @@ window.HabbtSyncManager = (function() {
     loadFromFirebase,
     restoreAllDataFromFirebase,
     processSyncQueue,
+    ensureMealPlanningSystem,
     
     // Status
     getStatus: () => ({
@@ -348,6 +589,8 @@ window.HabbtSyncManager = (function() {
       console.log('Last sync:', lastSyncTime);
       console.log('Firebase user:', window.firebaseAuth?.currentUser?.email);
       console.log('Sync queue:', syncQueue);
+      console.log('Meal planning ready:', !!window.HabbtMealPlanning?.findSuitableMeals);
+      console.log('User goals:', window.userGoals);
     }
   };
 })();
@@ -385,4 +628,4 @@ function initSyncWhenReady() {
 // Start initialization
 initSyncWhenReady();
 
-console.log('🔄 Habbt Firebase Sync Manager loaded!');
+console.log('🔄 Habbt Firebase Sync Manager with Meal Planning loaded!');
