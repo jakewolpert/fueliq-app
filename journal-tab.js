@@ -326,9 +326,15 @@ window.HabbtJournal = (function() {
     
     window.currentJournalEntry[type] = value;
     
+    // Map the type to the correct CSS class name
+    let buttonClass = type;
+    if (type === 'mealSatisfaction') {
+      buttonClass = 'satisfaction';
+    }
+    
     // Update UI with a more robust approach
-    const buttons = document.querySelectorAll(`.${type}-btn`);
-    console.log(`Found ${buttons.length} ${type} buttons`);
+    const buttons = document.querySelectorAll(`.${buttonClass}-btn`);
+    console.log(`Found ${buttons.length} ${buttonClass} buttons for type ${type}`);
     
     buttons.forEach((btn, index) => {
       const isActive = (index + 1) <= value; // index is 0-based, value is 1-based
@@ -346,7 +352,7 @@ window.HabbtJournal = (function() {
           btn.className += ' bg-blue-500 border-blue-500 text-white shadow-blue-200';
         } else if (type === 'mood') {
           btn.className += ' bg-green-500 border-green-500 text-white shadow-green-200';
-        } else {
+        } else if (type === 'mealSatisfaction') {
           btn.className += ' bg-orange-500 border-orange-500 text-white shadow-orange-200';
         }
       } else {
@@ -463,8 +469,14 @@ if (!window.setRating) {
     
     window.currentJournalEntry[type] = value;
     
-    const buttons = document.querySelectorAll(`.${type}-btn`);
-    console.log(`Found ${buttons.length} ${type} buttons`);
+    // Map the type to the correct CSS class name
+    let buttonClass = type;
+    if (type === 'mealSatisfaction') {
+      buttonClass = 'satisfaction';
+    }
+    
+    const buttons = document.querySelectorAll(`.${buttonClass}-btn`);
+    console.log(`Found ${buttons.length} ${buttonClass} buttons for type ${type}`);
     
     buttons.forEach((btn, index) => {
       const isActive = (index + 1) <= value;
@@ -480,7 +492,7 @@ if (!window.setRating) {
           btn.className += ' bg-blue-500 border-blue-500 text-white shadow-blue-200';
         } else if (type === 'mood') {
           btn.className += ' bg-green-500 border-green-500 text-white shadow-green-200';
-        } else {
+        } else if (type === 'mealSatisfaction') {
           btn.className += ' bg-orange-500 border-orange-500 text-white shadow-orange-200';
         }
       } else {
