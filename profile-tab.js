@@ -1221,15 +1221,25 @@
 
         return React.createElement('div', { className: 'min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-cyan-50' },
             React.createElement('div', { className: 'max-w-6xl mx-auto p-6' },
-                // Header with Habbt branding
-                React.createElement('div', { className: 'bg-gradient-to-r from-blue-600 to-teal-600 rounded-3xl shadow-2xl p-6 mb-6 text-white' },
-                    React.createElement('h1', { className: 'text-3xl font-bold mb-2' }, 
-                        profile.personal.name ? `${profile.personal.name}'s Profile` : 'Your Profile'
-                    ),
-                    React.createElement('p', { className: 'text-lg opacity-90' }, 
-                        'Build your system for better nutrition habits'
-                    )
-                ),
+               // Header with Habbt branding and smart messaging
+React.createElement('div', { className: 'bg-gradient-to-r from-blue-600 to-teal-600 rounded-3xl shadow-2xl p-6 mb-6 text-white' },
+    React.createElement('h1', { className: 'text-3xl font-bold mb-2' }, 
+        profile.personal.name ? `${profile.personal.name}'s Profile` : 'Your Profile'
+    ),
+    React.createElement('p', { className: 'text-lg opacity-90' }, 
+        (() => {
+            const goal = profile.goals.primaryGoal;
+            const name = profile.personal.name;
+            const goalMessages = {
+                fat_loss: `${name ? `${name}, let's` : 'Let\'s'} build your sustainable fat loss system with smart nutrition habits`,
+                muscle_gain: `${name ? `${name}, let's` : 'Let\'s'} create your muscle building system with optimized protein and energy`,
+                maintenance: `${name ? `${name}, let's` : 'Let\'s'} design your maintenance system for balanced, long-term health`,
+                recomp: `${name ? `${name}, let's` : 'Let\'s'} craft your body recomposition system with precision nutrition`
+            };
+            return goalMessages[goal] || 'Build your personalized system for better nutrition habits';
+        })()
+    )
+),
 
                 // Quick Stats (always visible)
                 React.createElement(QuickStats, { 
