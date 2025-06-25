@@ -951,12 +951,11 @@
         };
 
         const isProfileComplete = () => {
-            return profile.personal.name && 
-                   profile.personal.birthday && 
-                   profile.personal.height && 
-                   profile.current.weight &&
-                   profile.goals.targetWeight;
-        };
+    return profile.personal.name && 
+           profile.personal.birthday && 
+           profile.personal.height && 
+           profile.current.weight;
+};
 
         if (!isProfileComplete()) {
             return React.createElement('div', { className: 'bg-gradient-to-r from-blue-100 to-teal-100 rounded-3xl p-6 mb-6 border-l-4 border-blue-500' },
