@@ -472,16 +472,6 @@ function generateSmartInsights() {
 
               ${renderSmartInsights()}
 
-              <!-- Debug Panel -->
-              <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <h4 class="text-sm font-bold text-gray-700 mb-2">🔧 Debug Panel</h4>
-                <button onclick="testJournalFunctions()" 
-                        class="px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 mb-2">
-                  Test Functions
-                </button>
-                <div class="text-xs text-gray-600">
-                  Having issues? Click "Test Functions" to verify everything is working.
-                </div>
               </div>
             </div>
           </div>
