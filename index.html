@@ -52,25 +52,24 @@
       const [currentView, setCurrentView] = useState('profile');
       const [userDisplayName, setUserDisplayName] = useState('');
 
-      // Load user's display name from localStorage only
-      useEffect(() => {
-        try {
-          const localProfile = localStorage.getItem('habbt_profile_data');
-          if (localProfile) {
-            const parsed = JSON.parse(localProfile);
-            if (parsed.personal?.name) {
-              setUserDisplayName(parsed.personal.name);
-              return;
-            }
-          }
-          // Default name
-          setUserDisplayName('User');
-        } catch (error) {
-          console.warn('Could not load user name:', error);
-          setUserDisplayName('User');
-        }
-      }, []);
-
+     // Load user's display name from localStorage only
+useEffect(() => {
+  try {
+    const localProfile = localStorage.getItem('habbt_profile_data');
+    if (localProfile) {
+      const parsed = JSON.parse(localProfile);
+      if (parsed.personal?.name) {
+        setUserDisplayName(parsed.personal.name);
+        return;
+      }
+    }
+    // Default name
+    setUserDisplayName('User');
+  } catch (error) {
+    console.warn('Could not load user name:', error);
+    setUserDisplayName('User');
+  }
+}, [currentView]); // Add currentView as dependency to refresh when navigating
       // Your existing state and functionality (Firebase-free)
       const [userProfile, setUserProfile] = useState({
         name: '',
