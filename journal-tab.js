@@ -470,22 +470,7 @@ function generateSmartInsights() {
                 </div>
               </div>
 
-              <!-- Insights Preview -->
-              <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl shadow-lg p-6 border border-purple-200">
-                <h3 class="text-lg font-bold text-purple-800 mb-3 flex items-center">
-                  <span class="mr-2 text-2xl">🧠</span>
-                  Coming Soon
-                </h3>
-                <p class="text-sm text-purple-700 mb-3">
-                  Smart insights will appear here once you have a few days of data:
-                </p>
-                <ul class="text-xs text-purple-600 space-y-1">
-                  <li>• Sleep-nutrition correlations</li>
-                  <li>• Meal timing patterns</li>
-                  <li>• Symptom triggers</li>
-                  <li>• Energy optimization tips</li>
-                </ul>
-              </div>
+              ${renderSmartInsights()}
 
               <!-- Debug Panel -->
               <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
