@@ -533,15 +533,15 @@
                 ),
                 
                 React.createElement('div', null,
-                    React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Target Weight (lbs)'),
-                    React.createElement('input', {
-                        type: 'number',
-                        value: profile.goals.targetWeight,
-                        onChange: (e) => handleChange('goals.targetWeight', e.target.value),
-                        className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200',
-                        placeholder: 'Goal weight'
-                    })
-                ),
+    React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Target Weight (Optional)'),
+    React.createElement('input', {
+        type: 'number',
+        value: profile.goals.targetWeight,
+        onChange: (e) => handleChange('goals.targetWeight', e.target.value),
+        className: 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200',
+        placeholder: 'Optional - focus on habits instead'
+    })
+),
                 
                 React.createElement('div', null,
                     React.createElement('label', { className: 'block text-sm font-semibold text-gray-700 mb-2' }, 'Target Date'),
