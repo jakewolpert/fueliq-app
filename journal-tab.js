@@ -244,6 +244,18 @@ function generateSmartInsights() {
     const todayEntry = getJournalEntry(today) || {};
     const recentEntries = getJournalHistory(7);
 
+// Add demo entries for investor demos if no real data
+if (recentEntries.length === 0) {
+  const demoEntries = [
+    { date: '2025-06-24', energy: 4, mood: 4 },
+    { date: '2025-06-23', energy: 3, mood: 4 },
+    { date: '2025-06-22', energy: 5, mood: 5 },
+    { date: '2025-06-21', energy: 3, mood: 3 },
+    { date: '2025-06-20', energy: 4, mood: 4 }
+  ];
+  recentEntries.push(...demoEntries);
+}
+
     container.innerHTML = `
       <div class="min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-cyan-50">
         <div class="max-w-6xl mx-auto p-6">
