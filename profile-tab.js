@@ -555,26 +555,104 @@
                 )
             ),
 
-            // Calculated Goals Display with Habbt blue-teal theme
+            // Enhanced Macro Goals with Suggested vs Custom toggle
             profile.goals.calories && React.createElement('div', { className: 'p-4 bg-gradient-to-r from-blue-50 to-teal-50 rounded-lg border border-blue-200' },
-                React.createElement('h4', { className: 'font-bold text-blue-800 mb-3' }, 'Calculated Daily Targets'),
-                React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-4' },
-                    React.createElement('div', null,
-                        React.createElement('div', { className: 'text-2xl font-bold text-blue-600' }, profile.goals.calories || '--'),
-                        React.createElement('div', { className: 'text-sm text-gray-600' }, 'Calories')
-                    ),
-                    React.createElement('div', null,
-                        React.createElement('div', { className: 'text-2xl font-bold text-teal-500' }, `${profile.goals.protein || '--'}g`),
-                        React.createElement('div', { className: 'text-sm text-gray-600' }, 'Protein')
-                    ),
-                    React.createElement('div', null,
-                        React.createElement('div', { className: 'text-2xl font-bold text-green-500' }, `${profile.goals.carbs || '--'}g`),
-                        React.createElement('div', { className: 'text-sm text-gray-600' }, 'Carbs')
-                    ),
-                    React.createElement('div', null,
-                        React.createElement('div', { className: 'text-2xl font-bold text-cyan-500' }, `${profile.goals.fat || '--'}g`),
-                        React.createElement('div', { className: 'text-sm text-gray-600' }, 'Fat')
+                // Macro Toggle Header
+                React.createElement('div', { className: 'flex items-center justify-between mb-4' },
+                    React.createElement('h4', { className: 'font-bold text-blue-800' }, 'Daily Macro Targets'),
+                    React.createElement('div', { className: 'flex bg-white rounded-lg p-1 shadow-sm' },
+                        React.createElement('button', {
+                            onClick: () => handleChange('goals.macroMode', 'suggested'),
+                            className: `px-3 py-1 text-sm font-medium rounded transition-all ${
+                                (profile.goals.macroMode || 'suggested') === 'suggested' 
+                                    ? 'bg-blue-500 text-white shadow' 
+                                    : 'text-blue-600 hover:bg-blue-50'
+                            }`
+                        }, '🎯 Suggested'),
+                        React.createElement('button', {
+                            onClick: () => handleChange('goals.macroMode', 'custom'),
+                            className: `px-3 py-1 text-sm font-medium rounded transition-all ${
+                                profile.goals.macroMode === 'custom' 
+                                    ? 'bg-blue-500 text-white shadow' 
+                                    : 'text-blue-600 hover:bg-blue-50'
+                            }`
+                        }, '⚙️ Custom')
                     )
+                ),
+
+                // Suggested Mode (default calculated macros)
+                (profile.goals.macroMode || 'suggested') === 'suggested' && React.createElement('div', null,
+                    React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-4' },
+                        React.createElement('div', null,
+                            React.createElement('div', { className: 'text-2xl font-bold text-blue-600' }, profile.goals.calories || '--'),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Calories')
+                        ),
+                        React.createElement('div', null,
+                            React.createElement('div', { className: 'text-2xl font-bold text-teal-500' }, `${profile.goals.protein || '--'}g`),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Protein')
+                        ),
+                        React.createElement('div', null,
+                            React.createElement('div', { className: 'text-2xl font-bold text-green-500' }, `${profile.goals.carbs || '--'}g`),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Carbs')
+                        ),
+                        React.createElement('div', null,
+                            React.createElement('div', { className: 'text-2xl font-bold text-cyan-500' }, `${profile.goals.fat || '--'}g`),
+                            React.createElement('div', { className: 'text-sm text-gray-600' }, 'Fat')
+                        )
+                    ),
+                    React.createElement('div', { className: 'text-xs text-blue-700 bg-blue-100 rounded p-2 text-center' },
+                        '✨ Calculated based on your goal, activity level, and body composition'
+                    )
+                ),
+
+                // Custom Mode (manual input fields)
+                profile.goals.macroMode === 'custom' && React.createElement('div', null,
+                    React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mb-4' },
+                        React.createElement('div', null,
+                            React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Calories'),
+                            React.createElement('input', {
+                                type: 'number',
+                                value: profile.goals.customCalories || profile.goals.calories || '',
+                                onChange: (e) => handleChange('goals.customCalories', e.target.value),
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 text-center',
+                                placeholder: '2000'
+                            })
+                        ),
+                        React.createElement('div', null,
+                            React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Protein (g)'),
+                            React.createElement('input', {
+                                type: 'number',
+                                value: profile.goals.customProtein || profile.goals.protein || '',
+                                onChange: (e) => handleChange('goals.customProtein', e.target.value),
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 text-center',
+                                placeholder: '150'
+                            })
+                        ),
+                        React.createElement('div', null,
+                            React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Carbs (g)'),
+                            React.createElement('input', {
+                                type: 'number',
+                                value: profile.goals.customCarbs || profile.goals.carbs || '',
+                                onChange: (e) => handleChange('goals.customCarbs', e.target.value),
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 text-center',
+                                placeholder: '250'
+                            })
+                        ),
+                        React.createElement('div', null,
+                            React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Fat (g)'),
+                            React.createElement('input', {
+                                type: 'number',
+                                value: profile.goals.customFat || profile.goals.fat || '',
+                                onChange: (e) => handleChange('goals.customFat', e.target.value),
+                                className: 'w-full px-3 py-2 border border-gray-300 rounded focus:border-blue-500 text-center',
+                                placeholder: '67'
+                            })
+                        )
+                    ),
+                    React.createElement('div', { className: 'text-xs text-blue-700 bg-blue-100 rounded p-2 text-center' },
+                        '⚙️ Set your own macro targets based on your preferences or coach recommendations'
+                    )
+                )
                 ),
                 
                 // Goal Timeline with Habbt colors
