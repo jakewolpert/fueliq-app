@@ -649,11 +649,10 @@
                             })
                         )
                     ),
-                    React.createElement('div', { className: 'text-xs text-blue-700 bg-blue-100 rounded p-2 text-center' },
-                        '⚙️ Set your own macro targets based on your preferences or coach recommendations'
-                    )
+                   React.createElement('div', { className: 'text-xs text-blue-700 bg-blue-100 rounded p-2 text-center' },
+                    '⚙️ Set your own macro targets based on your preferences or coach recommendations'
                 )
-                ),
+            ),
                 
                 // Goal Timeline with Habbt colors
                 timeline && React.createElement('div', { className: 'pt-4 border-t border-blue-200' },
