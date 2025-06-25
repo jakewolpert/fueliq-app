@@ -695,7 +695,7 @@
         );
       }
 
-      // Dashboard view (simplified - no cloud data)
+     // Dashboard view (enhanced with wearables data)
       if (currentView === 'dashboard') {
         const now = new Date();
         const today = now.toLocaleDateString('en-US', { 
@@ -734,6 +734,44 @@
           return { calories: 2000, protein: 150, carbs: 250, fat: 67, water: 64 };
         })();
 
+        // Get wearables data
+        const getWearablesData = () => {
+          try {
+            const healthData = localStorage.getItem('habbt_dashboard_health_data');
+            return healthData ? JSON.parse(healthData) : null;
+          } catch (error) {
+            return null;
+          }
+        };
+
+        const wearablesData = getWearablesData();
+        const hasWearables = wearablesData && wearablesData.dailyMetrics;
+
+        // Extract health metrics
+        const steps = hasWearables ? (wearablesData.dailyMetrics.steps || 0) : 8247; // Demo data
+        const sleepHours = hasWearables && wearablesData.dailyMetrics.sleep ? 
+          (wearablesData.dailyMetrics.sleep.totalSleep / 60).toFixed(1) : 7.3; // Demo data
+        const sleepScore = hasWearables && wearablesData.dailyMetrics.sleep ?
+          wearablesData.dailyMetrics.sleep.sleepScore : 78; // Demo data
+
+        // Smart insights based on data
+        const getMovementInsight = (steps) => {
+          if (steps < 5000) return { text: "Gentle movement helps circulation and nutrient absorption", emoji: "🚶", color: "text-blue-600" };
+          if (steps < 8000) return { text: "Good activity supports your nutrition goals", emoji: "🏃", color: "text-green-600" };
+          if (steps < 12000) return { text: "Great activity! Focus on quality protein for recovery", emoji: "💪", color: "text-blue-600" };
+          return { text: "Outstanding activity! Prioritize hydration and recovery nutrition", emoji: "🔥", color: "text-purple-600" };
+        };
+
+        const getSleepInsight = (sleepHours, sleepScore) => {
+          if (sleepScore >= 85 || sleepHours >= 8) return { text: "Excellent rest supports your nutrition goals perfectly", emoji: "😴", color: "text-green-600" };
+          if (sleepScore >= 70 || sleepHours >= 7) return { text: "Good sleep helps regulate hunger hormones", emoji: "😊", color: "text-blue-600" };
+          if (sleepScore >= 55 || sleepHours >= 6) return { text: "Try magnesium-rich foods for better sleep tonight", emoji: "😐", color: "text-yellow-600" };
+          return { text: "Poor sleep affects food choices - prioritize rest tonight", emoji: "😵", color: "text-red-600" };
+        };
+
+        const movementInsight = getMovementInsight(steps);
+        const sleepInsight = getSleepInsight(sleepHours, sleepScore);
+
         const getProgressPercentage = (current, goal) => {
           const currentNum = parseFloat(current) || 0;
           const goalNum = parseFloat(goal) || 1;
@@ -757,7 +795,9 @@
                 e('p', { className: "text-xl opacity-90 mb-2" }, today),
                 e('p', { className: "text-lg font-semibold opacity-95" }, currentTime),
                 e('div', { className: "mt-4 text-sm opacity-80" }, 
-                  '🎯 Local nutrition tracking - no cloud required'
+                  hasWearables ? 
+                    '🎯 Health data connected - Smart insights active' :
+                    '🎯 Demo mode - Connect devices for real-time insights'
                 )
               )
             ),
@@ -765,7 +805,7 @@
             // Main Metrics Grid
             e('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" },
               
-              // Nutrition Card
+              // Nutrition Card (unchanged)
               e('div', { 
                 className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
                 onClick: () => setCurrentView('meals')
@@ -798,31 +838,135 @@
                 )
               ),
               
-              // Placeholder cards for other metrics
-              e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 opacity-50" },
-                e('div', { className: 'text-center' },
-                  e('div', { className: 'text-3xl mb-2' }, '👟'),
-                  e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Movement'),
-                  e('p', { className: 'text-sm text-gray-600' }, 'Connect device to track'),
-                  e('div', { className: 'mt-4 text-2xl font-bold text-gray-400' }, '0 steps')
+              // Enhanced Movement Card
+              e('div', { 
+                className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
+                onClick: () => setCurrentView('wearables')
+              },
+                e('div', { className: 'flex items-center justify-between mb-4' },
+                  e('div', { className: 'flex items-center space-x-3' },
+                    e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '👟'),
+                    e('div', null,
+                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Movement'),
+                      e('p', { className: 'text-xs text-gray-600' }, hasWearables ? 'Device connected' : 'Demo data')
+                    )
+                  ),
+                  e('div', { className: `text-sm font-bold ${movementInsight.color}` }, movementInsight.emoji)
+                ),
+                e('div', { className: 'mb-4' },
+                  e('div', { className: 'flex items-baseline space-x-2' },
+                    e('span', { className: 'text-3xl font-bold text-gray-900' }, steps.toLocaleString()),
+                    e('span', { className: 'text-lg text-gray-600' }, 'steps'),
+                    e('span', { className: 'text-gray-400' }, '/'),
+                    e('span', { className: 'text-lg text-gray-600' }, '10,000')
+                  )
+                ),
+                e('div', { className: 'w-full bg-gray-200 rounded-full h-3 mb-3' },
+                  e('div', {
+                    className: 'bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-500',
+                    style: { width: `${Math.min((steps / 10000) * 100, 100)}%` }
+                  })
+                ),
+                e('div', { className: 'text-xs text-blue-600 bg-blue-50 p-2 rounded-lg' },
+                  `💡 ${movementInsight.text}`
                 )
               ),
               
-              e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 opacity-50" },
-                e('div', { className: 'text-center' },
-                  e('div', { className: 'text-3xl mb-2' }, '😴'),
-                  e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Rest'),
-                  e('p', { className: 'text-sm text-gray-600' }, 'Track sleep quality'),
-                  e('div', { className: 'mt-4 text-2xl font-bold text-gray-400' }, '0 hours')
+              // Enhanced Rest Card
+              e('div', { 
+                className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 cursor-pointer hover:scale-105 transition-all duration-200 group",
+                onClick: () => setCurrentView('wearables')
+              },
+                e('div', { className: 'flex items-center justify-between mb-4' },
+                  e('div', { className: 'flex items-center space-x-3' },
+                    e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-2xl group-hover:scale-110 transition-transform duration-200' }, '😴'),
+                    e('div', null,
+                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Rest'),
+                      e('p', { className: 'text-xs text-gray-600' }, hasWearables ? 'Sleep tracked' : 'Demo data')
+                    )
+                  ),
+                  e('div', { className: `text-sm font-bold ${sleepInsight.color}` }, sleepInsight.emoji)
+                ),
+                e('div', { className: 'mb-4' },
+                  e('div', { className: 'flex items-baseline space-x-2' },
+                    e('span', { className: 'text-3xl font-bold text-gray-900' }, sleepHours),
+                    e('span', { className: 'text-lg text-gray-600' }, 'hrs'),
+                    e('span', { className: 'text-gray-400' }, '/'),
+                    e('span', { className: 'text-lg text-gray-600' }, '8 hrs')
+                  )
+                ),
+                e('div', { className: 'w-full bg-gray-200 rounded-full h-3 mb-3' },
+                  e('div', {
+                    className: 'bg-gradient-to-r from-purple-500 to-indigo-500 h-3 rounded-full transition-all duration-500',
+                    style: { width: `${Math.min((sleepHours / 8) * 100, 100)}%` }
+                  })
+                ),
+                e('div', { className: 'text-xs text-blue-600 bg-blue-50 p-2 rounded-lg' },
+                  `💡 ${sleepInsight.text}`
                 )
               ),
               
-              e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 opacity-50" },
-                e('div', { className: 'text-center' },
-                  e('div', { className: 'text-3xl mb-2' }, '💧'),
-                  e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Hydration'),
-                  e('p', { className: 'text-sm text-gray-600' }, 'Manual tracking'),
-                  e('div', { className: 'mt-4 text-2xl font-bold text-gray-400' }, '0 oz')
+              // Hydration Card (manual)
+              e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 opacity-90" },
+                e('div', { className: 'flex items-center justify-between mb-4' },
+                  e('div', { className: 'flex items-center space-x-3' },
+                    e('div', { className: 'text-3xl p-3 bg-gradient-to-r from-cyan-100 to-blue-100 rounded-2xl' }, '💧'),
+                    e('div', null,
+                      e('h3', { className: 'text-lg font-bold text-gray-800' }, 'Hydration'),
+                      e('p', { className: 'text-xs text-gray-600' }, 'Manual tracking')
+                    )
+                  ),
+                  e('div', { className: 'text-sm font-bold text-cyan-600' }, '🚰')
+                ),
+                e('div', { className: 'mb-4' },
+                  e('div', { className: 'flex items-baseline space-x-2' },
+                    e('span', { className: 'text-3xl font-bold text-gray-900' }, '0'),
+                    e('span', { className: 'text-lg text-gray-600' }, 'oz'),
+                    e('span', { className: 'text-gray-400' }, '/'),
+                    e('span', { className: 'text-lg text-gray-600' }, `${profileGoals.water} oz`)
+                  )
+                ),
+                e('div', { className: 'mb-3' },
+                  e('button', { 
+                    className: 'w-full py-2 px-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-blue-700 transition-all'
+                  }, '+ Add Water')
+                ),
+                e('div', { className: 'text-xs text-blue-600 bg-blue-50 p-2 rounded-lg' },
+                  '💡 Proper hydration supports nutrient absorption'
+                )
+              )
+            ),
+
+            // Smart Insights Panel (new!)
+            (hasWearables || steps > 0) && e('div', { className: "bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/20 p-6 mb-8" },
+              e('h3', { className: "text-xl font-bold text-gray-800 mb-4 flex items-center gap-3" },
+                e('span', { className: "text-2xl" }, '💡'),
+                'Smart Health Insights'
+              ),
+              e('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
+                e('div', { className: "p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200" },
+                  e('div', { className: "flex items-center gap-3 mb-2" },
+                    e('span', { className: "text-2xl" }, movementInsight.emoji),
+                    e('h4', { className: "font-semibold text-gray-800" }, 'Movement Status')
+                  ),
+                  e('p', { className: "text-sm text-gray-700 mb-2" }, movementInsight.text),
+                  e('div', { className: "text-xs text-green-700 font-medium" },
+                    steps >= 10000 ? 'Excellent daily activity! ⭐' : 
+                    steps >= 8000 ? 'On track for health goals 📈' :
+                    'A short walk can boost energy levels 🚶'
+                  )
+                ),
+                e('div', { className: "p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200" },
+                  e('div', { className: "flex items-center gap-3 mb-2" },
+                    e('span', { className: "text-2xl" }, sleepInsight.emoji),
+                    e('h4', { className: "font-semibold text-gray-800" }, 'Recovery Status')
+                  ),
+                  e('p', { className: "text-sm text-gray-700 mb-2" }, sleepInsight.text),
+                  e('div', { className: "text-xs text-purple-700 font-medium" },
+                    sleepScore >= 80 ? 'Your body is optimally recovered! 🌟' :
+                    sleepScore >= 70 ? 'Good recovery supports your goals 💪' :
+                    'Quality sleep enhances nutrition success 😴'
+                  )
                 )
               )
             ),
@@ -835,7 +979,9 @@
                   e('div', {},
                     e('h3', { className: "font-bold text-green-800" }, 'Habbt Local Mode Active'),
                     e('p', { className: "text-sm text-green-600" }, 
-                      'Your data is stored securely on your device - no cloud required'
+                      hasWearables ? 
+                        'Health insights powered by connected devices' :
+                        'Demo mode active - connect devices for real-time data'
                     )
                   )
                 ),
@@ -844,7 +990,7 @@
                     userDisplayName ? `${userDisplayName}` : 'User'
                   ),
                   e('div', { className: "text-xs text-green-500" }, 
-                    '📱 Local Storage Only'
+                    hasWearables ? '📊 Live Health Data' : '🎯 Demo Mode'
                   )
                 )
               )
@@ -852,7 +998,6 @@
           )
         );
       }
-
       // All other view handlers
       if (currentView === 'meals') {
         return e('div', { className: "min-h-screen bg-gradient-card" },
