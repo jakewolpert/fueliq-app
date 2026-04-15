@@ -59,7 +59,9 @@
       const data = await get('getProfile');
       cache.profile = data;
 
-      // Also sync to localStorage so existing app code still works
+      // Only sync to localStorage if Sheet has actual data (don't overwrite with empty)
+      if (!data || Object.keys(data).length === 0) return data;
+
       localStorage.setItem('habbt_profile_data', JSON.stringify({
         personal: {
           name: data.name || '',
