@@ -323,10 +323,10 @@
       }
     }
     
-    // Mirror daily meal totals to Sheet
-    if (key.startsWith('habbt_meals_')) {
+    // Mirror daily meal totals to Sheet (handles both habbt_ and fueliq_ key prefixes)
+    if (key.startsWith('habbt_meals_') || key.startsWith('fueliq_meals_')) {
       try {
-        const date = key.replace('habbt_meals_', '');
+        const date = key.replace('habbt_meals_', '').replace('fueliq_meals_', '');
         const meals = JSON.parse(value);
         const allFoods = [
           ...(meals.breakfast || []),
@@ -354,10 +354,10 @@
       } catch(e) {}
     }
 
-    // Mirror journal entries to Sheet
-    if (key.startsWith('habbt_journal_')) {
+    // Mirror journal entries to Sheet (handles both habbt_ and fueliq_ key prefixes)
+    if (key.startsWith('habbt_journal_') || key.startsWith('fueliq_journal_')) {
       try {
-        const date = key.replace('habbt_journal_', '');
+        const date = key.replace('habbt_journal_', '').replace('fueliq_journal_', '');
         const entries = JSON.parse(value);
         if (Array.isArray(entries) && entries.length > 0) {
           const latest = entries[entries.length - 1];
