@@ -275,6 +275,98 @@
     }
   }
 
+
+  // ─── LOCALSTORAGE INTERCEPTOR ─────────────────────────────────────────────
+  // Watches for writes to key localStorage keys and mirrors them to the Sheet
+  // This means we never need to modify profile-tab.js or other tab files
+  const _originalSetItem = localStorage.setItem.bind(localStorage);
+  
+  localStorage.setItem = function(key, value) {
+    // Always do the normal localStorage write first
+    _originalSetItem(key, value);
+    
+    // Mirror profile saves to Sheet
+    if (key === 'habbt_profile_data') {
+      try {
+        const parsed = JSON.parse(value);
+        if (!parsed || !parsed.personal || !parsed.personal.name) return;
+        
+        // Flatten the nested profile structure into Sheet-friendly key/value pairs
+        const flat = {
+          name:                 parsed.personal?.name || '',
+          age:                  parsed.personal?.age || '',
+          gender:               parsed.personal?.gender || '',
+          height:               parsed.personal?.height || '',
+          current_weight:       parsed.current?.weight || '',
+          activity_level:       parsed.current?.activityLevel || '',
+          goal_type:            parsed.goals?.primaryGoal || '',
+          calories_goal:        parsed.goals?.calories || '',
+          protein_goal:         parsed.goals?.protein || '',
+          carbs_goal:           parsed.goals?.carbs || '',
+          fat_goal:             parsed.goals?.fat || '',
+          water_goal:           parsed.goals?.water || '',
+          dietary_restrictions: (parsed.dietary?.restrictions || []).join(','),
+          allergies:            (parsed.dietary?.allergies || []).join(','),
+          foods_love:           (parsed.preferences?.foodsILove || []).join(','),
+          foods_avoid:          (parsed.preferences?.foodsIAvoid || []).join(','),
+          cuisines:             (parsed.preferences?.cuisines || []).join(',')
+        };
+        
+        // Fire and forget — don't block the UI
+        post('saveProfile', flat)
+          .then(() => console.log('[HabbtDataService] Profile mirrored to Sheet ✅'))
+          .catch(err => console.warn('[HabbtDataService] Sheet sync failed (data safe in localStorage):', err));
+          
+        cache.profile = flat;
+      } catch(e) {
+        // Never crash the app over a sync failure
+      }
+    }
+    
+    // Mirror daily meal totals to Sheet
+    if (key.startsWith('habbt_meals_')) {
+      try {
+        const date = key.replace('habbt_meals_', '');
+        const meals = JSON.parse(value);
+        const allFoods = [
+          ...(meals.breakfast || []),
+          ...(meals.lunch || []),
+          ...(meals.dinner || []),
+          ...(meals.snacks || [])
+        ];
+        const totals = allFoods.reduce((acc, item) => {
+          const mult = (item.servingSize || 100) / 100;
+          return {
+            calories: acc.calories + ((item.calories || 0) * mult),
+            protein:  acc.protein  + ((item.protein  || 0) * mult),
+            carbs:    acc.carbs    + ((item.carbs    || 0) * mult),
+            fat:      acc.fat      + ((item.fat      || 0) * mult)
+          };
+        }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+        
+        post('saveDailyLog', {
+          date,
+          calories_consumed: Math.round(totals.calories),
+          protein: Math.round(totals.protein),
+          carbs:   Math.round(totals.carbs),
+          fat:     Math.round(totals.fat)
+        }).catch(() => {});
+      } catch(e) {}
+    }
+
+    // Mirror journal entries to Sheet
+    if (key.startsWith('habbt_journal_')) {
+      try {
+        const date = key.replace('habbt_journal_', '');
+        const entries = JSON.parse(value);
+        if (Array.isArray(entries) && entries.length > 0) {
+          const latest = entries[entries.length - 1];
+          post('saveJournal', { ...latest, date }).catch(() => {});
+        }
+      } catch(e) {}
+    }
+  };
+
   // ─── INIT ─────────────────────────────────────────────────────────────────
   // On load: pull profile from Sheet, hydrate localStorage so existing tabs work
   async function init() {
