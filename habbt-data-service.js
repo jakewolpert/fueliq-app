@@ -18,6 +18,14 @@
     workouts: {}
   };
 
+  // Track last synced values to prevent duplicate Sheet writes on re-renders
+  const lastSynced = {
+    profile: null,
+    meals: {},
+    journal: {},
+    weight: null
+  };
+
   // ─── CORE HTTP HELPERS ────────────────────────────────────────────────────
   async function get(action, params = {}) {
     const url = new URL(API_URL);
@@ -306,6 +314,10 @@
         const parsed = JSON.parse(value);
         if (!parsed || !parsed.personal || !parsed.personal.name) return;
         
+        // Only sync if data actually changed
+        if (lastSynced.profile === value) return;
+        lastSynced.profile = value;
+        
         // Flatten the nested profile structure into Sheet-friendly key/value pairs
         const flat = {
           name:                 parsed.personal?.name || '',
@@ -342,6 +354,11 @@
     if (key.startsWith('habbt_meals_') || key.startsWith('fueliq_meals_')) {
       try {
         const date = key.replace('habbt_meals_', '').replace('fueliq_meals_', '');
+        
+        // Only sync if data actually changed
+        if (lastSynced.meals[date] === value) return;
+        lastSynced.meals[date] = value;
+
         const meals = JSON.parse(value);
         const allFoods = [
           ...(meals.breakfast || []),
@@ -373,6 +390,11 @@
     if (key.startsWith('habbt_journal_') || key.startsWith('fueliq_journal_')) {
       try {
         const date = key.replace('habbt_journal_', '').replace('fueliq_journal_', '');
+        
+        // Only sync if data actually changed
+        if (lastSynced.journal[date] === value) return;
+        lastSynced.journal[date] = value;
+
         const entries = JSON.parse(value);
         if (Array.isArray(entries) && entries.length > 0) {
           const latest = entries[entries.length - 1];
