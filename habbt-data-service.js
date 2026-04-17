@@ -62,15 +62,23 @@
       // Only sync to localStorage if Sheet has actual data (don't overwrite with empty)
       if (!data || Object.keys(data).length === 0) return data;
 
-      localStorage.setItem('habbt_profile_data', JSON.stringify({
+      // Reconstruct the EXACT nested structure profile-tab.js expects
+      const nested = {
         personal: {
           name: data.name || '',
-          age: data.age || '',
-          gender: data.gender || 'male',
+          birthday: data.birthday || '',
           height: data.height || '',
+          gender: data.gender || 'male'
         },
-        current_weight: data.current_weight || '',
+        current: {
+          weight: data.current_weight || '',
+          activityLevel: data.activity_level || 'moderate',
+          lastWeightEntry: null
+        },
         goals: {
+          primaryGoal: data.goal_type || 'fat_loss',
+          targetWeight: data.target_weight || '',
+          targetDate: data.target_date || '',
           calories: data.calories_goal || 2000,
           protein: data.protein_goal || 150,
           carbs: data.carbs_goal || 250,
@@ -78,14 +86,27 @@
           water: data.water_goal || 64
         },
         dietary: {
-          restrictions: data.dietary_restrictions ? data.dietary_restrictions.split(',') : [],
-          allergies: data.allergies ? data.allergies.split(',') : [],
-          foods_love: data.foods_love ? data.foods_love.split(',') : [],
-          foods_avoid: data.foods_avoid ? data.foods_avoid.split(',') : []
+          restrictions: data.dietary_restrictions ? data.dietary_restrictions.split(',').filter(Boolean) : [],
+          allergies: data.allergies ? data.allergies.split(',').filter(Boolean) : [],
+          healthConcerns: []
         },
-        activity_level: data.activity_level || 'moderate',
-        goal_type: data.goal_type || 'fat_loss'
-      }));
+        preferences: {
+          foodsILove: data.foods_love ? data.foods_love.split(',').filter(Boolean) : [],
+          foodsIAvoid: data.foods_avoid ? data.foods_avoid.split(',').filter(Boolean) : [],
+          cuisines: data.cuisines ? data.cuisines.split(',').filter(Boolean) : [],
+          antiBloutPreference: false
+        },
+        weightHistory: [],
+        planGenerated: false,
+        planGeneratedDate: null
+      };
+
+      // Only write to localStorage if current localStorage is empty or missing current
+      const existing = localStorage.getItem('habbt_profile_data');
+      const existingParsed = existing ? JSON.parse(existing) : null;
+      if (!existingParsed || !existingParsed.current || !existingParsed.current.weight) {
+        _originalSetItem('habbt_profile_data', JSON.stringify(nested));
+      }
 
       return data;
     } catch (err) {
@@ -99,14 +120,8 @@
   async function saveProfile(profileData) {
     cache.profile = { ...cache.profile, ...profileData };
 
-    // Sync to localStorage immediately so UI updates instantly
-    const existing = JSON.parse(localStorage.getItem('habbt_profile_data') || '{}');
-    localStorage.setItem('habbt_profile_data', JSON.stringify({
-      ...existing,
-      ...profileData
-    }));
-
-    // Write through to Sheet
+    // Write through to Sheet only — never touch localStorage here
+    // localStorage is managed by profile-tab.js directly
     try {
       await post('saveProfile', profileData);
       console.log('[HabbtDataService] Profile saved to Sheet');
