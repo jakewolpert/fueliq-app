@@ -383,6 +383,50 @@
           carbs:   Math.round(totals.carbs),
           fat:     Math.round(totals.fat)
         }).catch(() => {});
+
+        // Also sync individual meal items to Meals tab
+        const now = new Date().toISOString();
+        const mealTypes = ['breakfast', 'lunch', 'dinner', 'snacks'];
+        
+        // Get previously synced items to only send NEW ones
+        const prevKey = `habbt_synced_meals_${date}`;
+        let prevSynced = [];
+        try { prevSynced = JSON.parse(localStorage.getItem(prevKey) || '[]'); } catch(e) {}
+        
+        const newItems = [];
+        mealTypes.forEach(mealType => {
+          (meals[mealType] || []).forEach(item => {
+            const itemKey = `${mealType}_${item.id || item.name}_${item.servingSize}`;
+            if (!prevSynced.includes(itemKey)) {
+              newItems.push({ mealType, item, itemKey });
+            }
+          });
+        });
+
+        // Send only new items to Sheet
+        newItems.forEach(({ mealType, item, itemKey }) => {
+          const mult = (item.servingSize || 100) / 100;
+          post('saveMeal', {
+            date,
+            meal_type: mealType,
+            food_name: item.name || item.food_name || '',
+            calories: Math.round((item.calories || 0) * mult),
+            protein: Math.round((item.protein || 0) * mult * 10) / 10,
+            carbs: Math.round((item.carbs || 0) * mult * 10) / 10,
+            fat: Math.round((item.fat || 0) * mult * 10) / 10,
+            fiber: Math.round((item.fiber || 0) * mult * 10) / 10,
+            serving_size: item.servingSize || 100,
+            serving_unit: item.servingUnit || 'g',
+            logged_at: now
+          }).catch(() => {});
+          prevSynced.push(itemKey);
+        });
+
+        // Update synced items tracker
+        if (newItems.length > 0) {
+          try { localStorage.setItem(prevKey, JSON.stringify(prevSynced)); } catch(e) {}
+        }
+
       } catch(e) {}
     }
 
