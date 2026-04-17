@@ -10,7 +10,7 @@
     const searchFoods = async (query) => {
         if (!query || query.length < 2) return [];
         try {
-            const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&pageSize=10&api_key=DEMO_KEY`);
+            const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(query)}&pageSize=10&api_key=xSSO9Bty1SnmrzodrrSy9T0IMOgieHu7gkEaDTYc`);
             const data = await response.json();
             return data.foods || [];
         } catch (error) {
@@ -21,7 +21,7 @@
 
     const getFoodDetails = async (fdcId) => {
         try {
-            const response = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${fdcId}?api_key=DEMO_KEY`);
+            const response = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${fdcId}?api_key=xSSO9Bty1SnmrzodrrSy9T0IMOgieHu7gkEaDTYc`);
             return await response.json();
         } catch (error) {
             console.error('Error getting food details:', error);
