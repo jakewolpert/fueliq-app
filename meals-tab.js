@@ -235,7 +235,7 @@
     const memoryStorage = {};
 
     const saveMealData = (date, meals) => {
-        const key = `fueliq_meals_${date}`;
+const key = `habbt_meals_${date}`;
         const data = JSON.stringify(meals);
         
         if (isLocalStorageAvailable()) {
@@ -250,7 +250,7 @@
     };
 
     const loadMealData = (date) => {
-        const key = `fueliq_meals_${date}`;
+const key = `habbt_meals_${date}`;
         let data = null;
         
         if (isLocalStorageAvailable()) {
