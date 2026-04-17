@@ -175,9 +175,19 @@
       const data = await get('getMeals', { date: d });
       cache.meals[d] = data;
 
-      // Sync to localStorage format the existing meals tab expects
-      const localKey = `habbt_meals_${d}`;
-      localStorage.setItem(localKey, JSON.stringify(data.meals || {}));
+      // Only write to localStorage if Sheet has actual meal data
+      // Never overwrite good local data with empty Sheet data
+      const hasMealData = data.meals && (
+        (data.meals.breakfast && data.meals.breakfast.length > 0) ||
+        (data.meals.lunch && data.meals.lunch.length > 0) ||
+        (data.meals.dinner && data.meals.dinner.length > 0) ||
+        (data.meals.snacks && data.meals.snacks.length > 0)
+      );
+
+      if (hasMealData) {
+        const localKey = `habbt_meals_${d}`;
+        _originalSetItem(localKey, JSON.stringify(data.meals));
+      }
 
       return data;
     } catch (err) {
